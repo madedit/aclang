@@ -405,14 +405,22 @@ void* getArrayVar(acArray* arr, acVariable* var, acVM* vm)
 void addTableKeyValue(acTable* tab, acVariable* key, acVariable* value, acVM* vm)
 {
     acGarbageCollector* gc = vm->getGarbageCollector();
-    tab->add(key, value);
+
+    acVariable* var = (acVariable*)gc->createObject(acVT_NULL);
+    var->setValue(value);
+
+    tab->add(key, var);
 }
 
 void addTableKeyValue_str(acTable* tab, char* name, acVariable* value, acVM* vm)
 {
     acGarbageCollector* gc = vm->getGarbageCollector();
+
     acVariable* key = (acVariable*)gc->createVarWithData(name);
-    tab->add(key, value);
+    acVariable* var = (acVariable*)gc->createObject(acVT_NULL);
+    var->setValue(value);
+
+    tab->add(key, var);
 }
 
 void* addTableVar(acTable* tab, acVariable* key, acVM* vm)
