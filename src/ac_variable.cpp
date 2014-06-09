@@ -569,7 +569,7 @@ acDouble arr_toDouble(acVariable* var, acVM* vm)
 std::string arr_toStr(acVariable* var, acVM* vm)
 {
     char buf[32];
-    sprintf(buf, "array: 0x%08x", (acUInt32)var->m_gcobj);
+    sprintf(buf, "array: 0x%08x", (size_t)var->m_gcobj);
     return std::string(buf);
 }
 void arr_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
@@ -606,7 +606,7 @@ acDouble tab_toDouble(acVariable* var, acVM* vm)
 std::string tab_toStr(acVariable* var, acVM* vm)
 {
     char buf[32];
-    sprintf(buf, "table: 0x%08x", (acUInt32)var->m_gcobj);
+    sprintf(buf, "table: 0x%08x", (size_t)var->m_gcobj);
     return std::string(buf);
 }
 void tab_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
@@ -643,7 +643,7 @@ acDouble func_toDouble(acVariable* var, acVM* vm)
 std::string func_toStr(acVariable* var, acVM* vm)
 {
     char buf[32];
-    sprintf(buf, "function: 0x%08x", (acUInt32)var->m_gcobj);
+    sprintf(buf, "function: 0x%08x", (size_t)var->m_gcobj);
     return std::string(buf);
 }
 void func_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
@@ -687,7 +687,7 @@ acDouble dele_toDouble(acVariable* var, acVM* vm)
 std::string dele_toStr(acVariable* var, acVM* vm)
 {
     char buf[32];
-    sprintf(buf, "delegate: 0x%08x", (acUInt32)var->m_gcobj);
+    sprintf(buf, "delegate: 0x%08x", (size_t)var->m_gcobj);
     return std::string(buf);
 }
 void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
@@ -732,7 +732,7 @@ acDouble uf_toDouble(acVariable* var, acVM* vm)
 std::string uf_toStr(acVariable* var, acVM* vm)
 {
     char buf[32];
-    sprintf(buf, "userfunc: 0x%08x", (acUInt32)var->m_gcobj);
+    sprintf(buf, "userfunc: 0x%08x", (size_t)var->m_gcobj);
     return std::string(buf);
 }
 void uf_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)

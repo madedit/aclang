@@ -202,7 +202,7 @@ const char* findTokenString(acTokenType type, acKeyword* keywords, int count)
     return 0;
 }
 
-const char* getTokenString(acTokenType type)
+const char* getTokenString0(acTokenType type)
 {
     const char* str;
     str = findTokenString(type, stKeywords, stKeywords_count);
@@ -242,7 +242,6 @@ const char* getTokenString(acTokenType type)
 
 }//namespace
 
-#ifdef AC_DEBUG
 const char* getTokenString(acTokenType type)
 {
     switch(type)
@@ -308,12 +307,11 @@ const char* getTokenString(acTokenType type)
     case TOK_CATASS:     return "~=";
     }
 
-    const char* str = ::getTokenString(type);
+    const char* str = ::getTokenString0(type);
     if(str != 0) return str;
 
     return "";
 }
-#endif
 
 acLexer::acReturnType acLexer::next(acToken &token, acChar *bufferEnd)
 {

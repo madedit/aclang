@@ -398,8 +398,8 @@ void acGarbageCollector::addChildrenToGrayList(acArray* array)
 
 void acGarbageCollector::addChildrenToGrayList(acTable* table)
 {
-    acTable::data_iterator it = table->m_data.begin();
-    acTable::data_iterator itend = table->m_data.end();
+    acTable::DataIterator it = table->m_data.begin();
+    acTable::DataIterator itend = table->m_data.end();
 
     while(it != itend)
     {

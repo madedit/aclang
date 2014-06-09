@@ -180,6 +180,7 @@ struct acString : acGCObject
     acUInt32 m_hash;
     acUInt32 m_sum;
     std::string m_data;
+    int m_iteratorIndex;//for foreach()
 
     acString()
         : acGCObject(acVT_STRING)
@@ -206,14 +207,31 @@ struct acString : acGCObject
     }
 
     void hash();
+
+    void initIter() { m_iteratorIndex = 0; }
+    bool iterate(acVariable* idx, acVariable* value)
+    {
+        if(m_iteratorIndex < 0 || m_iteratorIndex >= (int)m_data.size())
+            return false;
+
+        if(idx != 0)
+            idx->setValue(m_iteratorIndex);
+        if(value != 0)
+            value->setValue((int)m_data[m_iteratorIndex]);
+
+        ++m_iteratorIndex;
+        return true;
+    }
 };
 
 struct acArray : acGCObject
 {
     std::vector<acVariable*> m_data;
+    int m_iteratorIndex;//for foreach()
 
     acArray()
         : acGCObject(acVT_ARRAY)
+        , m_iteratorIndex(-1)
     {
     }
 
@@ -221,6 +239,21 @@ struct acArray : acGCObject
     void add(acVariable* var) { m_data.push_back(var); }
     acVariable* get(int idx) { return m_data[idx]; }
     void set(int idx, acVariable* var) { m_data[idx] = var; }
+
+    void initIter() { m_iteratorIndex = 0; }
+    bool iterate(acVariable* idx, acVariable* value)
+    {
+        if(m_iteratorIndex < 0 || m_iteratorIndex >= size())
+            return false;
+
+        if(idx != 0)
+            idx->setValue(m_iteratorIndex);
+        if(value != 0)
+            value->setValue(m_data[m_iteratorIndex]);
+
+        ++m_iteratorIndex;
+        return true;
+    }
 };
 
 struct acTable : acGCObject
@@ -237,17 +270,27 @@ struct acTable : acGCObject
     };
 
     std::map<acHashValue, KeyValue> m_data;
-    typedef std::map<acHashValue, KeyValue>::iterator data_iterator;
+    typedef std::map<acHashValue, KeyValue>::iterator DataIterator;
+    DataIterator m_iterator;//for foreach()
 
     acTable()
         : acGCObject(acVT_TABLE)
+        , m_iterator(m_data.end())
     {
     }
 
     void add(acVariable* key, acVariable* var)
     {
         acHashValue& hash = key->getHash();
-        m_data.insert(std::make_pair(hash, KeyValue(key, var)));
+        DataIterator it = m_data.find(hash);
+        if(it == m_data.end())
+        {
+            m_data.insert(std::make_pair(hash, KeyValue(key, var)));
+        }
+        else
+        {
+            it->second = KeyValue(key, var);
+        }
     }
     void remove(acVariable* key)
     {
@@ -258,7 +301,7 @@ struct acTable : acGCObject
     {
         acHashValue hash;
         acVariable::getHash(idx, hash);
-        data_iterator it = m_data.find(hash);
+        DataIterator it = m_data.find(hash);
         if(it == m_data.end()) return 0;
         return it->second.value;
     }
@@ -267,7 +310,7 @@ struct acTable : acGCObject
     {
         acHashValue hash;
         acVariable::getHash(key, hash);
-        data_iterator it = m_data.find(hash);
+        DataIterator it = m_data.find(hash);
         if(it == m_data.end()) return 0;
         return it->second.value;
     }
@@ -275,7 +318,7 @@ struct acTable : acGCObject
     acVariable* get(acVariable* key)
     {
         acHashValue& hash = key->getHash();
-        data_iterator it = m_data.find(hash);
+        DataIterator it = m_data.find(hash);
         if(it == m_data.end()) return 0;
         return it->second.value;
     }
@@ -283,6 +326,23 @@ struct acTable : acGCObject
     void copyTo(acTable* other)
     {
         other->m_data = m_data;
+    }
+
+    void initIter() { m_iterator = m_data.begin(); }
+    bool iterate(acVariable* key, acVariable* value)
+    {
+        if(m_iterator == m_data.end())
+            return false;
+
+        KeyValue& kv = m_iterator->second;
+
+        if(key != 0)
+            key->setValue(kv.key);
+        if(value != 0)
+            value->setValue(kv.value);
+
+        ++m_iterator;
+        return true;
     }
 };
 

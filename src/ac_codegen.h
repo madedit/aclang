@@ -131,6 +131,8 @@ public:
     Function* m_gf_opBitwiseNotVar;
     Function* m_gf_opBitwiseAndOrXorVar;
     Function* m_gf_opToBoolVar;
+    Function* m_gf_opInitIter;
+    Function* m_gf_opIterateVar;
 
 public:
     acCodeGenerator(acVM* vm);

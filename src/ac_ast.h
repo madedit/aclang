@@ -1201,10 +1201,25 @@ public:
         printf("[ForAST]:\n");
         printIndent(indent+2);
         printf("m_init:\n");
-        m_init->print(indent+2);
+        if(m_init != 0)
+        {
+            printf("m_init:\n");
+            m_init->print(indent+2);
+        }
+        else
+        {
+            printf("m_init: NULL\n");
+        }
         printIndent(indent+2);
-        printf("m_cond:\n");
-        m_cond->print(indent+2);
+        if(m_cond != 0)
+        {
+            printf("m_cond:\n");
+            m_cond->print(indent+2);
+        }
+        else
+        {
+            printf("m_cond: NULL\n");
+        }
         printIndent(indent+2);
         if(m_inc != 0)
         {
@@ -1213,7 +1228,6 @@ public:
         }
         else
         {
-            printIndent(indent+2);
             printf("m_inc: NULL\n");
         }
         printIndent(indent+2);
@@ -1225,13 +1239,19 @@ public:
 class ForeachAST : public NodeAST
 {
 public:
-    NodeAST* m_var;
+    int m_declTok;
+    GetVarAST* m_var1;
+    GetVarAST* m_var2;
     NodeAST* m_container;
     NodeAST* m_stmt;
-    ForeachAST(NodeAST* var, NodeAST* container, NodeAST* stmt)
-        : m_var(var)
+    BasicBlock* m_condblock;
+    ForeachAST(int declTok, GetVarAST* var1, GetVarAST* var2, NodeAST* container, NodeAST* stmt)
+        : m_declTok(declTok)
+        , m_var1(var1)
+        , m_var2(var2)
         , m_container(container)
         , m_stmt(stmt)
+        , m_condblock(0)
     {
         m_type = tForeachAST;
     }
@@ -1241,14 +1261,29 @@ public:
         printIndent(indent);
         printf("[ForeachAST]:\n");
         printIndent(indent+2);
-        printf("m_var:\n");
-        m_var->print(indent+2);
+        printf("m_m_declTok: %s\n", (m_declTok==0? "NULL": getTokenString(m_declTok)) );
+        if(m_var1 != 0)
+        {
+            printIndent(indent+2);
+            printf("m_var1:\n");
+            m_var1->print(indent+2);
+        }
+        printIndent(indent+2);
+        printf("m_var2:\n");
+        m_var2->print(indent+2);
         printIndent(indent+2);
         printf("m_container:\n");
         m_container->print(indent+2);
         printIndent(indent+2);
-        printf("m_stmt:\n");
-        m_stmt->print(indent+2);
+        if(m_stmt != 0)
+        {
+            printf("m_stmt:\n");
+            m_stmt->print(indent+2);
+        }
+        else
+        {
+            printf("m_stmt: NULL\n");
+        }
     }
 };
 

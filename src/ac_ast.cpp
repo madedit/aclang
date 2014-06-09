@@ -381,33 +381,32 @@ inline Value* codeGenNewVar(IRBuilder<>& builder, Value* parent, NodeAST* keyExp
     return builder.CreateCall3(cg->m_gf_opNewVar, parent, key, cg->m_gv_vm);
 }
 
-Value* VariableDeclarationAST::codeGen(acCodeGenerator* cg)
+Value* codeGenVarDecl(IRBuilder<>& builder, GetVarAST* varExpr, bool isLocal, acCodeGenerator* cg)
 {
     acCodeGenBlock* block = cg->currentBlock();
-    IRBuilder<>& builder = cg->getIRBuilder();
 
     Value* val = 0;
-    if(m_isLocal)
+    if(isLocal)
     {
-        if(m_varExpr->m_parentExpr != 0 || m_varExpr->m_scope != GetVarAST::NONE)
+        if(varExpr->m_parentExpr != 0 || varExpr->m_scope != GetVarAST::NONE)
         {
             cg->getMsgHandler()->errorMessage("Error: cannot declare a local variable with parent scope.");
             cg->setCompileError(true);
             return 0;
         }
 
-        val = builder.CreateCall3(cg->m_gf_newArrayVar, block->m_argArray, builder.getInt32(-1), cg->m_gv_vm, Twine("v_").concat(m_varExpr->m_keyIdentifier));
+        val = builder.CreateCall3(cg->m_gf_newArrayVar, block->m_argArray, builder.getInt32(-1), cg->m_gv_vm, Twine("v_").concat(varExpr->m_keyIdentifier));
     }
     else
     {
         Value* parent = 0;
-        if(m_varExpr->m_parentExpr != 0)
+        if(varExpr->m_parentExpr != 0)
         {
-            parent = m_varExpr->m_parentExpr->codeGen(cg);
+            parent = varExpr->m_parentExpr->codeGen(cg);
         }
         else
         {
-            switch(m_varExpr->m_scope)
+            switch(varExpr->m_scope)
             {
             case GetVarAST::NONE:
             case GetVarAST::THIS:
@@ -419,15 +418,25 @@ Value* VariableDeclarationAST::codeGen(acCodeGenerator* cg)
             }
         }
         
-        if(m_varExpr->m_keyExpr != 0)
+        if(varExpr->m_keyExpr != 0)
         {
-            val = codeGenNewVar(builder, parent, m_varExpr->m_keyExpr, cg);
+            val = codeGenNewVar(builder, parent, varExpr->m_keyExpr, cg);
         }
         else
         {
-            val = builder.CreateCall3(cg->m_gf_opNewVar_str, parent, builder.CreateGlobalStringPtr(m_varExpr->m_keyIdentifier), cg->m_gv_vm, Twine("v_").concat(m_varExpr->m_keyIdentifier));
+            val = builder.CreateCall3(cg->m_gf_opNewVar_str, parent, builder.CreateGlobalStringPtr(varExpr->m_keyIdentifier), cg->m_gv_vm, Twine("v_").concat(varExpr->m_keyIdentifier));
         }
     }
+
+    return val;
+}
+
+Value* VariableDeclarationAST::codeGen(acCodeGenerator* cg)
+{
+    acCodeGenBlock* block = cg->currentBlock();
+    IRBuilder<>& builder = cg->getIRBuilder();
+
+    Value* val = codeGenVarDecl(builder, m_varExpr, m_isLocal, cg);
 
     if(m_assignmentExpr != 0)
     {
@@ -1363,6 +1372,12 @@ Value* ContinueAST::codeGen(acCodeGenerator* cg)
             builder.CreateBr(ast->m_incblock);
         }
         break;
+    case acCodeGenBlock::FOREACH:
+        {
+            ForeachAST* ast = (ForeachAST*)block->m_ast;
+            builder.CreateBr(ast->m_condblock);
+        }
+        break;
     }
 
     return 0;
@@ -1467,17 +1482,27 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
     //init
     builder.CreateBr(label_for_init);
     builder.SetInsertPoint(label_for_init);
-    m_init->codeGen(cg);
+    if(m_init != 0)
+    {
+        m_init->codeGen(cg);
+    }
 
     //cond
     builder.CreateBr(label_for_cond);
     builder.SetInsertPoint(label_for_cond);
 
-    Value* condVar = m_cond->codeGen(cg);
-    Value* boolValue = builder.CreateCall2(cg->m_gf_opToBoolVar, condVar, cg->m_gv_vm);
-    Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
+    if(m_cond != 0)
+    {
+        Value* condVar = m_cond->codeGen(cg);
+        Value* boolValue = builder.CreateCall2(cg->m_gf_opToBoolVar, condVar, cg->m_gv_vm);
+        Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
 
-    builder.CreateCondBr(cond, label_for_loop, label_for_end);
+        builder.CreateCondBr(cond, label_for_loop, label_for_end);
+    }
+    else
+    {
+        builder.CreateBr(label_for_loop);
+    }
 
     cg->pushBlock(label_for_loop, label_for_inc, this, acCodeGenBlock::CODE,
         block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
@@ -1504,6 +1529,92 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
 
 Value* ForeachAST::codeGen(acCodeGenerator* cg)
 {
+    acCodeGenBlock* block = cg->currentBlock();
+    IRBuilder<>& builder = cg->getIRBuilder();
+    LLVMContext& context = cg->getLLVMContext();
+    Function* function = block->m_bblock->getParent();
+
+    BasicBlock* label_foreach_init = BasicBlock::Create(context, "foreach.init", function, block->m_leave);
+    BasicBlock* label_foreach_cond = BasicBlock::Create(context, "foreach.cond", function, block->m_leave);
+    BasicBlock* label_foreach_loop = BasicBlock::Create(context, "foreach.loop", function, block->m_leave);
+    BasicBlock* label_foreach_end = BasicBlock::Create(context, "foreach.end", function, block->m_leave);
+
+    m_condblock = label_foreach_cond;
+
+    cg->pushBlock(label_foreach_init, label_foreach_end, this, acCodeGenBlock::FOREACH,
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+
+    //init
+    builder.CreateBr(label_foreach_init);
+    builder.SetInsertPoint(label_foreach_init);
+
+    Value* keyVal = 0;
+    Value* valueVal = 0;
+    Value* containerVal = 0;
+
+    if(m_var1 == 0)
+    {
+        keyVal = ConstantPointerNull::get(builder.getInt8PtrTy());
+    }
+    switch(m_declTok)
+    {
+    case TOK_VAR:
+        {
+            if(m_var1 != 0)
+            {
+                keyVal = codeGenVarDecl(builder, m_var1, false, cg);
+            }
+            valueVal = codeGenVarDecl(builder, m_var2, false, cg);
+        }
+    case TOK_LOCAL:
+        {
+            if(m_var1 != 0)
+            {
+                keyVal = codeGenVarDecl(builder, m_var1, true, cg);
+                cg->currentBlock()->m_localVars.push_back(std::make_pair(m_var1->m_keyIdentifier, keyVal));
+            }
+            valueVal = codeGenVarDecl(builder, m_var2, true, cg);
+            cg->currentBlock()->m_localVars.push_back(std::make_pair(m_var2->m_keyIdentifier, valueVal));
+        }
+    default:
+        {
+            if(m_var1 != 0)
+            {
+                keyVal = m_var1->codeGen(cg);
+            }
+            valueVal = m_var2->codeGen(cg);
+        }
+        break;
+    }
+
+    containerVal = m_container->codeGen(cg);
+    builder.CreateCall2(cg->m_gf_opInitIter, containerVal, cg->m_gv_vm);
+
+    //cond
+    builder.CreateBr(label_foreach_cond);
+    builder.SetInsertPoint(label_foreach_cond);
+
+    Value* boolValue = builder.CreateCall4(cg->m_gf_opIterateVar, containerVal, keyVal, valueVal, cg->m_gv_vm);
+    Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
+    builder.CreateCondBr(cond, label_foreach_loop, label_foreach_end);
+
+
+    cg->pushBlock(label_foreach_loop, label_foreach_end, this, acCodeGenBlock::CODE,
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+    //loop
+    builder.SetInsertPoint(label_foreach_loop);
+    m_stmt->codeGen(cg);
+
+    cg->popBlock();
+
+    if(builder.GetInsertBlock()->getTerminator() == false)
+        builder.CreateBr(label_foreach_cond);
+
+    //end
+    builder.SetInsertPoint(label_foreach_end);
+
+    cg->popBlock();
+
     return 0;
 }
 

@@ -157,7 +157,7 @@ extern int yyparse(void* YYPARSE_PARAM);
 /* ast types */
 %type <block> stmts block
 %type <node> stmt expr inner_expr namespace_block
-%type <node> expr_stmt decl_stmt var_decl_stmt selection_stmt labeled_stmt jump_stmt iteration_stmt
+%type <node> expr_stmt decl_stmt var_decl_stmt selection_stmt labeled_stmt jump_stmt iteration_stmt foreach_stmt
 %type <node> boolean numeric string keyvalue table element array
 %type <token> unary_op assignment_op type_specifier
 %type <node> primary_expr
@@ -219,6 +219,8 @@ argument_expr_list:
     | table                                         { $$ = new NodeASTList(); PARSER->addNodeAST($$); $$->push_back($1); }
     | anony_func_decl                               { $$ = new NodeASTList(); PARSER->addNodeAST($$); $$->push_back($1); }
     | argument_expr_list TOK_COMMA assignment_expr  { $1->push_back($3); }
+    | argument_expr_list TOK_COMMA table            { $1->push_back($3); }
+    | argument_expr_list TOK_COMMA anony_func_decl  { $1->push_back($3); }
     ;
 
 postfix_expr:
@@ -552,8 +554,40 @@ iteration_stmt:
     | TOK_FOR TOK_LPAREN expr_stmt expr_stmt expr TOK_RPAREN stmt       { $$ = new ForAST($3, $4, $5, $7); PARSER->addNodeAST($$); }
     | TOK_FOR TOK_LPAREN var_decl_stmt expr_stmt TOK_RPAREN stmt        { $$ = new ForAST($3, $4, NULL, $6); PARSER->addNodeAST($$); }
     | TOK_FOR TOK_LPAREN var_decl_stmt expr_stmt expr TOK_RPAREN stmt   { $$ = new ForAST($3, $4, $5, $7); PARSER->addNodeAST($$); }
-    | TOK_FOREACH TOK_LPAREN expr TOK_IN inner_expr TOK_RPAREN stmt     { $$ = new ForeachAST($3, $5, $7); PARSER->addNodeAST($$); }
-    | TOK_FOREACH TOK_LPAREN var_decl TOK_IN inner_expr TOK_RPAREN stmt { $$ = new ForeachAST($3, $5, $7); PARSER->addNodeAST($$); }
+    | foreach_stmt                                                      { $$ = $1; }
+    ;
+
+foreach_stmt:
+      TOK_FOREACH TOK_LPAREN getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+        {
+            $$ = new ForeachAST(0, NULL, $3, $5, $7);
+            PARSER->addNodeAST($$);
+        }
+    | TOK_FOREACH TOK_LPAREN getvar_postfix_expr TOK_COMMA getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+        {
+            $$ = new ForeachAST(0, $3, $5, $7, $9);
+            PARSER->addNodeAST($$);
+        }
+    | TOK_FOREACH TOK_LPAREN TOK_VAR getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+        {
+            $$ = new ForeachAST(TOK_VAR, NULL, $4, $6, $8);
+            PARSER->addNodeAST($$);
+        }
+    | TOK_FOREACH TOK_LPAREN TOK_VAR getvar_postfix_expr TOK_COMMA getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+        {
+            $$ = new ForeachAST(TOK_VAR, $4, $6, $8, $10);
+            PARSER->addNodeAST($$);
+        }
+    | TOK_FOREACH TOK_LPAREN TOK_LOCAL getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+        {
+            $$ = new ForeachAST(TOK_LOCAL, NULL, $4, $6, $8);
+            PARSER->addNodeAST($$);
+        }
+    | TOK_FOREACH TOK_LPAREN TOK_LOCAL getvar_postfix_expr TOK_COMMA getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+        {
+            $$ = new ForeachAST(TOK_LOCAL, $4, $6, $8, $10);
+            PARSER->addNodeAST($$);
+        }
     ;
 
 namespace_block:

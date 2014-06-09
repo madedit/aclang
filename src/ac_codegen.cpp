@@ -1382,6 +1382,45 @@ int opToBoolVar(acVariable* var, acVM* vm)
     return toBool(var, vm);
 }
 
+void opInitIter(acVariable* var, acVM* vm)
+{
+    switch(var->m_valueType)
+    {
+    case acVT_STRING:
+        ((acString*)var->m_gcobj)->initIter();
+        break;
+    case acVT_ARRAY:
+        ((acArray*)var->m_gcobj)->initIter();
+        break;
+    case acVT_TABLE:
+        ((acTable*)var->m_gcobj)->initIter();
+        break;
+    default:
+        vm->runtimeError(std::string("Error: attempt to iterate on '")+getVarTypeStr(var->m_valueType)+"'"); 
+        break;
+    }
+}
+
+int opIterateVar(acVariable* var, acVariable* key, acVariable* value, acVM* vm)
+{
+    switch(var->m_valueType)
+    {
+    case acVT_STRING:
+        return ((acString*)var->m_gcobj)->iterate(key, value);
+
+    case acVT_ARRAY:
+        return ((acArray*)var->m_gcobj)->iterate(key, value);
+
+    case acVT_TABLE:
+        return ((acTable*)var->m_gcobj)->iterate(key, value);
+
+    default:
+        vm->runtimeError(std::string("Error: attempt to iterate on '")+getVarTypeStr(var->m_valueType)+"'"); 
+        break;
+    }
+    return false;
+}
+
 }//extern"C"
 }//namespace
 
@@ -1721,4 +1760,16 @@ void acCodeGenerator::createGlobalFunctions()
                                  voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opToBoolVar, (void*)opToBoolVar);
+
+    m_gf_opInitIter = cast<Function>(mod->getOrInsertFunction("opInitIter",
+                                 voidTy,//ret
+                                 voidPtrTy, voidPtrTy,//args
+                                 NULL) );
+    ee->addGlobalMapping(m_gf_opInitIter, (void*)opInitIter);
+
+    m_gf_opIterateVar = cast<Function>(mod->getOrInsertFunction("opIterateVar",
+                                 int32Ty,//ret
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 NULL) );
+    ee->addGlobalMapping(m_gf_opIterateVar, (void*)opIterateVar);
 }
