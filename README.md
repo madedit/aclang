@@ -41,8 +41,9 @@ Feature
 - dynamic typing
 - first-class function
 - closure
-- incremental GC
 - all variables must be declared before they are used (by **var** or **local**)
+- incremental GC
+- easy to bind C/C++ functions
 
 How to Build
 ============
@@ -70,3 +71,11 @@ Todo
     bindfunc( str, "encode", function(encoding) { return this; } );
     bindfunc( str, "decode", function(encoding) { return this; } );
     str.decode("utf8").encode("big5");
+
+License
+======
+MIT License
+
+Author
+======
+**Alston Chen**
