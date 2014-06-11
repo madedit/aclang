@@ -45,6 +45,12 @@ Feature
 - incremental GC
 - easy to bind C/C++ functions
 
+Download
+========
+
+You can download the pre-build executable file (Win32) from SourceForge:
+[http://sourceforge.net/projects/aclang/files/?source=navbar](http://sourceforge.net/projects/aclang/files/?source=navbar)
+
 How to Build
 ============
 
