@@ -130,7 +130,7 @@ acVariable* acVM::createString(const char* str)
 }
 
 extern int yyparse(void*);
-bool acVM::runCode(const char* code)
+bool acVM::runCode(const char* code, bool runGCFinally)
 {
     m_isRuntimeError = false;
     m_codeGenerator->setCompileError(false);
@@ -163,6 +163,11 @@ bool acVM::runCode(const char* code)
     }
 
     m_parser->releaseNodeASTList();
+
+    if(runGCFinally)
+    {
+        m_gc.completeGC();
+    }
 
     return compileOk && !m_isRuntimeError;
 }

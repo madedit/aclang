@@ -97,6 +97,15 @@ void acGarbageCollector::incrementalGC(clock_t clocks)
     }
 }
 
+void acGarbageCollector::completeGC()
+{
+    do
+    {
+        incrementalGC(0x7FFFFFFF);
+    }
+    while(m_state != INIT);
+}
+
 void acGarbageCollector::changeGCColor(acGCObject* obj)
 {
     if(m_state == MARK)
@@ -236,14 +245,14 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
             {
             case acVT_VAR:
 #ifdef AC_DEBUG
-                printf("sweep var: %p\n", obj);
+                printf("gc: delete var: %p\n", obj);
 #endif
                 delete (acVariable*)obj;
                 break;
 
             case acVT_STRING:
 #ifdef AC_DEBUG
-                printf("sweep string: %p\n", obj);
+                printf("gc: delete string: %p\n", obj);
 #endif
                 ((acString*)obj)->m_data.clear();
                 delete (acString*)obj;
@@ -251,7 +260,7 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
 
             case acVT_ARRAY:
 #ifdef AC_DEBUG
-                printf("sweep array: %p\n", obj);
+                printf("gc: delete array: %p\n", obj);
 #endif
                 ((acArray*)obj)->m_data.clear();
                 delete (acArray*)obj;
@@ -259,7 +268,7 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
 
             case acVT_TABLE:
 #ifdef AC_DEBUG
-                printf("sweep table: %p\n", obj);
+                printf("gc: delete table: %p\n", obj);
 #endif
                 ((acTable*)obj)->m_data.clear();
                 delete (acTable*)obj;
@@ -267,7 +276,7 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
 
             case acVT_FUNCTION:
 #ifdef AC_DEBUG
-                printf("sweep function: %p\n", obj);
+                printf("gc: delete function: %p\n", obj);
 #endif
                 //TODO
                 //delete llvm function
@@ -276,7 +285,7 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
 
             case acVT_DELEGATE:
 #ifdef AC_DEBUG
-                printf("sweep delegate: %p\n", obj);
+                printf("gc: delete delegate: %p\n", obj);
 #endif
                 //TODO
                 delete (acDelegate*)obj;
@@ -284,7 +293,7 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
 
             case acVT_USERFUNC:
 #ifdef AC_DEBUG
-                printf("sweep userfunc: %p\n", obj);
+                printf("gc: delete userfunc: %p\n", obj);
 #endif
                 //TODO
                 delete (acUserFunc*)obj;

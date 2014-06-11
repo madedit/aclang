@@ -72,7 +72,7 @@ public:
 
 public:
     //compile & run Code
-    bool runCode(const char* code);
+    bool runCode(const char* code, bool runGCFinally = true);
 
 protected:
 

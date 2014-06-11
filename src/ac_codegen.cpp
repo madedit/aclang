@@ -188,6 +188,9 @@ GenericValue acCodeGenerator::runCode()
         {
             m_msgHandler->errorMessage("Encounter error!\n");
         }
+
+        m_rootArgArray->m_data.clear();
+        m_rootTmpArray->m_data.clear();
         return v;
     }
 
