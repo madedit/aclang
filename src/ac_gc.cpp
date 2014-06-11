@@ -244,57 +244,57 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
             switch(obj->m_objType)
             {
             case acVT_VAR:
-#ifdef AC_DEBUG
-                printf("gc: delete var: %p\n", obj);
-#endif
+                if(m_printGC)
+                    printf("gc: delete var: %p\n", obj);
+
                 delete (acVariable*)obj;
                 break;
 
             case acVT_STRING:
-#ifdef AC_DEBUG
-                printf("gc: delete string: %p\n", obj);
-#endif
+                if(m_printGC)
+                    printf("gc: delete string: %p\n", obj);
+
                 ((acString*)obj)->m_data.clear();
                 delete (acString*)obj;
                 break;
 
             case acVT_ARRAY:
-#ifdef AC_DEBUG
-                printf("gc: delete array: %p\n", obj);
-#endif
+                if(m_printGC)
+                    printf("gc: delete array: %p\n", obj);
+
                 ((acArray*)obj)->m_data.clear();
                 delete (acArray*)obj;
                 break;
 
             case acVT_TABLE:
-#ifdef AC_DEBUG
-                printf("gc: delete table: %p\n", obj);
-#endif
+                if(m_printGC)
+                    printf("gc: delete table: %p\n", obj);
+
                 ((acTable*)obj)->m_data.clear();
                 delete (acTable*)obj;
                 break;
 
             case acVT_FUNCTION:
-#ifdef AC_DEBUG
-                printf("gc: delete function: %p\n", obj);
-#endif
+                if(m_printGC)
+                    printf("gc: delete function: %p\n", obj);
+
                 //TODO
                 //delete llvm function
                 delete (acFunction*)obj;
                 break;
 
             case acVT_DELEGATE:
-#ifdef AC_DEBUG
-                printf("gc: delete delegate: %p\n", obj);
-#endif
+                if(m_printGC)
+                    printf("gc: delete delegate: %p\n", obj);
+
                 //TODO
                 delete (acDelegate*)obj;
                 break;
 
             case acVT_USERFUNC:
-#ifdef AC_DEBUG
-                printf("gc: delete userfunc: %p\n", obj);
-#endif
+                if(m_printGC)
+                    printf("gc: delete userfunc: %p\n", obj);
+
                 //TODO
                 delete (acUserFunc*)obj;
                 break;

@@ -69,6 +69,8 @@ public:
     bool getPrintAST() { return m_printAST; }
     void setPrintIR(bool b) { m_printIR = b; }
     bool getPrintIR() { return m_printIR; }
+    void setPrintGC(bool b) { m_gc.setPrintGC(b); }
+    bool getPrintGC() { return m_gc.getPrintGC(); }
 
 public:
     //compile & run Code

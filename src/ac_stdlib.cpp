@@ -4,6 +4,28 @@
 #include "ac_vm.h"
 #include <iostream>
 
+void ac_stdlib_showAST(acVariable* thisVar, acArray* args, acVM* vm)
+{
+    if(args->size() > 0)
+    {
+        vm->setPrintAST(toBool(args->get(0), vm));
+    }
+}
+void ac_stdlib_showIR(acVariable* thisVar, acArray* args, acVM* vm)
+{
+    if(args->size() > 0)
+    {
+        vm->setPrintIR(toBool(args->get(0), vm));
+    }
+}
+void ac_stdlib_showGC(acVariable* thisVar, acArray* args, acVM* vm)
+{
+    if(args->size() > 0)
+    {
+        vm->setPrintGC(toBool(args->get(0), vm));
+    }
+}
+
 void ac_stdlib_typeof(acVariable* thisVar, acArray* args, acVM* vm)
 {
     if(args->size() < 1)
@@ -83,6 +105,10 @@ void ac_stdlib_tostr(acVariable* thisVar, acArray* args, acVM* vm)
 
 void acStdLib::bindStdFunctions(acVM* vm)
 {
+    vm->bindFunction("showAST", ac_stdlib_showAST);
+    vm->bindFunction("showIR",  ac_stdlib_showIR);
+    vm->bindFunction("showGC",  ac_stdlib_showGC);
+
     vm->bindFunction("typeof",   ac_stdlib_typeof);
     vm->bindFunction("print",    ac_stdlib_print);
     vm->bindFunction("tobool",   ac_stdlib_tobool);

@@ -39,10 +39,13 @@ private:
     std::list<acGCObject*>::iterator m_sweepIter, m_sweepLastIter;
     std::set<acGCObject*> m_grayList;
 
+    //for debug
+    bool m_printGC;
 public:
     acGarbageCollector(acVM* vm)
         : m_vm(vm)
         , m_state(INIT)
+        , m_printGC(false)
     {
     }
 
@@ -58,6 +61,9 @@ public:
 
     size_t getObjectListCount() { return m_objectList.size(); }
     size_t getGrayListCount() { return m_grayList.size(); }
+
+    void setPrintGC(bool b) { m_printGC = b; }
+    bool getPrintGC() { return m_printGC; }
 
 private:    
     void initGCColor(acGCObject* obj);

@@ -9,6 +9,10 @@
 #include <time.h>
 #include <ac_vm.h>
 
+#if defined(WIN32)
+#include <windows.h>
+#endif
+
 //>>>>> Dump Memory Leaks >>>>>
 #if defined(WIN32) && defined(_DEBUG)
 #include <crtdbg.h>
@@ -34,7 +38,8 @@ void test_parser();
 void test_gc();
 
 void aclang_shell();
-int inputCode(std::string& buffer);
+int inputCode(std::string& buffer, acVM* vm);
+int MBCSToUTF8(std::string& buffer);
 
 int main()
 {
@@ -61,17 +66,22 @@ void aclang_shell()
     vm.getMsgHandler()->setFileName("<stdin>");
     std::string buffer;
 
-    while(inputCode(buffer) > 0)
+    while(inputCode(buffer, &vm) > 0)
     {
         vm.runCode(buffer.c_str());
     }
 }
 
-int inputCode(std::string& buffer)
+int inputCode(std::string& buffer, acVM* vm)
 {
     fflush(stdin);
 
-    fprintf(stderr, "\nACLang ready (press Ctrl+D to end input) >\n");
+    fprintf(stderr, "\n[showAST() = %s, showIR() = %s, showGC() = %s]\n",
+        vm->getPrintAST()? "true":"false",
+        vm->getPrintIR()? "true":"false",
+        vm->getPrintGC()? "true":"false" );
+    fprintf(stderr, "ACLang ready (press Ctrl+D to end input) >\n");
+
     errno = 0;
 
     buffer.clear();
@@ -84,5 +94,84 @@ int inputCode(std::string& buffer)
         buffer += (char)ch;
     }
 
+#if defined(WIN32)
+    MBCSToUTF8(buffer);
+#endif
+
     return buffer.length();
 }
+
+#if defined(WIN32)
+WCHAR* pTempWCBuf = 0;
+int nTempWCBufSize = 0;
+int MBCSToUTF8(std::string& buffer)
+{
+    WCHAR outBuf[ 1024 ];
+
+    /// MBCS -> Unicode
+    int iWideCharCnt = MultiByteToWideChar( CP_ACP,
+        0,
+        buffer.c_str(),
+        static_cast<int>(buffer.length()), 
+        outBuf, 
+        0 );
+
+    WCHAR* pOutBuf = NULL;
+    size_t    iOutBufSize = 0;
+    if( iWideCharCnt >= 1024 )
+    {
+        if( iWideCharCnt > nTempWCBufSize )
+        {
+            if( pTempWCBuf )
+            {
+                delete[] pTempWCBuf;
+                pTempWCBuf = NULL;
+            }
+            pTempWCBuf = new WCHAR[ iWideCharCnt + 10 ];
+            nTempWCBufSize = iWideCharCnt;
+        }
+        pOutBuf = pTempWCBuf;
+        iOutBufSize = nTempWCBufSize;
+    }
+    else
+    {
+        pOutBuf = outBuf;
+        iOutBufSize = sizeof( outBuf );
+    }
+
+    /// MBCS -> Unicode
+    iWideCharCnt = MultiByteToWideChar( CP_ACP, //When this is set, dwFlags must be zero.
+        0, 
+        buffer.c_str(),
+        buffer.length(), 
+        pOutBuf, 
+        static_cast<int>(iOutBufSize) );
+    pOutBuf[iWideCharCnt] = 0;
+
+    /// Unicode -> UTF8
+    int ret = WideCharToMultiByte( CP_UTF8,
+        0, 
+        pOutBuf, 
+        -1, 
+        0, 
+        0, 
+        0, 
+        0 );
+    buffer.resize(ret);
+
+    ret = WideCharToMultiByte( CP_UTF8,
+        0, 
+        pOutBuf, 
+        -1, 
+        &buffer[0], 
+        ret, 
+        0, 
+        0 );
+    if(buffer[ret] == 0)
+    {
+        --ret;
+        buffer.resize(ret);
+    }
+    return ret;
+}
+#endif

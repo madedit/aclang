@@ -57,7 +57,7 @@ void test_gc()
             //gc.changeGCColor(t1);
         }
 
-        gc.incrementalCollect(1);
+        gc.incrementalGC(1);
         printf("i=%d\n", i);
     }
     printf("root size=%d, objectCount=%d\n", root->m_data.size(), gc.getObjectListCount());
