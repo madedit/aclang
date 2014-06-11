@@ -51,7 +51,8 @@ public:
 
     acVM* getVM() { return m_vm; }
     void addRootObj(acGCObject* obj) { m_rootList.push_back(obj); }
-    void incrementalCollect(clock_t clocks);
+    void incrementalGC(clock_t clocks);//run incremental gc
+    void completeGC();//run one complete gc
     CollectionState getGCState() { return m_state; }
     void changeGCColor(acGCObject* obj);
 

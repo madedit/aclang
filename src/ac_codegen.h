@@ -155,7 +155,7 @@ public:
 
     acCodeGenBlock* currentBlock() { return m_blocks.front(); }
     void pushBlock(BasicBlock* bblock, BasicBlock* leave, NodeAST* ast, acCodeGenBlock::BlockType type,
-                   Value* retVar, Value* thisVar, Value* argArray, Value* tmpArray);
+                   Value* retVar, Value* thisVar, Value* argArray, Value* tmpArray, int tmpArraySize);
     void popBlock();
     Value* findLocalVar(const std::string& name);
     acCodeGenBlock* findWhereIsBreak();

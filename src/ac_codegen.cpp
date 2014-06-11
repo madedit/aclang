@@ -145,7 +145,7 @@ void acCodeGenerator::generateCode()
 
     /* Push a new variable/block context */
     pushBlock(label_begin, label_end, m_programBlockAST, acCodeGenBlock::FUNCTION,
-              retVar, m_gv_rootTableVar, m_gv_rootArgArray, m_gv_rootTmpArray);
+              retVar, m_gv_rootTableVar, m_gv_rootArgArray, m_gv_rootTmpArray, 0);
 
 
     currentBlock()->m_localVars.push_back(std::make_pair("this", m_gv_rootTableVar));
@@ -195,7 +195,7 @@ GenericValue acCodeGenerator::runCode()
 }
 
 void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave, NodeAST* ast, acCodeGenBlock::BlockType type,
-                                Value* retVar, Value* thisVar, Value* argArray, Value* tmpArray)
+                                Value* retVar, Value* thisVar, Value* argArray, Value* tmpArray, int tmpArraySize)
 {
     acCodeGenBlock* block = new acCodeGenBlock();
     block->m_bblock = bblock;
@@ -206,7 +206,7 @@ void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave, NodeAST* 
     block->m_thisVar = thisVar;
     block->m_argArray = argArray;
     block->m_tmpArray = tmpArray;
-    block->m_tmpArraySize = 0;
+    block->m_tmpArraySize = tmpArraySize;
     block->m_isBlockEnd = false;
     m_blocks.push_front(block);
 }

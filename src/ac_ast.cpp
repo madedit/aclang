@@ -560,7 +560,7 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     BasicBlock* leave = BasicBlock::Create(context, "leave", llvmFunc, 0);
     builder.SetInsertPoint(entry);
 
-    cg->pushBlock(entry, leave, this, acCodeGenBlock::FUNCTION, 0, 0, 0, 0);
+    cg->pushBlock(entry, leave, this, acCodeGenBlock::FUNCTION, 0, 0, 0, 0, 0);
     m_localblock = cg->currentBlock();
 
     //this, args, upvalues
@@ -1161,7 +1161,7 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
         builder.SetInsertPoint(label_if_then);
         
         cg->pushBlock(label_if_then, label_if_else, this, acCodeGenBlock::IF_THEN,
-            block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+            block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
         m_thenStmt->codeGen(cg);
         cg->popBlock();
 
@@ -1170,7 +1170,7 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
         builder.SetInsertPoint(label_if_else);
 
         cg->pushBlock(label_if_else, label_if_end, this, acCodeGenBlock::IF_ELSE,
-            block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+            block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
         m_elseStmt->codeGen(cg);
         cg->popBlock();
 
@@ -1186,7 +1186,7 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
         builder.SetInsertPoint(label_if_then);
 
         cg->pushBlock(label_if_then, label_if_end, this, acCodeGenBlock::IF_THEN,
-            block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+            block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
         m_thenStmt->codeGen(cg);
         cg->popBlock();
 
@@ -1245,7 +1245,8 @@ Value* SwitchAST::codeGen(acCodeGenerator* cg)
     Value* condVar = m_cond->codeGen(cg);
 
     cg->pushBlock(label_switch_begin, label_switch_end, this, acCodeGenBlock::SWITCH, 
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
+    block = cg->currentBlock();
 
     it = m_labeledStmts->m_nodeASTVec.begin();
     for(int idx = 0; idx < count; ++idx, ++it)
@@ -1289,7 +1290,7 @@ Value* SwitchAST::codeGen(acCodeGenerator* cg)
         if(ast->m_stmts != 0)
         {
             cg->pushBlock(swblock, nextBlock, this, acCodeGenBlock::CODE, 
-                block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+                block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
 
             ast->m_stmts->codeGen(cg);
 
@@ -1408,7 +1409,7 @@ Value* WhileAST::codeGen(acCodeGenerator* cg)
     builder.SetInsertPoint(label_while_loop);
 
     cg->pushBlock(label_while_loop, label_while_end, this, acCodeGenBlock::WHILE,
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
 
     m_stmt->codeGen(cg);
 
@@ -1439,7 +1440,7 @@ Value* DoWhileAST::codeGen(acCodeGenerator* cg)
     builder.SetInsertPoint(label_dowhile_loop);
 
     cg->pushBlock(label_dowhile_loop, label_dowhile_end, this, acCodeGenBlock::WHILE,
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
 
     m_stmt->codeGen(cg);
 
@@ -1477,7 +1478,8 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
     m_incblock = label_for_inc;
 
     cg->pushBlock(label_for_init, label_for_end, this, acCodeGenBlock::FOR,
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
+    block = cg->currentBlock();
 
     //init
     builder.CreateBr(label_for_init);
@@ -1505,12 +1507,13 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
     }
 
     cg->pushBlock(label_for_loop, label_for_inc, this, acCodeGenBlock::CODE,
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
     //loop
     builder.SetInsertPoint(label_for_loop);
     m_stmt->codeGen(cg);
 
     cg->popBlock();
+    block = cg->currentBlock();
 
     if(builder.GetInsertBlock()->getTerminator() == false)
         builder.CreateBr(label_for_inc);
@@ -1542,7 +1545,8 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
     m_condblock = label_foreach_cond;
 
     cg->pushBlock(label_foreach_init, label_foreach_end, this, acCodeGenBlock::FOREACH,
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
+    block = cg->currentBlock();
 
     //init
     builder.CreateBr(label_foreach_init);
@@ -1571,10 +1575,10 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
             if(m_var1 != 0)
             {
                 keyVal = codeGenVarDecl(builder, m_var1, true, cg);
-                cg->currentBlock()->m_localVars.push_back(std::make_pair(m_var1->m_keyIdentifier, keyVal));
+                block->m_localVars.push_back(std::make_pair(m_var1->m_keyIdentifier, keyVal));
             }
             valueVal = codeGenVarDecl(builder, m_var2, true, cg);
-            cg->currentBlock()->m_localVars.push_back(std::make_pair(m_var2->m_keyIdentifier, valueVal));
+            block->m_localVars.push_back(std::make_pair(m_var2->m_keyIdentifier, valueVal));
         }
     default:
         {
@@ -1600,12 +1604,15 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
 
 
     cg->pushBlock(label_foreach_loop, label_foreach_end, this, acCodeGenBlock::CODE,
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray);
+        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
+    block = cg->currentBlock();
+
     //loop
     builder.SetInsertPoint(label_foreach_loop);
     m_stmt->codeGen(cg);
 
     cg->popBlock();
+    block = cg->currentBlock();
 
     if(builder.GetInsertBlock()->getTerminator() == false)
         builder.CreateBr(label_foreach_cond);
