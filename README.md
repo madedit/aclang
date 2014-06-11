@@ -44,6 +44,7 @@ Feature
 - all variables must be declared before they are used (by **var** or **local**)
 - incremental GC
 - easy to bind C/C++ functions
+- support Universal Character as variable name (e.g. **var 變數 = 10;** )
 
 Download
 ========
