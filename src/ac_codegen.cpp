@@ -73,7 +73,7 @@ void acCodeGenerator::generateCode()
     LLVMContext& context = m_vm->getLLVMContext();
     Module* module = m_vm->getModule();
 
-    m_vm->getMsgHandler()->errorMessage("Generating code...\n");
+    //m_vm->getMsgHandler()->errorMessage("Generating code...\n");
 	
 	/* Create the top level interpreter function to call as entry */
     std::vector<Type*> argTypes;
@@ -175,18 +175,18 @@ GenericValue acCodeGenerator::runCode()
 {
     if(m_mainFunction != 0)
     {
-	    m_vm->getMsgHandler()->errorMessage("Running code...\n");
+	    //m_vm->getMsgHandler()->errorMessage("Running code...\n");
         ExecutionEngine* ee = m_vm->getExecutionEngine();
         std::vector<GenericValue> noargs;
         GenericValue v = ee->runFunction(m_mainFunction, noargs);
-        printf("ret = %d\n", v.IntVal.getZExtValue());
+        //printf("ret = %d\n", v.IntVal.getZExtValue());
         if(v.IntVal.getZExtValue() == 0)
         {
-            m_msgHandler->errorMessage("Code was run.\n");
+            //m_msgHandler->errorMessage("Code was run.\n");
         }
         else
         {
-            m_msgHandler->errorMessage("Encounter error!\n");
+            //m_msgHandler->errorMessage("Encounter error!\n");
         }
 
         m_rootArgArray->m_data.clear();
