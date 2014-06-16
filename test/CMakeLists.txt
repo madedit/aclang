@@ -30,5 +30,4 @@ add_executable(aclang-test
 target_link_libraries(aclang-test
     aclang
     ${LLVM_LIBS}
-    imagehlp
     )
