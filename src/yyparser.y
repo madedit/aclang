@@ -203,7 +203,8 @@ expr_stmt:
     ;
 
 primary_expr:
-      boolean                           { $$ = $1; }
+      TOK_NULL                          { $$ = new NullAST(); PARSER->addNodeAST($$); }
+    | boolean                           { $$ = $1; }
     | numeric                           { $$ = $1; }
     | string                            { $$ = $1; }
     //| table                             { $$ = $1; } //conflicts with block

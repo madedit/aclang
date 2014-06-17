@@ -780,6 +780,10 @@ void opAssignVar(acVariable* v1, acVariable* v2)
 {
     v1->assignFrom(v2);
 }
+void opAssignVar_null(acVariable* v1)
+{
+    v1->setNull();
+}
 void opAssignVar_bool(acVariable* v1, int v2)
 {
     v1->setValue(v2!=0);
@@ -1625,6 +1629,12 @@ void acCodeGenerator::createGlobalFunctions()
                                  voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opAssignVar, (void*)opAssignVar);
+
+    m_gf_opAssignVar_null = cast<Function>(mod->getOrInsertFunction("opAssignVar_null",
+                                 voidTy,//ret
+                                 voidPtrTy,//args
+                                 NULL) );
+    ee->addGlobalMapping(m_gf_opAssignVar_null, (void*)opAssignVar_null);
 
     m_gf_opAssignVar_bool = cast<Function>(mod->getOrInsertFunction("opAssignVar_bool",
                                  voidTy,//ret

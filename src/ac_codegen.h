@@ -108,6 +108,7 @@ public:
     Function* m_gf_opNewVar_int;
     Function* m_gf_opNewVar_str;
     Function* m_gf_opAssignVar;
+    Function* m_gf_opAssignVar_null;
     Function* m_gf_opAssignVar_bool;
     Function* m_gf_opAssignVar_int32;
     Function* m_gf_opAssignVar_int64;

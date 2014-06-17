@@ -35,6 +35,16 @@ void NodeASTList::add_case_ast(CaseAST* node)
 }
 
 
+Value* NullAST::codeGen(acCodeGenerator* cg)
+{
+    acCodeGenBlock* block = cg->currentBlock();
+    IRBuilder<>& builder = cg->getIRBuilder();
+    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
+        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+    builder.CreateCall(cg->m_gf_opAssignVar_null, val);
+    return val;
+}
+
 Value* BooleanAST::codeGen(acCodeGenerator* cg)
 {
     acCodeGenBlock* block = cg->currentBlock();
@@ -153,6 +163,11 @@ inline void codeGenAssignment(IRBuilder<>& builder, Value* val, NodeAST* assExpr
 {
     switch(assExpr->m_type)
     {
+    case NodeAST::tNullAST:
+        {
+            builder.CreateCall(cg->m_gf_opAssignVar_null, val);
+        }
+        break;
     case NodeAST::tBooleanAST:
         {
             BooleanAST* ast = (BooleanAST*)assExpr;

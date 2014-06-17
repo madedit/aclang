@@ -24,6 +24,7 @@ public:
         tNodeAST,
         tNodeASTList,
         tStringList,
+        tNullAST,
         tBooleanAST,
         tInt32AST,
         tInt64AST,
@@ -156,6 +157,21 @@ public:
         m_stringVec.push_back(str);
     }
 
+};
+
+class NullAST : public NodeAST
+{
+public:
+    NullAST()
+    {
+        m_type = tNullAST;
+    }
+    virtual Value* codeGen(acCodeGenerator* cg);
+    virtual void print(int indent)
+    {
+        printIndent(indent);
+        printf("[NullAST]\n");
+    }
 };
 
 class BooleanAST : public NodeAST
