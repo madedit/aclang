@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include;..\src;D:\llvm\vc\include;D:\llvm\include"
+				AdditionalIncludeDirectories="..\src;D:\llvm\vc\include;D:\llvm\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;__STDC_CONSTANT_MACROS;__STDC_FORMAT_MACROS;__STDC_LIMIT_MACROS;_HAS_EXCEPTIONS=0;_HAS_ITERATOR_DEBUGGING=0"
 				MinimalRebuild="false"
 				ExceptionHandling="0"
@@ -290,7 +290,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\include\aclang.h"
+			RelativePath="..\src\aclang.h"
 			>
 		</File>
 		<File

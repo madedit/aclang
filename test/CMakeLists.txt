@@ -12,7 +12,6 @@ execute_process(COMMAND llvm-config --libs x86 jit mcjit OUTPUT_VARIABLE LLVM_LI
 string(REGEX REPLACE "\n" "" LLVM_LIBS "${LLVM_LIBS}")
 
 include_directories(
-    ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
     )
 
