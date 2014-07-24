@@ -75,6 +75,12 @@ public:
 public:
     //compile & run Code
     bool runCode(const char* code, bool runGCFinally = true);
+    //get roottable
+    acVariable* getRootTable() { return m_codeGenerator->getRootTableVar(); }
+    //key: "a.b.123"; return ::a[b][123] or NULL if there is any key that is not exist.
+    acVariable* getValueInRootTable(const std::string& keys);
+    //key: "a.b.123"; return var[a][b][123] or NULL if there is any key that is not exist.
+    acVariable* getValueInVariable(acVariable* var, const std::string& keys);
 
 protected:
 

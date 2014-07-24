@@ -1,6 +1,7 @@
 /* see copyright notice in aclang.h */
 
 #include "ac_vm.h"
+#include "ac_variable.h"
 #include "ac_stdlib.h"
 #include <llvm/ExecutionEngine/JIT.h>
 #include <llvm/Support/TargetSelect.h>
@@ -170,4 +171,80 @@ bool acVM::runCode(const char* code, bool runGCFinally)
     }
 
     return compileOk && !m_isRuntimeError;
+}
+
+struct KeyData
+{
+    std::string key;
+    bool isNumber;
+};
+//split keys by '.'
+bool splitKeys(const std::string& keysStr, std::vector<KeyData>& keys)
+{
+    KeyData kd;
+    kd.key.clear();
+    kd.isNumber = true;
+
+    int count = (int)keysStr.size();
+    for(int i = 0; i < count; ++i)
+    {
+        char ch = keysStr[i];
+        if(ch == '.')
+        {
+            if(kd.key.empty())
+                return false;
+
+            //add a keydata
+            keys.push_back(kd);
+            //clear keydata
+            kd.key.clear();
+            kd.isNumber = true;
+        }
+        else if(kd.isNumber && ch <= '9' && ch >= '0')
+        {
+            kd.key.push_back(ch);
+        }
+        else
+        {
+            kd.key.push_back(ch);
+            kd.isNumber = false;
+        }
+    }
+
+    if(kd.key.empty())
+        return false;
+
+    //add a keydata
+    keys.push_back(kd);
+
+    return true;
+}
+
+acVariable* acVM::getValueInRootTable(const std::string& keys)
+{
+    return 0;
+}
+
+acVariable* acVM::getValueInVariable(acVariable* var, const std::string& keys)
+{
+    std::vector<KeyData> keyData;
+    if(!splitKeys(keys, keyData))
+        return 0;
+
+    int count = (int)keyData.size();
+    for(int i = 0; i < count; ++i)
+    {
+        const KeyData& kd = keyData[i];
+        if(kd.isNumber)
+        {
+            int idx = atoi(kd.key.c_str());
+            var = (*var)[idx];
+        }
+        else
+        {
+            var = (*var)[kd.key.c_str()];
+        }
+    }
+
+    return var;
 }

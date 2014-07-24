@@ -258,7 +258,7 @@ void acVariable::getHash(int value, acHashValue& hash)
     hash.u32_3 = acVT_INT32;
 }
 
-void acVariable::getHash(char* str, acHashValue& hash)
+void acVariable::getHash(const char* str, acHashValue& hash)
 {
     acUInt32 h, s;
     acUInt32 len = strlen(str);
@@ -268,6 +268,83 @@ void acVariable::getHash(char* str, acHashValue& hash)
     hash.u32_1 = s;
     hash.u32_2 = len;
     hash.u32_3 = acVT_STRING;
+}
+
+//======================================
+acVariable* acVariable::operator[](int idx)
+{
+    switch(m_valueType)
+    {
+    case acVT_ARRAY:
+        {
+            acArray* arr = (acArray*)m_gcobj;
+            if(idx < 0 || idx >= arr->size())
+                return 0;
+
+            return arr->get(idx);
+        }
+        break;
+    case acVT_TABLE:
+        {
+            acTable* tab = (acTable*)m_gcobj;
+            return tab->get(idx);
+        }
+        break;
+    }
+
+    return 0;
+}
+
+acVariable* acVariable::operator[](const char* key)
+{
+    switch(m_valueType)
+    {
+    case acVT_TABLE:
+        {
+            acTable* tab = (acTable*)m_gcobj;
+            return tab->get(key);
+        }
+        break;
+    }
+
+    return 0;
+}
+
+acVariable* acVariable::operator[](acVariable* key)
+{
+    switch(m_valueType)
+    {
+    case acVT_ARRAY:
+        {
+            int idx = -1;
+            switch(key->m_valueType)
+            {
+            case acVT_INT32:
+                idx = key->m_int32;
+                break;
+            case acVT_INT64:
+                idx = (int)key->m_int64;
+                break;
+            default:
+                return 0;
+            }
+
+            acArray* arr = (acArray*)m_gcobj;
+            if(idx < 0 || idx >= arr->size())
+                return 0;
+
+            return arr->get(idx);
+        }
+        break;
+    case acVT_TABLE:
+        {
+            acTable* tab = (acTable*)m_gcobj;
+            return tab->get(key);
+        }
+        break;
+    }
+
+    return 0;
 }
 
 //======================================

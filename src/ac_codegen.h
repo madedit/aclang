@@ -147,6 +147,7 @@ public:
     IRBuilder<>& getIRBuilder() { return m_irBuilder; }
 
     acTable* getRootTable() { return m_rootTable; }
+    acVariable* getRootTableVar() { return m_rootTableVar; }
 
     void setProgramBlockAST(BlockAST* block) { m_programBlockAST = block; }
     BlockAST* getProgramBlockAST() { return m_programBlockAST; }

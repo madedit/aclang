@@ -166,11 +166,16 @@ struct acVariable : acGCObject
 
     acHashValue& getHash();
     static void getHash(int value, acHashValue& hash);
-    static void getHash(char* str, acHashValue& hash);
+    static void getHash(const char* str, acHashValue& hash);
     static void setBaseFuncPtrs(acVariable* var);
 
     //return >0, =0, <0
     int compare(acVariable* v, acVM* vm);
+
+    //get child var by index/key. for array & table.
+    acVariable* operator[](int idx);
+    acVariable* operator[](const char* key);
+    acVariable* operator[](acVariable* key);
 };
 #pragma pack()
 
@@ -306,7 +311,7 @@ struct acTable : acGCObject
         return it->second.value;
     }
     //get value by string
-    acVariable* get(char* key)
+    acVariable* get(const char* key)
     {
         acHashValue hash;
         acVariable::getHash(key, hash);
