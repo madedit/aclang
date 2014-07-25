@@ -26,7 +26,17 @@ add_executable(aclang-test
     ${SRC_LIST}
     )
 
-target_link_libraries(aclang-test
-    aclang
-    ${LLVM_LIBS}
+if(WIN32)
+    target_link_libraries(aclang-test
+        aclang
+        ${LLVM_LIBS}
+        imagehlp
     )
+else(WIN32)
+    target_link_libraries(aclang-test
+        aclang
+        ${LLVM_LIBS}
+    )
+endif(WIN32)
+
+
