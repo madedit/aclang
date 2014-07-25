@@ -271,7 +271,7 @@ void acVariable::getHash(const char* str, acHashValue& hash)
 }
 
 //======================================
-acVariable* acVariable::operator[](int idx)
+acVariable* acVariable::get(int idx)
 {
     switch(m_valueType)
     {
@@ -295,7 +295,7 @@ acVariable* acVariable::operator[](int idx)
     return 0;
 }
 
-acVariable* acVariable::operator[](const char* key)
+acVariable* acVariable::get(const char* key)
 {
     switch(m_valueType)
     {
@@ -310,7 +310,7 @@ acVariable* acVariable::operator[](const char* key)
     return 0;
 }
 
-acVariable* acVariable::operator[](acVariable* key)
+acVariable* acVariable::get(acVariable* key)
 {
     switch(m_valueType)
     {

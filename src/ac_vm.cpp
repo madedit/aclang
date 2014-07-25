@@ -220,12 +220,12 @@ bool splitKeys(const std::string& keysStr, std::vector<KeyData>& keys)
     return true;
 }
 
-acVariable* acVM::getValueInRootTable(const std::string& keys)
+acVariable* acVM::getItemInRootTable(const std::string& keys)
 {
-    return 0;
+    return getItemInVar(getRootTable(), keys);
 }
 
-acVariable* acVM::getValueInVariable(acVariable* var, const std::string& keys)
+acVariable* acVM::getItemInVar(acVariable* var, const std::string& keys)
 {
     std::vector<KeyData> keyData;
     if(!splitKeys(keys, keyData))
@@ -234,15 +234,18 @@ acVariable* acVM::getValueInVariable(acVariable* var, const std::string& keys)
     int count = (int)keyData.size();
     for(int i = 0; i < count; ++i)
     {
+        if(var == 0)
+            return 0;
+
         const KeyData& kd = keyData[i];
         if(kd.isNumber)
         {
             int idx = atoi(kd.key.c_str());
-            var = (*var)[idx];
+            var =var->get(idx);
         }
         else
         {
-            var = (*var)[kd.key.c_str()];
+            var = var->get(kd.key.c_str());
         }
     }
 

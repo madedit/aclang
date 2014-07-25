@@ -112,7 +112,6 @@ struct acVariable : acGCObject
         m_objType = acVT_VAR;
         setBaseFuncPtrs(this);
     }
-
     void setValue(bool v)
     {
         m_valueType = acVT_BOOL;
@@ -120,7 +119,6 @@ struct acVariable : acGCObject
         m_int32 = v;
         setBaseFuncPtrs(this);
     }
-
     void setValue(acInt32 v)
     {
         m_valueType = acVT_INT32;
@@ -173,9 +171,9 @@ struct acVariable : acGCObject
     int compare(acVariable* v, acVM* vm);
 
     //get child var by index/key. for array & table.
-    acVariable* operator[](int idx);
-    acVariable* operator[](const char* key);
-    acVariable* operator[](acVariable* key);
+    acVariable* get(int idx);
+    acVariable* get(const char* key);
+    acVariable* get(acVariable* key);
 };
 #pragma pack()
 
