@@ -35,6 +35,32 @@ Language Syntax
         }
     }
 
+    //support JSON format natively
+    var json = {
+    "firstName": "John",
+    "lastName": "Smith",
+    "isAlive": true,
+    "age": 25,
+    "height_cm": 167.6,
+    "address": {
+        "streetAddress": "21 2nd Street",
+        "city": "New York",
+        "state": "NY",
+        "postalCode": "10021-3100"
+    },
+    "phoneNumbers": [
+        {
+        "type": "home",
+        "number": "212 555-1234"
+        },
+        {
+        "type": "office",
+        "number": "646 555-4567"
+        }
+    ]
+    };
+    print(json.phoneNumbers[0].number);
+
 Feature
 =======
 - C-like syntax
@@ -42,9 +68,10 @@ Feature
 - first-class function
 - closure
 - all variables must be declared before they are used (by **var** or **local**)
-- incremental GC
+- incremental GC (won't freeze the world)
 - easy to bind C/C++ functions
 - support Universal Character as variable name (e.g. **var 變數 = 10; print(變數);** )
+- support JSON format natively
 
 Download
 ========
