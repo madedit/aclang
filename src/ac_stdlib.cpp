@@ -4,21 +4,21 @@
 #include "ac_vm.h"
 #include <iostream>
 
-void ac_stdlib_showAST(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_printAST(acVariable* thisVar, acArray* args, acVM* vm)
 {
     if(args->size() > 0)
     {
         vm->setPrintAST(toBool(args->get(0), vm));
     }
 }
-void ac_stdlib_showIR(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_printIR(acVariable* thisVar, acArray* args, acVM* vm)
 {
     if(args->size() > 0)
     {
         vm->setPrintIR(toBool(args->get(0), vm));
     }
 }
-void ac_stdlib_showGC(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_printGC(acVariable* thisVar, acArray* args, acVM* vm)
 {
     if(args->size() > 0)
     {
@@ -105,9 +105,9 @@ void ac_stdlib_tostr(acVariable* thisVar, acArray* args, acVM* vm)
 
 void acStdLib::bindStdFunctions(acVM* vm)
 {
-    vm->bindFunction("showAST", ac_stdlib_showAST);
-    vm->bindFunction("showIR",  ac_stdlib_showIR);
-    vm->bindFunction("showGC",  ac_stdlib_showGC);
+    vm->bindFunction("printAST", ac_stdlib_printAST);
+    vm->bindFunction("printIR",  ac_stdlib_printIR);
+    vm->bindFunction("printGC",  ac_stdlib_printGC);
 
     vm->bindFunction("typeof",   ac_stdlib_typeof);
     vm->bindFunction("print",    ac_stdlib_print);

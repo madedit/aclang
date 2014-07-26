@@ -27,8 +27,8 @@ acVM::acVM()
     , m_msgHandler()
     , m_gc(this)
     , m_isRuntimeError(false)
-    , m_printAST(true)
-    , m_printIR(true)
+    , m_printAST(false)
+    , m_printIR(false)
 {
     llvm::install_fatal_error_handler(&llvm_fatal_error_handler, this);
     InitializeNativeTarget();

@@ -76,7 +76,7 @@ int inputCode(std::string& buffer, acVM* vm)
 {
     fflush(stdin);
 
-    fprintf(stderr, "\n[showAST() = %s, showIR() = %s, showGC() = %s]\n",
+    fprintf(stderr, "\n[printAST() = %s, printIR() = %s, printGC() = %s]\n",
         vm->getPrintAST()? "true":"false",
         vm->getPrintIR()? "true":"false",
         vm->getPrintGC()? "true":"false" );
