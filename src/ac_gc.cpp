@@ -66,6 +66,13 @@ acVariable* acGarbageCollector::createVarWithData(const char* data)
     return var;
 }
 
+acVariable* acGarbageCollector::createVarWithData(acInt32 data)
+{
+    acVariable* var = (acVariable*)createObject(acVT_INT32);
+    var->m_int32 = data;
+    return var;
+}
+
 void acGarbageCollector::incrementalGC(clock_t clocks)
 {
     switch(m_state)

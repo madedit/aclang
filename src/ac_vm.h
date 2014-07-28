@@ -82,6 +82,13 @@ public:
     //key: "a.b.123"; return var[a][b][123] or NULL if there is any key that is not exist.
     acVariable* getItemInVar(acVariable* var, const std::string& keys);
 
+    //add a new item in table
+    acVariable* addItemInTable(acVariable* tableVar, const char* key, acVarType valueType);
+    //add a new item at array[idx], if sizeof(array) < idx, array will be fill up with null values
+    acVariable* addItemInArray(acVariable* arrayVar, int idx, acVarType valueType);
+
+    void setVarType(acVariable* var, acVarType type);
+
 protected:
 
 };

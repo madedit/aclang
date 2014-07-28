@@ -155,7 +155,8 @@ struct acVariable : acGCObject
         m_gcobj = v;
         setBaseFuncPtrs(this);
     }
-
+    void setValue(const char* str, acVM* vm);
+    
     void assignFrom(acVariable* v);
     acVariable* getBindFunc(char* name);
     acVariable* getBindFunc(acVariable* key);
@@ -174,6 +175,9 @@ struct acVariable : acGCObject
     acVariable* get(int idx);
     acVariable* get(const char* key);
     acVariable* get(acVariable* key);
+
+    acTable* toTable() { return (acTable*)m_gcobj; }
+    acArray* toArray() { return (acArray*)m_gcobj; }
 };
 #pragma pack()
 
@@ -242,6 +246,8 @@ struct acArray : acGCObject
     void add(acVariable* var) { m_data.push_back(var); }
     acVariable* get(int idx) { return m_data[idx]; }
     void set(int idx, acVariable* var) { m_data[idx] = var; }
+    void fillAndSet(int idx, acVariable* var, acVM* vm);
+    acVariable* fillAndGet(int idx, acVM* vm);
 
     void initIter() { m_iteratorIndex = 0; }
     bool iterate(acVariable* idx, acVariable* value)
@@ -295,6 +301,12 @@ struct acTable : acGCObject
             it->second = KeyValue(key, var);
         }
     }
+    //helper functions for add kv
+    void add(const char* key, const char* value, acVM* vm);
+    void add(const char* key, int value, acVM* vm);
+    void add(int key, const char* value, acVM* vm);
+    void add(int key, int value, acVM* vm);
+
     void remove(acVariable* key)
     {
         m_data.erase(key->getHash());

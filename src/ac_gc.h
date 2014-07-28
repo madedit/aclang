@@ -51,6 +51,7 @@ public:
 
     acGCObject* createObject(acVarType type);
     acVariable* createVarWithData(const char* data);
+    acVariable* createVarWithData(acInt32 data);
 
     acVM* getVM() { return m_vm; }
     void addRootObj(acGCObject* obj) { m_rootList.push_back(obj); }

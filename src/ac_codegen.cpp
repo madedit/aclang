@@ -419,7 +419,7 @@ void addTableKeyValue_str(acTable* tab, char* name, acVariable* value, acVM* vm)
 {
     acGarbageCollector* gc = vm->getGarbageCollector();
 
-    acVariable* key = (acVariable*)gc->createVarWithData(name);
+    acVariable* key = gc->createVarWithData(name);
     acVariable* var = (acVariable*)gc->createObject(acVT_NULL);
     var->setValue(value);
 

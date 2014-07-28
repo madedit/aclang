@@ -251,3 +251,84 @@ acVariable* acVM::getItemInVar(acVariable* var, const std::string& keys)
 
     return var;
 }
+
+acVariable* acVM::addItemInTable(acVariable* tableVar, const char* key, acVarType valueType)
+{
+    acGarbageCollector* gc = getGarbageCollector();
+    acVariable* keyVar = gc->createVarWithData(key);
+    acVariable* valVar = (acVariable*)gc->createObject(valueType);
+    tableVar->toTable()->add(keyVar, valVar);
+    return valVar;
+}
+
+acVariable* acVM::addItemInArray(acVariable* arrayVar, int idx, acVarType valueType)
+{
+    acGarbageCollector* gc = getGarbageCollector();
+    acVariable* valVar = (acVariable*)gc->createObject(valueType);
+    arrayVar->toArray()->fillAndSet(idx, valVar, this);
+    return valVar;
+}
+
+void acVM::setVarType(acVariable* var, acVarType valueType)
+{
+    if(var->m_valueType != valueType)
+    {
+        switch(valueType)
+        {
+        case acVT_NULL:
+            var->setNull();
+            break;
+        case acVT_BOOL:
+            var->setValue(false);
+            break;
+        case acVT_INT32:
+            var->setValue(acInt32(0));
+            break;
+        case acVT_INT64:
+            var->setValue(acInt64(0));
+            break;
+        case acVT_FLOAT:
+            var->setValue(acFloat(0));
+            break;
+        case acVT_DOUBLE:
+            var->setValue(acDouble(0));
+            break;
+        case acVT_STRING:
+            var->setValue("", this);
+            break;
+        case acVT_ARRAY:
+            {
+                acGCObject* obj = getGarbageCollector()->createObject(acVT_ARRAY);
+                var->setValue(obj);
+            }
+            break;
+        case acVT_TABLE:
+            {
+                acGCObject* obj = getGarbageCollector()->createObject(acVT_TABLE);
+                var->setValue(obj);
+            }
+            break;
+        case acVT_FUNCTION:
+            {
+                acGCObject* obj = getGarbageCollector()->createObject(acVT_FUNCTION);
+                var->setValue(obj);
+            }
+            break;
+        case acVT_DELEGATE:
+            {
+                acGCObject* obj = getGarbageCollector()->createObject(acVT_DELEGATE);
+                var->setValue(obj);
+            }
+            break;
+        case acVT_USERDATA:
+            //TODO
+            break;
+        case acVT_USERFUNC:
+            {
+                acGCObject* obj = getGarbageCollector()->createObject(acVT_USERFUNC);
+                var->setValue(obj);
+            }
+            break;
+        }
+    }
+}

@@ -48,6 +48,22 @@ void acString::hash()
     MurmurHash3_x86_32(m_data.c_str(), m_data.length(), HASH_SEED, &m_hash, &m_sum);
 }
 
+//======================================
+void acVariable::setValue(const char* str, acVM* vm)
+{
+    if(m_valueType == acVT_STRING)
+    {
+        ((acString*)m_gcobj)->setData(str);
+    }
+    else
+    {
+        acGarbageCollector* gc = vm->getGarbageCollector();
+        acString* s = (acString*)gc->createObject(acVT_STRING);
+        s->setData(str);
+        setValue(s);
+    }
+}
+
 void acVariable::assignFrom(acVariable* v)
 {
     memcpy(this, v, sizeof(acVariable));
@@ -345,6 +361,71 @@ acVariable* acVariable::get(acVariable* key)
     }
 
     return 0;
+}
+
+//======================================
+void acArray::fillAndSet(int idx, acVariable* var, acVM* vm)
+{
+    //fill
+    if(idx >= (int)m_data.size())
+    {
+        acGarbageCollector* gc = vm->getGarbageCollector();
+        do
+        {
+            m_data.push_back((acVariable*)gc->createObject(acVT_NULL));
+        }
+        while(idx >= (int)m_data.size());
+    }
+
+    //set
+    m_data[idx] = var;
+}
+
+acVariable* acArray::fillAndGet(int idx, acVM* vm)
+{
+    //fill
+    if(idx >= (int)m_data.size())
+    {
+        acGarbageCollector* gc = vm->getGarbageCollector();
+        do
+        {
+            m_data.push_back((acVariable*)gc->createObject(acVT_NULL));
+        }
+        while(idx >= (int)m_data.size());
+    }
+
+    //get
+    return m_data[idx];
+}
+
+//======================================
+void acTable::add(const char* key, const char* value, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    acVariable* keyVar = gc->createVarWithData(key);
+    acVariable* valVar = gc->createVarWithData(value);
+    add(keyVar, valVar);
+}
+void acTable::add(const char* key, int value, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    acVariable* keyVar = gc->createVarWithData(key);
+    acVariable* valVar = gc->createVarWithData(value);
+    add(keyVar, valVar);
+}
+void acTable::add(int key, const char* value, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    acVariable* keyVar = gc->createVarWithData(key);
+    acVariable* valVar = gc->createVarWithData(value);
+    add(keyVar, valVar);
+}
+void acTable::add(int key, int value, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    acVariable* keyVar = gc->createVarWithData(key);
+    acVariable* valVar = gc->createVarWithData(value);
+    add(keyVar, valVar);
 }
 
 //======================================
