@@ -509,16 +509,16 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     argTypes.push_back(voidPtrTy);//upValueTable
     FunctionType* funcType = FunctionType::get(voidTy, makeArrayRef(argTypes), false);
 
-    Twine name("func");
+    std::string name("func");
     static int count = 0;
-    name = name.concat(Twine(count++));
-    Twine funcName;
+    name += Twine(count++).str();
+    std::string funcName;
     if(m_nameExpr != 0 && m_nameExpr->m_keyIdentifier.length() > 0)
     {
         funcName = "_";
-        funcName = funcName.concat(Twine(m_nameExpr->m_keyIdentifier));
+        funcName += m_nameExpr->m_keyIdentifier;
     }
-    Twine name2 = name.concat(funcName);
+    Twine name2 = Twine(name).concat(funcName);
 
     llvm::Function* llvmFunc = Function::Create(funcType, GlobalValue::InternalLinkage, name2, cg->getModule());
 
@@ -1233,8 +1233,7 @@ Value* SwitchAST::codeGen(acCodeGenerator* cg)
     for(int idx = 0; idx < count; ++idx, ++it)
     {
         CaseAST* ast = (CaseAST*)*it;
-        Twine caseidx(idx);
-        caseidx = caseidx.concat("_");
+        Twine caseidx = Twine(idx).concat("_");
         if(ast->m_expr != 0)//case
         {
             ast->m_swcase = BasicBlock::Create(context, Twine("sw.case.").concat(caseidx), function, label_switch_default);

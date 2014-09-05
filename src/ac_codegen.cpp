@@ -5,8 +5,8 @@
 #include "ac_gc.h"
 #include "ac_vm.h"
 #include <llvm/PassManager.h>
-#include <llvm/Analysis/Verifier.h>
-#include <llvm/Assembly/PrintModulePass.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/IR/IRPrintingPasses.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Type.h>
@@ -74,16 +74,15 @@ void acCodeGenerator::generateCode()
     Module* module = m_vm->getModule();
 
     //m_vm->getMsgHandler()->errorMessage("Generating code...\n");
-	
-	/* Create the top level interpreter function to call as entry */
+    
+    /* Create the top level interpreter function to call as entry */
     std::vector<Type*> argTypes;
-	FunctionType* mainFuncType = FunctionType::get(IntegerType::get(context, 32), makeArrayRef(argTypes), false);
+    FunctionType* mainFuncType = FunctionType::get(IntegerType::get(context, 32), makeArrayRef(argTypes), false);
 
-    Twine mainName("main");
     static int count = 0;
-    mainName = mainName + Twine(count++);
+    Twine mainName = Twine("main") + Twine(count++);
 
-	m_mainFunction = Function::Create(mainFuncType, GlobalValue::InternalLinkage, mainName, module);
+    m_mainFunction = Function::Create(mainFuncType, GlobalValue::InternalLinkage, mainName, module);
 
     /*  //main function:
         //entry:
@@ -101,10 +100,10 @@ void acCodeGenerator::generateCode()
     */
 
     //blocks
-	BasicBlock* label_entry = BasicBlock::Create(context, "entry", m_mainFunction);
+    BasicBlock* label_entry = BasicBlock::Create(context, "entry", m_mainFunction);
     BasicBlock* label_begin = BasicBlock::Create(context, "begin", m_mainFunction);
     BasicBlock* label_end = BasicBlock::Create(context, "end", m_mainFunction);
-	
+    
     m_irBuilder.SetInsertPoint(label_entry);
 
     //types
@@ -164,9 +163,9 @@ void acCodeGenerator::generateCode()
     if(m_vm->getPrintIR())
     {
         m_vm->getMsgHandler()->errorMessage(">>>LLVM IR<<<\n");
-	    PassManager pm;
-	    pm.add(createPrintModulePass(&outs()));
-	    pm.run(*module);
+        PassManager pm;
+        pm.add(createPrintModulePass(outs()));
+        pm.run(*module);
     }
 }
 
@@ -175,7 +174,7 @@ GenericValue acCodeGenerator::runCode()
 {
     if(m_mainFunction != 0)
     {
-	    //m_vm->getMsgHandler()->errorMessage("Running code...\n");
+        //m_vm->getMsgHandler()->errorMessage("Running code...\n");
         ExecutionEngine* ee = m_vm->getExecutionEngine();
         std::vector<GenericValue> noargs;
         GenericValue v = ee->runFunction(m_mainFunction, noargs);
@@ -194,7 +193,7 @@ GenericValue acCodeGenerator::runCode()
         return v;
     }
 
-	return GenericValue();
+    return GenericValue();
 }
 
 void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave, NodeAST* ast, acCodeGenBlock::BlockType type,

@@ -84,7 +84,7 @@ How to Build
 
 Required tools & libs:
 
-1. llvm 3.4
+1. llvm 3.5
 2. cmake 2.8
 
 ACLang can be built on Linux and Windows

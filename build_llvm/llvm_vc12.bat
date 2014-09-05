@@ -1,0 +1,3 @@
+REM require: Visual Studio 2013, cmake.exe (cmake-2.8.12.2-win32-x86), python.exe (PortablePython)
+d:\cmake-2.8.12.2-win32-x86\bin\cmake .. -DCMAKE_BUILD_TYPE=Release -DLLVM_TARGETS_TO_BUILD="X86;CppBackend" -G "Visual Studio 12" -DPYTHON_EXECUTABLE=d:\python2.7.3.2\App\python.exe -DLLVM_BUILD_EXAMPLES=OFF -DLLVM_INCLUDE_EXAMPLES=OFF -DLLVM_BUILD_TESTS=OFF -DLLVM_INCLUDE_TESTS=OFF -DCLANG_BUILT_STANDALONE=1
+pause
