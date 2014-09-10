@@ -67,7 +67,6 @@ protected:
     acVariable* m_rootTableVar;
     acArray* m_rootArgArray;
     acArray* m_rootTmpArray;
-    acVariable* m_userFuncRetVar;
 
     std::list<acCodeGenBlock*> m_blocks;
 

@@ -4,21 +4,21 @@
 #include "ac_vm.h"
 #include <iostream>
 
-void ac_stdlib_printAST(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_printAST(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() > 0)
     {
         vm->setPrintAST(toBool(args->get(0), vm));
     }
 }
-void ac_stdlib_printIR(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_printIR(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() > 0)
     {
         vm->setPrintIR(toBool(args->get(0), vm));
     }
 }
-void ac_stdlib_printGC(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_printGC(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() > 0)
     {
@@ -26,15 +26,15 @@ void ac_stdlib_printGC(acVariable* thisVar, acArray* args, acVM* vm)
     }
 }
 
-void ac_stdlib_typeof(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_typeof(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() < 1)
         vm->runtimeError("Error: typeof() has no argument");
 
-    vm->setUserFuncRetVar(getVarTypeStr(args->get(0)->m_valueType));
+    retVar->setValue(getVarTypeStr(args->get(0)->m_valueType).c_str(), vm);
 }
 
-void ac_stdlib_print(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_print(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     std::string str;
     std::string s;
@@ -55,52 +55,52 @@ void ac_stdlib_print(acVariable* thisVar, acArray* args, acVM* vm)
     std::cout << str << std::endl;
 }
 
-void ac_stdlib_tobool(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_tobool(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() < 1)
         vm->runtimeError("Error: tobool() has no argument");
 
-    vm->setUserFuncRetVar(toBool(args->get(0), vm));
+    retVar->setValue(toBool(args->get(0), vm));
 }
 
-void ac_stdlib_toint32(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_toint32(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() < 1)
         vm->runtimeError("Error: toint32() has no argument");
 
-    vm->setUserFuncRetVar(toInt32(args->get(0), vm));
+    retVar->setValue(toInt32(args->get(0), vm));
 }
 
-void ac_stdlib_toint64(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_toint64(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() < 1)
         vm->runtimeError("Error: toint64() has no argument");
 
-    vm->setUserFuncRetVar(toInt64(args->get(0), vm));
+    retVar->setValue(toInt64(args->get(0), vm));
 }
 
-void ac_stdlib_tofloat(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_tofloat(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() < 1)
         vm->runtimeError("Error: tofloat() has no argument");
 
-    vm->setUserFuncRetVar(toFloat(args->get(0), vm));
+    retVar->setValue(toFloat(args->get(0), vm));
 }
 
-void ac_stdlib_todouble(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_todouble(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() < 1)
         vm->runtimeError("Error: todouble() has no argument");
 
-    vm->setUserFuncRetVar(toDouble(args->get(0), vm));
+    retVar->setValue(toDouble(args->get(0), vm));
 }
 
-void ac_stdlib_tostr(acVariable* thisVar, acArray* args, acVM* vm)
+void ac_stdlib_tostr(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() < 1)
         vm->runtimeError("Error: tostr() has no argument");
 
-    vm->setUserFuncRetVar(toString(args->get(0), vm));
+    retVar->setValue(toString(args->get(0), vm).c_str(), vm);
 }
 
 void acStdLib::bindStdFunctions(acVM* vm)

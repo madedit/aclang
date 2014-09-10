@@ -46,20 +46,9 @@ public:
     acGarbageCollector* getGarbageCollector() { return &m_gc; }
     void runtimeError(const std::string& errMsg);
 
-    typedef void (*AC_FUNCTION)(acVariable* thisVar, acArray* args, acVM* vm);
+    typedef void(*AC_FUNCTION)(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm);
     void bindFunction(const std::string& name, AC_FUNCTION func);
     //void callFunction(const std::string& name, std::vector<GenericValue> noargs);
-
-    //user function
-    void setUserFuncRetVar(bool v);
-    void setUserFuncRetVar(acInt32 v);
-    void setUserFuncRetVar(acInt64 v);
-    void setUserFuncRetVar(acFloat v);
-    void setUserFuncRetVar(acDouble v);
-    void setUserFuncRetVar(const char* v);
-    void setUserFuncRetVar(const std::string& v) { setUserFuncRetVar(v.c_str()); }
-    void setUserFuncRetVar(acVariable* var);
-    acVariable* getUserFuncRetVar();
 
     //helper function for creating acVariable objects
     acVariable* createString(const char* str);

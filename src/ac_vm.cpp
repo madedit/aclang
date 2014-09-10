@@ -83,48 +83,6 @@ void acVM::bindFunction(const std::string& name, AC_FUNCTION func)
     var->setValue(uf);
 }
 
-void acVM::setUserFuncRetVar(bool v)
-{
-    m_codeGenerator->m_userFuncRetVar->setValue(v);
-}
-
-void acVM::setUserFuncRetVar(acInt32 v)
-{
-    m_codeGenerator->m_userFuncRetVar->setValue(v);
-}
-
-void acVM::setUserFuncRetVar(acInt64 v)
-{
-    m_codeGenerator->m_userFuncRetVar->setValue(v);
-}
-
-void acVM::setUserFuncRetVar(acFloat v)
-{
-    m_codeGenerator->m_userFuncRetVar->setValue(v);
-}
-
-void acVM::setUserFuncRetVar(acDouble v)
-{
-    m_codeGenerator->m_userFuncRetVar->setValue(v);
-}
-
-void acVM::setUserFuncRetVar(const char* v)
-{
-    acString* str = (acString*)m_gc.createObject(acVT_STRING);
-    str->setData(v);
-    m_codeGenerator->m_userFuncRetVar->setValue(str);
-}
-
-void acVM::setUserFuncRetVar(acVariable* var)
-{
-    m_codeGenerator->m_userFuncRetVar = var;
-}
-
-acVariable* acVM::getUserFuncRetVar()
-{
-    return m_codeGenerator->m_userFuncRetVar;
-}
-
 acVariable* acVM::createString(const char* str)
 {
     return m_gc.createVarWithData(str);

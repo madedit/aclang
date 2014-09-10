@@ -899,22 +899,22 @@ void uf_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* 
     acGarbageCollector* gc = vm->getGarbageCollector();
 
     //ret var = null
-    vm->setUserFuncRetVar((acVariable*)gc->createObject(acVT_NULL));
+    acVariable* retVar = (acVariable*)gc->createObject(acVT_NULL);
 
     acUserFunc* uf = (acUserFunc*)var->m_gcobj;
 
-    typedef void (*PFN)(void*, void*, void*);
+    typedef void(*PFN)(void*, void*, void*, void*);
     PFN pfn = reinterpret_cast<PFN>(uf->m_funcPtr);
-    pfn(thisVar, argArray, vm);
+    pfn(thisVar, argArray, retVar, vm);
 
     //set ret var
     if(argArray->size() > 0)
     {
-        argArray->set(0, vm->getUserFuncRetVar());
+        argArray->set(0, retVar);
     }
     else
     {
-        argArray->add(vm->getUserFuncRetVar());
+        argArray->add(retVar);
     }
 }
 
