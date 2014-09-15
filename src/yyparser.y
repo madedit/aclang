@@ -559,34 +559,57 @@ iteration_stmt:
     ;
 
 foreach_stmt:
-      TOK_FOREACH TOK_LPAREN getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+      TOK_FOR TOK_LPAREN postfix_expr TOK_COLON inner_expr TOK_RPAREN stmt
         {
-            $$ = new ForeachAST(0, NULL, $3, $5, $7);
+            if($3->m_type != NodeAST::tGetVarAST)
+            {
+                yyerror("for-each expression is illegal");
+                YYABORT;
+            }
+            $$ = new ForeachAST(0, NULL, (GetVarAST*)$3, $5, $7);
             PARSER->addNodeAST($$);
         }
-    | TOK_FOREACH TOK_LPAREN getvar_postfix_expr TOK_COMMA getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+    | TOK_FOR TOK_LPAREN postfix_expr TOK_COMMA getvar_postfix_expr TOK_COLON inner_expr TOK_RPAREN stmt
         {
-            $$ = new ForeachAST(0, $3, $5, $7, $9);
+            if($3->m_type != NodeAST::tGetVarAST)
+            {
+                yyerror("for-each expression is illegal");
+                YYABORT;
+            }
+            $$ = new ForeachAST(0, (GetVarAST*)$3, $5, $7, $9);
             PARSER->addNodeAST($$);
         }
-    | TOK_FOREACH TOK_LPAREN TOK_VAR getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
+    | TOK_FOR TOK_LPAREN var_decl TOK_COLON inner_expr TOK_RPAREN stmt
         {
-            $$ = new ForeachAST(TOK_VAR, NULL, $4, $6, $8);
-            PARSER->addNodeAST($$);
-        }
-    | TOK_FOREACH TOK_LPAREN TOK_VAR getvar_postfix_expr TOK_COMMA getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
-        {
-            $$ = new ForeachAST(TOK_VAR, $4, $6, $8, $10);
-            PARSER->addNodeAST($$);
-        }
-    | TOK_FOREACH TOK_LPAREN TOK_LOCAL getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
-        {
-            $$ = new ForeachAST(TOK_LOCAL, NULL, $4, $6, $8);
-            PARSER->addNodeAST($$);
-        }
-    | TOK_FOREACH TOK_LPAREN TOK_LOCAL getvar_postfix_expr TOK_COMMA getvar_postfix_expr TOK_IN inner_expr TOK_RPAREN stmt
-        {
-            $$ = new ForeachAST(TOK_LOCAL, $4, $6, $8, $10);
+            VariableDeclarationAST* node0 = (VariableDeclarationAST*)$3->m_nodeASTVec[0];
+            if(node0->m_assignmentExpr != NULL)
+            {
+                yyerror("for-each expression is illegal");
+                YYABORT;
+            }
+            GetVarAST* getvar0 = node0->m_varExpr;
+            
+            VariableDeclarationAST* node1 = NULL;
+            GetVarAST* getvar1 = NULL;
+            if($3->m_nodeASTVec.size() >= 2)
+            {
+                node1 = (VariableDeclarationAST*)$3->m_nodeASTVec[1];
+                if(node1->m_assignmentExpr != NULL)
+                {
+                    yyerror("for-each expression is illegal");
+                    YYABORT;
+                }
+                getvar1 = node1->m_varExpr;
+            }
+            
+            if(getvar1 == 0)
+            {
+                $$ = new ForeachAST(node0->m_isLocal? TOK_LOCAL : TOK_VAR, NULL, getvar0, $5, $7);
+            }
+            else
+            {
+                $$ = new ForeachAST(node0->m_isLocal? TOK_LOCAL : TOK_VAR, getvar0, getvar1, $5, $7);
+            }
             PARSER->addNodeAST($$);
         }
     ;

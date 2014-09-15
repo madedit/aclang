@@ -1520,14 +1520,19 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
         builder.CreateBr(label_for_loop);
     }
 
-    cg->pushBlock(label_for_loop, label_for_inc, this, acCodeGenBlock::CODE,
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
-    //loop
     builder.SetInsertPoint(label_for_loop);
-    m_stmt->codeGen(cg);
 
-    cg->popBlock();
-    block = cg->currentBlock();
+    //loop
+    if(m_stmt != 0)
+    {
+        cg->pushBlock(label_for_loop, label_for_inc, this, acCodeGenBlock::CODE,
+            block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
+
+        m_stmt->codeGen(cg);
+
+        cg->popBlock();
+        block = cg->currentBlock();
+    }
 
     if(builder.GetInsertBlock()->getTerminator() == false)
         builder.CreateBr(label_for_inc);
@@ -1616,17 +1621,20 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
     Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
     builder.CreateCondBr(cond, label_foreach_loop, label_foreach_end);
 
-
-    cg->pushBlock(label_foreach_loop, label_foreach_end, this, acCodeGenBlock::CODE,
-        block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
-    block = cg->currentBlock();
+    builder.SetInsertPoint(label_foreach_loop);
 
     //loop
-    builder.SetInsertPoint(label_foreach_loop);
-    m_stmt->codeGen(cg);
+    if(m_stmt != 0)
+    {
+        cg->pushBlock(label_foreach_loop, label_foreach_end, this, acCodeGenBlock::CODE,
+            block->m_retVar, block->m_thisVar, block->m_argArray, block->m_tmpArray, block->m_tmpArraySize);
+        block = cg->currentBlock();
 
-    cg->popBlock();
-    block = cg->currentBlock();
+        m_stmt->codeGen(cg);
+
+        cg->popBlock();
+        block = cg->currentBlock();
+    }
 
     if(builder.GetInsertBlock()->getTerminator() == false)
         builder.CreateBr(label_foreach_cond);
