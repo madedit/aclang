@@ -365,7 +365,17 @@ keyvalue:
       TOK_IDENTIFIER                                        { $$ = new KeyValueAST($1.getRawString(), NULL); PARSER->addNodeAST($$); }
     | TOK_IDENTIFIER TOK_ASSIGN inner_expr                  { $$ = new KeyValueAST($1.getRawString(), $3); PARSER->addNodeAST($$); }
     | TOK_LBRACKET expr TOK_RBRACKET TOK_ASSIGN inner_expr  { $$ = new KeyValueAST($2, $5); PARSER->addNodeAST($$); }
-    | func_decl                                             { $$ = new KeyValueAST("", $1); PARSER->addNodeAST($$); }
+    | func_decl
+        {
+            GetVarAST* gv = $1->m_nameExpr;
+            if(gv->m_keyIdentifier.empty() || gv->m_parentExpr != 0 || gv->m_keyExpr != 0)
+            {
+                yyerror("invalid function name in table, must be a string");
+                YYABORT;
+            }
+            $$ = new KeyValueAST(gv->m_keyIdentifier, $1);
+            PARSER->addNodeAST($$);
+        }
     //json format
     | string TOK_COLON inner_expr   { $$ = new KeyValueAST(((StringAST*)$1)->m_val, $3); PARSER->addNodeAST($$); }
     ;

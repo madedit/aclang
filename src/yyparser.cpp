@@ -673,14 +673,14 @@ static const yytype_uint16 yyrline[] =
      301,   302,   306,   307,   311,   312,   316,   317,   318,   319,
      320,   321,   322,   323,   324,   325,   326,   327,   328,   332,
      333,   334,   335,   339,   343,   344,   345,   349,   350,   354,
-     355,   356,   357,   361,   365,   366,   367,   368,   370,   374,
-     375,   379,   380,   381,   385,   389,   390,   394,   395,   396,
-     400,   401,   407,   408,   409,   413,   417,   418,   419,   420,
-     426,   427,   428,   431,   439,   447,   454,   464,   465,   466,
-     475,   487,   492,   500,   503,   508,   516,   517,   518,   523,
-     524,   536,   537,   538,   539,   543,   544,   545,   546,   547,
-     548,   552,   553,   554,   555,   556,   557,   558,   562,   572,
-     582,   618,   619
+     355,   356,   357,   361,   365,   366,   367,   368,   380,   384,
+     385,   389,   390,   391,   395,   399,   400,   404,   405,   406,
+     410,   411,   417,   418,   419,   423,   427,   428,   429,   430,
+     436,   437,   438,   441,   449,   457,   464,   474,   475,   476,
+     485,   497,   502,   510,   513,   518,   526,   527,   528,   533,
+     534,   546,   547,   548,   549,   553,   554,   555,   556,   557,
+     558,   562,   563,   564,   565,   566,   567,   568,   572,   582,
+     592,   628,   629
 };
 #endif
 
@@ -2537,151 +2537,160 @@ yyreduce:
 
   case 107:
 /* Line 1787 of yacc.c  */
-#line 368 "yyparser.y"
-    { (yyval.node) = new KeyValueAST("", (yyvsp[(1) - (1)].func)); PARSER->addNodeAST((yyval.node)); }
+#line 369 "yyparser.y"
+    {
+            GetVarAST* gv = (yyvsp[(1) - (1)].func)->m_nameExpr;
+            if(gv->m_keyIdentifier.empty() || gv->m_parentExpr != 0 || gv->m_keyExpr != 0)
+            {
+                yyerror("invalid function name in table, must be a string");
+                YYABORT;
+            }
+            (yyval.node) = new KeyValueAST(gv->m_keyIdentifier, (yyvsp[(1) - (1)].func));
+            PARSER->addNodeAST((yyval.node));
+        }
     break;
 
   case 108:
 /* Line 1787 of yacc.c  */
-#line 370 "yyparser.y"
+#line 380 "yyparser.y"
     { (yyval.node) = new KeyValueAST(((StringAST*)(yyvsp[(1) - (3)].node))->m_val, (yyvsp[(3) - (3)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 109:
 /* Line 1787 of yacc.c  */
-#line 374 "yyparser.y"
+#line 384 "yyparser.y"
     { (yyval.nodelist) = new NodeASTList(); PARSER->addNodeAST((yyval.nodelist)); (yyval.nodelist)->push_back((yyvsp[(1) - (1)].node)); }
     break;
 
   case 110:
 /* Line 1787 of yacc.c  */
-#line 375 "yyparser.y"
+#line 385 "yyparser.y"
     { (yyvsp[(1) - (3)].nodelist)->push_back((yyvsp[(3) - (3)].node)); }
     break;
 
   case 111:
 /* Line 1787 of yacc.c  */
-#line 379 "yyparser.y"
+#line 389 "yyparser.y"
     { (yyval.node) = new TableAST(NULL); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 112:
 /* Line 1787 of yacc.c  */
-#line 380 "yyparser.y"
+#line 390 "yyparser.y"
     { (yyval.node) = new TableAST((yyvsp[(2) - (3)].nodelist)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 113:
 /* Line 1787 of yacc.c  */
-#line 381 "yyparser.y"
+#line 391 "yyparser.y"
     { (yyval.node) = new TableAST((yyvsp[(2) - (4)].nodelist)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 114:
 /* Line 1787 of yacc.c  */
-#line 385 "yyparser.y"
+#line 395 "yyparser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 115:
 /* Line 1787 of yacc.c  */
-#line 389 "yyparser.y"
+#line 399 "yyparser.y"
     { (yyval.nodelist) = new NodeASTList(); PARSER->addNodeAST((yyval.nodelist)); (yyval.nodelist)->push_back((yyvsp[(1) - (1)].node)); }
     break;
 
   case 116:
 /* Line 1787 of yacc.c  */
-#line 390 "yyparser.y"
+#line 400 "yyparser.y"
     { (yyvsp[(1) - (3)].nodelist)->push_back((yyvsp[(3) - (3)].node)); }
     break;
 
   case 117:
 /* Line 1787 of yacc.c  */
-#line 394 "yyparser.y"
+#line 404 "yyparser.y"
     { (yyval.node) = new ArrayAST(NULL); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 118:
 /* Line 1787 of yacc.c  */
-#line 395 "yyparser.y"
+#line 405 "yyparser.y"
     { (yyval.node) = new ArrayAST((yyvsp[(2) - (3)].nodelist)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 119:
 /* Line 1787 of yacc.c  */
-#line 396 "yyparser.y"
+#line 406 "yyparser.y"
     { (yyval.node) = new ArrayAST((yyvsp[(2) - (4)].nodelist)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 122:
 /* Line 1787 of yacc.c  */
-#line 407 "yyparser.y"
+#line 417 "yyparser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 123:
 /* Line 1787 of yacc.c  */
-#line 408 "yyparser.y"
+#line 418 "yyparser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].func); }
     break;
 
   case 124:
 /* Line 1787 of yacc.c  */
-#line 409 "yyparser.y"
+#line 419 "yyparser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].func); }
     break;
 
   case 125:
 /* Line 1787 of yacc.c  */
-#line 413 "yyparser.y"
+#line 423 "yyparser.y"
     { (yyval.node) = new VariableDeclarationListAST((yyvsp[(1) - (2)].nodelist)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 126:
 /* Line 1787 of yacc.c  */
-#line 417 "yyparser.y"
+#line 427 "yyparser.y"
     { (yyval.getvar) = new GetVarAST(NULL, (yyvsp[(1) - (1)].token).getRawString(), GetVarAST::NONE); PARSER->addNodeAST((yyval.getvar)); }
     break;
 
   case 127:
 /* Line 1787 of yacc.c  */
-#line 418 "yyparser.y"
+#line 428 "yyparser.y"
     { (yyval.getvar) = new GetVarAST(NULL, (yyvsp[(2) - (2)].token).getRawString(), GetVarAST::GLOBAL); PARSER->addNodeAST((yyval.getvar)); }
     break;
 
   case 128:
 /* Line 1787 of yacc.c  */
-#line 419 "yyparser.y"
+#line 429 "yyparser.y"
     { (yyval.getvar) = new GetVarAST(NULL, (yyvsp[(3) - (3)].token).getRawString(), GetVarAST::THIS); PARSER->addNodeAST((yyval.getvar)); }
     break;
 
   case 129:
 /* Line 1787 of yacc.c  */
-#line 420 "yyparser.y"
+#line 430 "yyparser.y"
     { (yyval.getvar) = new GetVarAST(NULL, (yyvsp[(3) - (4)].node), GetVarAST::THIS); PARSER->addNodeAST((yyval.getvar)); }
     break;
 
   case 130:
 /* Line 1787 of yacc.c  */
-#line 426 "yyparser.y"
+#line 436 "yyparser.y"
     { (yyval.getvar) = (yyvsp[(1) - (1)].getvar); }
     break;
 
   case 131:
 /* Line 1787 of yacc.c  */
-#line 427 "yyparser.y"
+#line 437 "yyparser.y"
     { (yyval.getvar) = new GetVarAST((yyvsp[(1) - (3)].getvar), (yyvsp[(3) - (3)].token).getRawString()); PARSER->addNodeAST((yyval.getvar)); }
     break;
 
   case 132:
 /* Line 1787 of yacc.c  */
-#line 428 "yyparser.y"
+#line 438 "yyparser.y"
     { (yyval.getvar) = new GetVarAST((yyvsp[(1) - (4)].getvar), (yyvsp[(3) - (4)].node)); PARSER->addNodeAST((yyval.getvar)); }
     break;
 
   case 133:
 /* Line 1787 of yacc.c  */
-#line 432 "yyparser.y"
+#line 442 "yyparser.y"
     {
             (yyval.nodelist) = new NodeASTList();
             PARSER->addNodeAST((yyval.nodelist));
@@ -2693,7 +2702,7 @@ yyreduce:
 
   case 134:
 /* Line 1787 of yacc.c  */
-#line 440 "yyparser.y"
+#line 450 "yyparser.y"
     {
             (yyval.nodelist) = new NodeASTList();
             PARSER->addNodeAST((yyval.nodelist));
@@ -2705,7 +2714,7 @@ yyreduce:
 
   case 135:
 /* Line 1787 of yacc.c  */
-#line 448 "yyparser.y"
+#line 458 "yyparser.y"
     {
             VariableDeclarationAST* node0 = (VariableDeclarationAST*)(yyval.nodelist)->m_nodeASTVec[0];
             VariableDeclarationAST* node = new VariableDeclarationAST((yyvsp[(3) - (3)].getvar), NULL, node0->m_isLocal);
@@ -2716,7 +2725,7 @@ yyreduce:
 
   case 136:
 /* Line 1787 of yacc.c  */
-#line 455 "yyparser.y"
+#line 465 "yyparser.y"
     {
             VariableDeclarationAST* node0 = (VariableDeclarationAST*)(yyval.nodelist)->m_nodeASTVec[0];
             VariableDeclarationAST* node = new VariableDeclarationAST((yyvsp[(3) - (5)].getvar), (yyvsp[(5) - (5)].node), node0->m_isLocal);
@@ -2727,19 +2736,19 @@ yyreduce:
 
   case 137:
 /* Line 1787 of yacc.c  */
-#line 464 "yyparser.y"
+#line 474 "yyparser.y"
     { (yyval.arglist) = new StringList(); PARSER->addNodeAST((yyval.arglist)); (yyval.arglist)->push_back((yyvsp[(1) - (1)].token).getRawString()); }
     break;
 
   case 138:
 /* Line 1787 of yacc.c  */
-#line 465 "yyparser.y"
+#line 475 "yyparser.y"
     { (yyval.arglist) = new StringList(); PARSER->addNodeAST((yyval.arglist)); (yyval.arglist)->push_back((yyvsp[(2) - (2)].token).getRawString()); }
     break;
 
   case 139:
 /* Line 1787 of yacc.c  */
-#line 467 "yyparser.y"
+#line 477 "yyparser.y"
     {
             (yyvsp[(1) - (3)].arglist)->push_back((yyvsp[(3) - (3)].token).getRawString());
             if((yyvsp[(1) - (3)].arglist)->m_hasDuplicateStr)
@@ -2752,7 +2761,7 @@ yyreduce:
 
   case 140:
 /* Line 1787 of yacc.c  */
-#line 476 "yyparser.y"
+#line 486 "yyparser.y"
     {
             (yyvsp[(1) - (4)].arglist)->push_back((yyvsp[(4) - (4)].token).getRawString());
             if((yyvsp[(1) - (4)].arglist)->m_hasDuplicateStr)
@@ -2765,7 +2774,7 @@ yyreduce:
 
   case 141:
 /* Line 1787 of yacc.c  */
-#line 488 "yyparser.y"
+#line 498 "yyparser.y"
     {
             (yyval.func) = new FunctionAST((yyvsp[(2) - (5)].getvar), NULL, (yyvsp[(5) - (5)].block));
             PARSER->addNodeAST((yyval.func));
@@ -2774,7 +2783,7 @@ yyreduce:
 
   case 142:
 /* Line 1787 of yacc.c  */
-#line 493 "yyparser.y"
+#line 503 "yyparser.y"
     {
             (yyval.func) = new FunctionAST((yyvsp[(2) - (6)].getvar), (yyvsp[(4) - (6)].arglist), (yyvsp[(6) - (6)].block));
             PARSER->addNodeAST((yyval.func));
@@ -2783,13 +2792,13 @@ yyreduce:
 
   case 143:
 /* Line 1787 of yacc.c  */
-#line 500 "yyparser.y"
+#line 510 "yyparser.y"
     { (yyvsp[(2) - (2)].func)->m_isLocal = true; (yyval.func) = (yyvsp[(2) - (2)].func); }
     break;
 
   case 144:
 /* Line 1787 of yacc.c  */
-#line 504 "yyparser.y"
+#line 514 "yyparser.y"
     {
             (yyval.func) = new FunctionAST(NULL, NULL, (yyvsp[(4) - (4)].block));
             PARSER->addNodeAST((yyval.func));
@@ -2798,7 +2807,7 @@ yyreduce:
 
   case 145:
 /* Line 1787 of yacc.c  */
-#line 509 "yyparser.y"
+#line 519 "yyparser.y"
     {
             (yyval.func) = new FunctionAST(NULL, (yyvsp[(3) - (5)].arglist), (yyvsp[(5) - (5)].block));
             PARSER->addNodeAST((yyval.func));
@@ -2807,31 +2816,31 @@ yyreduce:
 
   case 146:
 /* Line 1787 of yacc.c  */
-#line 516 "yyparser.y"
+#line 526 "yyparser.y"
     { (yyval.node) = new IfElseAST((yyvsp[(3) - (7)].node), (yyvsp[(5) - (7)].node), (yyvsp[(7) - (7)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 147:
 /* Line 1787 of yacc.c  */
-#line 517 "yyparser.y"
+#line 527 "yyparser.y"
     { (yyval.node) = new IfElseAST((yyvsp[(3) - (5)].node), (yyvsp[(5) - (5)].node), NULL); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 148:
 /* Line 1787 of yacc.c  */
-#line 519 "yyparser.y"
+#line 529 "yyparser.y"
     { (yyval.node) = new SwitchAST((yyvsp[(3) - (7)].node), (yyvsp[(6) - (7)].nodelist)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 149:
 /* Line 1787 of yacc.c  */
-#line 523 "yyparser.y"
+#line 533 "yyparser.y"
     { (yyval.nodelist) = new NodeASTList(); PARSER->addNodeAST((yyval.nodelist)); (yyval.nodelist)->add_case_ast((CaseAST*)((yyvsp[(1) - (1)].node))); }
     break;
 
   case 150:
 /* Line 1787 of yacc.c  */
-#line 525 "yyparser.y"
+#line 535 "yyparser.y"
     {
             (yyvsp[(1) - (2)].nodelist)->add_case_ast((CaseAST*)((yyvsp[(2) - (2)].node)));
             if((yyvsp[(1) - (2)].nodelist)->m_hasMultipleDefaultStmt)
@@ -2844,109 +2853,109 @@ yyreduce:
 
   case 151:
 /* Line 1787 of yacc.c  */
-#line 536 "yyparser.y"
+#line 546 "yyparser.y"
     { (yyval.node) = new CaseAST((yyvsp[(2) - (4)].node), (yyvsp[(4) - (4)].block)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 152:
 /* Line 1787 of yacc.c  */
-#line 537 "yyparser.y"
+#line 547 "yyparser.y"
     { (yyval.node) = new CaseAST((yyvsp[(2) - (3)].node), NULL); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 153:
 /* Line 1787 of yacc.c  */
-#line 538 "yyparser.y"
+#line 548 "yyparser.y"
     { (yyval.node) = new CaseAST(NULL, (yyvsp[(3) - (3)].block)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 154:
 /* Line 1787 of yacc.c  */
-#line 539 "yyparser.y"
+#line 549 "yyparser.y"
     { (yyval.node) = new CaseAST(NULL, NULL); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 155:
 /* Line 1787 of yacc.c  */
-#line 543 "yyparser.y"
+#line 553 "yyparser.y"
     { (yyval.node) = new ContinueAST(); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 156:
 /* Line 1787 of yacc.c  */
-#line 544 "yyparser.y"
+#line 554 "yyparser.y"
     { (yyval.node) = new BreakAST(); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 157:
 /* Line 1787 of yacc.c  */
-#line 545 "yyparser.y"
+#line 555 "yyparser.y"
     { (yyval.node) = new ReturnAST(NULL); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 158:
 /* Line 1787 of yacc.c  */
-#line 546 "yyparser.y"
+#line 556 "yyparser.y"
     { (yyval.node) = new ReturnAST((yyvsp[(2) - (3)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 159:
 /* Line 1787 of yacc.c  */
-#line 547 "yyparser.y"
+#line 557 "yyparser.y"
     { (yyval.node) = new ReturnAST((yyvsp[(2) - (2)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 160:
 /* Line 1787 of yacc.c  */
-#line 548 "yyparser.y"
+#line 558 "yyparser.y"
     { (yyval.node) = new ReturnAST((yyvsp[(2) - (2)].func)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 161:
 /* Line 1787 of yacc.c  */
-#line 552 "yyparser.y"
+#line 562 "yyparser.y"
     { (yyval.node) = new WhileAST((yyvsp[(3) - (5)].node), (yyvsp[(5) - (5)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 162:
 /* Line 1787 of yacc.c  */
-#line 553 "yyparser.y"
+#line 563 "yyparser.y"
     { (yyval.node) = new DoWhileAST((yyvsp[(5) - (7)].node), (yyvsp[(2) - (7)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 163:
 /* Line 1787 of yacc.c  */
-#line 554 "yyparser.y"
+#line 564 "yyparser.y"
     { (yyval.node) = new ForAST((yyvsp[(3) - (6)].node), (yyvsp[(4) - (6)].node), NULL, (yyvsp[(6) - (6)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 164:
 /* Line 1787 of yacc.c  */
-#line 555 "yyparser.y"
+#line 565 "yyparser.y"
     { (yyval.node) = new ForAST((yyvsp[(3) - (7)].node), (yyvsp[(4) - (7)].node), (yyvsp[(5) - (7)].node), (yyvsp[(7) - (7)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 165:
 /* Line 1787 of yacc.c  */
-#line 556 "yyparser.y"
+#line 566 "yyparser.y"
     { (yyval.node) = new ForAST((yyvsp[(3) - (6)].node), (yyvsp[(4) - (6)].node), NULL, (yyvsp[(6) - (6)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 166:
 /* Line 1787 of yacc.c  */
-#line 557 "yyparser.y"
+#line 567 "yyparser.y"
     { (yyval.node) = new ForAST((yyvsp[(3) - (7)].node), (yyvsp[(4) - (7)].node), (yyvsp[(5) - (7)].node), (yyvsp[(7) - (7)].node)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 167:
 /* Line 1787 of yacc.c  */
-#line 558 "yyparser.y"
+#line 568 "yyparser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 168:
 /* Line 1787 of yacc.c  */
-#line 563 "yyparser.y"
+#line 573 "yyparser.y"
     {
             if((yyvsp[(3) - (7)].node)->m_type != NodeAST::tGetVarAST)
             {
@@ -2960,7 +2969,7 @@ yyreduce:
 
   case 169:
 /* Line 1787 of yacc.c  */
-#line 573 "yyparser.y"
+#line 583 "yyparser.y"
     {
             if((yyvsp[(3) - (9)].node)->m_type != NodeAST::tGetVarAST)
             {
@@ -2974,7 +2983,7 @@ yyreduce:
 
   case 170:
 /* Line 1787 of yacc.c  */
-#line 583 "yyparser.y"
+#line 593 "yyparser.y"
     {
             VariableDeclarationAST* node0 = (VariableDeclarationAST*)(yyvsp[(3) - (7)].nodelist)->m_nodeASTVec[0];
             if(node0->m_assignmentExpr != NULL)
@@ -3011,19 +3020,19 @@ yyreduce:
 
   case 171:
 /* Line 1787 of yacc.c  */
-#line 618 "yyparser.y"
+#line 628 "yyparser.y"
     { (yyval.node) = new NamespaceAST((yyvsp[(2) - (5)].getvar), (yyvsp[(4) - (5)].block)); PARSER->addNodeAST((yyval.node)); }
     break;
 
   case 172:
 /* Line 1787 of yacc.c  */
-#line 619 "yyparser.y"
+#line 629 "yyparser.y"
     { (yyval.node) = new NamespaceAST((yyvsp[(2) - (4)].getvar), NULL); PARSER->addNodeAST((yyval.node)); }
     break;
 
 
 /* Line 1787 of yacc.c  */
-#line 3027 "yyparser.cpp"
+#line 3036 "yyparser.cpp"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -3255,5 +3264,5 @@ yyreturn:
 
 
 /* Line 2050 of yacc.c  */
-#line 622 "yyparser.y"
+#line 632 "yyparser.y"
 
