@@ -23,7 +23,7 @@ Language Syntax
     print( "fib(10)=" + table.f(table.n) );
 
     local array = [ function(a, b){ print(a, b); }, 1, 3, 5 ];
-    foreach(local i,v in array)
+    for(local i,v : array)
     {
         if(typeof(v) == "function")
         {
