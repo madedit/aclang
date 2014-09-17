@@ -1216,7 +1216,6 @@ public:
         printIndent(indent);
         printf("[ForAST]:\n");
         printIndent(indent+2);
-        printf("m_init:\n");
         if(m_init != 0)
         {
             printf("m_init:\n");
