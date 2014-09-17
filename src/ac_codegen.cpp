@@ -559,6 +559,35 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
         return arr->m_data[idx];
     }
 
+    if(parent->m_valueType == acVT_STRING)
+    {
+        int idx = 0;
+        switch(key->m_valueType)
+        {
+        case acVT_INT32:
+            idx = key->m_int32;
+            break;
+        case acVT_INT64:
+            idx = (int)key->m_int64;
+            break;
+        default:
+            vm->runtimeError(std::string("Error: attempt to index string by '") + getVarTypeStr(key->m_valueType) + "'");
+            return 0;
+        }
+
+        acString* str = (acString*)parent->m_gcobj;
+        if(idx < 0 || idx >= str->m_data.size())
+        {
+            std::stringstream ss;
+            ss << idx;
+            vm->runtimeError(std::string("Error: string index out of bounds: ") + ss.str());
+            return 0;
+        }
+
+        acGarbageCollector* gc = vm->getGarbageCollector();
+        return gc->createVarWithData((acInt32)str->m_data[idx]);
+    }
+
     if(parent->m_valueType != acVT_TABLE)
     {
         vm->runtimeError(std::string("Error: attempt to get element '")+toString(key, vm)+"' on '"+getVarTypeStr(parent->m_valueType)+"'");
@@ -600,6 +629,21 @@ void* opGetVar_int(acVariable* parent, int idx, int findInGlobal, int isFuncCall
         }
 
         return arr->m_data[idx];
+    }
+
+    if(parent->m_valueType == acVT_STRING)
+    {
+        acString* str = (acString*)parent->m_gcobj;
+        if(idx < 0 || idx >= (int)str->m_data.size())
+        {
+            std::stringstream ss;
+            ss << idx;
+            vm->runtimeError(std::string("Error: string index out of bounds: ") + ss.str());
+            return 0;
+        }
+
+        acGarbageCollector* gc = vm->getGarbageCollector();
+        return gc->createVarWithData((acInt32)str->m_data[idx]);
     }
 
     if(parent->m_valueType != acVT_TABLE)
