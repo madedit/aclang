@@ -854,11 +854,37 @@ void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
     acGarbageCollector* gc = vm->getGarbageCollector();
 
     acDelegate* dele = (acDelegate*)var->m_gcobj;
-    acFunction* func = (acFunction*)dele->m_funcVar->m_gcobj;
-
-    typedef void (*PFN)(void*, void*, void*);
-    PFN pfn = reinterpret_cast<PFN>(func->m_funcPtr);
-    pfn(thisVar, argArray, func->m_upValueTable);
+    switch(dele->m_funcVar->m_valueType)
+    {
+    case acVT_FUNCTION:
+        {
+            acFunction* func = (acFunction*)dele->m_funcVar->m_gcobj;
+            typedef void(*PFN)(void*, void*, void*);
+            PFN pfn = reinterpret_cast<PFN>(func->m_funcPtr);
+            pfn(thisVar, argArray, func->m_upValueTable);
+        }
+        break;
+    case acVT_USERFUNC:
+        {
+            acVariable* retVar = (acVariable*)gc->createObject(acVT_NULL);
+            acUserFunc* uf = (acUserFunc*)dele->m_funcVar->m_gcobj;
+            typedef void(*PFN)(void*, void*, void*, void*);
+            PFN pfn = reinterpret_cast<PFN>(uf->m_funcPtr);
+            pfn(thisVar, argArray, retVar, vm);
+            //set ret var
+            if(argArray->size() > 0)
+            {
+                argArray->set(0, retVar);
+            }
+            else
+            {
+                argArray->add(retVar);
+            }
+        }
+    default:
+        vm->runtimeError(std::string("Error: attempt to call delegate function with type '") + getVarTypeStr(dele->m_funcVar->m_valueType) + "'");
+        break;
+    }
 }
 
 //======================================
