@@ -370,7 +370,7 @@ acLexer::acReturnType acLexer::next(acToken &token, acChar *bufferEnd)
         // unsupported char
         default:
             token.m_end = buf + 1;
-            m_msgHandler->errorMessage(token.m_endLine, "unsupported char 0x%02X", ch);
+            m_msgHandler->error(token.m_endLine, "unsupported char 0x%02X", ch);
             return RT_ERROR;
         }
     }
@@ -431,7 +431,7 @@ acLexer::acReturnType acLexer::next(acToken &token, acChar *bufferEnd)
                     }
                 }
             }
-            m_msgHandler->errorMessage(token.m_endLine, "unterminated /* */ comment starting at line(%d)", token.m_beginLine);
+            m_msgHandler->error(token.m_endLine, "unterminated /* */ comment starting at line(%d)", token.m_beginLine);
             return RT_ERROR;
 
         case '+':   // Nesting Comment
@@ -486,7 +486,7 @@ acLexer::acReturnType acLexer::next(acToken &token, acChar *bufferEnd)
                     }
                 }
             }
-            m_msgHandler->errorMessage(token.m_endLine, "unterminated /+ +/ comment starting at line(%d)", token.m_beginLine);
+            m_msgHandler->error(token.m_endLine, "unterminated /+ +/ comment starting at line(%d)", token.m_beginLine);
             return RT_ERROR;
 
         default:
@@ -818,7 +818,7 @@ acLexer::acReturnType acLexer::next(acToken &token, acChar *bufferEnd)
         if(len == 0)
         {
             token.m_end = buf;
-            m_msgHandler->errorMessage(token.m_endLine, "invalid UTF-8 sequence");
+            m_msgHandler->error(token.m_endLine, "invalid UTF-8 sequence");
             return RT_ERROR;
         }
 
@@ -858,7 +858,7 @@ acLexer::acReturnType acLexer::next(acToken &token, acChar *bufferEnd)
     token.m_end = buf;
     if(word.size() == 0)
     {
-        m_msgHandler->errorMessage(token.m_endLine, "unsupported char 0x%X", dch);
+        m_msgHandler->error(token.m_endLine, "unsupported char 0x%X", dch);
         return RT_ERROR;
     }
 
@@ -879,7 +879,7 @@ acLexer::acReturnType acLexer::hexString(acToken &token, acChar *buf, acChar *bu
         if(buf == bufferEnd || (ch=*buf) == 0x00 || ch == 0x1A)
         {
             token.m_end = buf;
-            m_msgHandler->errorMessage(token.m_endLine, "unterminated string constant starting at line(%d)", token.m_beginLine);
+            m_msgHandler->error(token.m_endLine, "unterminated string constant starting at line(%d)", token.m_beginLine);
             return RT_ERROR;
         }
 
@@ -890,7 +890,7 @@ acLexer::acReturnType acLexer::hexString(acToken &token, acChar *buf, acChar *bu
             if(high==true)
             {
                 token.m_end = buf;
-                m_msgHandler->errorMessage(token.m_endLine, "odd number of hex characters in hex string");
+                m_msgHandler->error(token.m_endLine, "odd number of hex characters in hex string");
                 return RT_ERROR;
             }
 
@@ -937,10 +937,10 @@ acLexer::acReturnType acLexer::hexString(acToken &token, acChar *buf, acChar *bu
                     switch(ret)
                     {
                     case RT_ERROR:
-                        m_msgHandler->errorMessage(token.m_endLine, "non-hex character '%c'", ch);
+                        m_msgHandler->error(token.m_endLine, "non-hex character '%c'", ch);
                         break;
                     case RT_ERROR2:
-                         m_msgHandler->errorMessage(token.m_endLine, "unterminated hex string constant starting at line(%d)", token.m_beginLine);
+                         m_msgHandler->error(token.m_endLine, "unterminated hex string constant starting at line(%d)", token.m_beginLine);
                         break;
                     }
                     token.m_end = buf;
@@ -974,7 +974,7 @@ acLexer::acReturnType acLexer::rawString(acToken &token, acChar *buf, acChar *bu
         if(buf == bufferEnd || (ch=*buf) == 0x00 || ch == 0x1A)
         {
             token.m_end = buf;
-            m_msgHandler->errorMessage(token.m_endLine, "unterminated string constant starting at line(%d)", token.m_beginLine);
+            m_msgHandler->error(token.m_endLine, "unterminated string constant starting at line(%d)", token.m_beginLine);
             return RT_ERROR;
         }
 
@@ -1040,7 +1040,7 @@ acLexer::acReturnType acLexer::string(acToken &token, acChar *buf, acChar *buffe
         if(buf == bufferEnd || (ch=*buf) == 0x00 || ch == 0x1A)
         {
             token.m_end = buf;
-            m_msgHandler->errorMessage(token.m_endLine, "unterminated string constant starting at line(%d)", token.m_beginLine);
+            m_msgHandler->error(token.m_endLine, "unterminated string constant starting at line(%d)", token.m_beginLine);
             return RT_ERROR;
         }
 
@@ -1097,7 +1097,7 @@ acLexer::acReturnType acLexer::string(acToken &token, acChar *buf, acChar *buffe
 
             if(len == 0)
             {
-                m_msgHandler->errorMessage(token.m_endLine, "invalid UTF character \\U%08x", dch);
+                m_msgHandler->error(token.m_endLine, "invalid UTF character \\U%08x", dch);
                 return RT_ERROR;
             }
 
@@ -1129,7 +1129,7 @@ acLexer::acReturnType acLexer::dchar(acToken &token, acChar *buf, acChar *buffer
     if(buf == bufferEnd || (ch=*buf) == 0x00 || ch == 0x1A || ch == 0x0D || ch == 0x0A)
     {
         token.m_end = buf;
-        m_msgHandler->errorMessage(token.m_endLine, "unterminated character constant");
+        m_msgHandler->error(token.m_endLine, "unterminated character constant");
         return RT_ERROR;
     }
 
@@ -1153,7 +1153,7 @@ acLexer::acReturnType acLexer::dchar(acToken &token, acChar *buf, acChar *buffer
     if(buf == bufferEnd || (*buf) != '\'')
     {
         token.m_end = buf;
-        m_msgHandler->errorMessage(token.m_endLine, "unterminated character constant");
+        m_msgHandler->error(token.m_endLine, "unterminated character constant");
         return RT_ERROR;
     }
 
@@ -1205,7 +1205,7 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
     {
         ch1 = 0;
     //    token.m_end = ptrEnd;
-    //    m_msgHandler->errorMessage(token.m_endLine, "semicolon expected, not 'EOF'");
+    //    m_msgHandler->error(token.m_endLine, "semicolon expected, not 'EOF'");
     //    return RT_ERROR;
     }
 
@@ -1214,7 +1214,7 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
         if(base == 2)
         {
             token.m_end = ptrEnd;
-            m_msgHandler->errorMessage(token.m_endLine, "binary digit expected, not '%c'", ch1);
+            m_msgHandler->error(token.m_endLine, "binary digit expected, not '%c'", ch1);
             return RT_ERROR;
         }
         if(base == 8) base = 10;
@@ -1225,7 +1225,7 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
         if(base != 16)
         {
             token.m_end = ptrEnd;
-            m_msgHandler->errorMessage(token.m_endLine, "digit expected, not '%c'", ch1);
+            m_msgHandler->error(token.m_endLine, "digit expected, not '%c'", ch1);
             return RT_ERROR;
         }
         ch = '.';
@@ -1235,7 +1235,7 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
         if(ch == '.')
         {
             token.m_end = ptrEnd;
-            m_msgHandler->errorMessage(token.m_endLine, "semicolon expected, not '.'");
+            m_msgHandler->error(token.m_endLine, "semicolon expected, not '.'");
             return RT_ERROR;
         }
 
@@ -1254,14 +1254,14 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
             break;
         default:
             token.m_end = ptrEnd;
-            m_msgHandler->errorMessage(token.m_endLine, "binary digit expected, not '.'");
+            m_msgHandler->error(token.m_endLine, "binary digit expected, not '.'");
             return RT_ERROR;
         }
 
         if(ptrEnd == bufferEnd || (ch1=*ptrEnd) == 0x00 || ch1 == 0x1A)
         {
             token.m_end = ptrEnd;
-            m_msgHandler->errorMessage(token.m_endLine, "semicolon expected, not 'EOF'");
+            m_msgHandler->error(token.m_endLine, "semicolon expected, not 'EOF'");
             return RT_ERROR;
         }
     }
@@ -1304,7 +1304,7 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
                     if(buf == ptrEnd)
                     {
                         token.m_end = ptrEnd;
-                        m_msgHandler->errorMessage(token.m_endLine, "exponent expected");
+                        m_msgHandler->error(token.m_endLine, "exponent expected");
                         return RT_ERROR;
                     }
                 }
@@ -1315,7 +1315,7 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
         if(ptrEnd == bufferEnd || (ch1=*ptrEnd) == 0x00 || ch1 == 0x1A)
         {
             token.m_end = ptrEnd;
-            m_msgHandler->errorMessage(token.m_endLine, "semicolon expected, not 'EOF'");
+            m_msgHandler->error(token.m_endLine, "semicolon expected, not 'EOF'");
             return RT_ERROR;
         }
 
@@ -1326,7 +1326,7 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
             if(++ptrEnd == bufferEnd || (ch1=*ptrEnd) == 0x00 || ch1 == 0x1A)
             {
                 token.m_end = ptrEnd;
-                m_msgHandler->errorMessage(token.m_endLine, "semicolon expected, not 'EOF'");
+                m_msgHandler->error(token.m_endLine, "semicolon expected, not 'EOF'");
                 return RT_ERROR;
             }
             break;
@@ -1335,7 +1335,7 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
         if(!isDelimiter(ch1))
         {
             token.m_end = ptrEnd;
-            m_msgHandler->errorMessage(token.m_endLine, "bad suffix on number, unexpected char '%c'", ch1);
+            m_msgHandler->error(token.m_endLine, "bad suffix on number, unexpected char '%c'", ch1);
             return RT_ERROR;
         }
 
@@ -1350,13 +1350,13 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
 
             if(errno != 0)
             {
-                m_msgHandler->errorMessage(token.m_endLine, "number is not representable");
+                m_msgHandler->error(token.m_endLine, "number is not representable");
                 return RT_ERROR;
             }
 
             if(pend != pbeg + num.size() - 1)
             {
-                m_msgHandler->errorMessage(token.m_endLine, "'%s' is not floating point number", pbeg);
+                m_msgHandler->error(token.m_endLine, "'%s' is not floating point number", pbeg);
                 return RT_ERROR;
             }
         }
@@ -1364,13 +1364,13 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
         {
             if(hexExponent.size() == 0)
             {
-                m_msgHandler->errorMessage(token.m_endLine, "binary-exponent-part required");
+                m_msgHandler->error(token.m_endLine, "binary-exponent-part required");
                 return RT_ERROR;
             }
 
             if(hexToDouble(token, num, hexFraction, hexExponent) != RT_OK)
             {
-                m_msgHandler->errorMessage(token.m_endLine, "number is not representable");
+                m_msgHandler->error(token.m_endLine, "number is not representable");
                 return RT_ERROR;
             }
         }
@@ -1410,20 +1410,20 @@ acLexer::acReturnType acLexer::number(acToken &token, acChar *buf, acChar *buffe
 
         //if(ptrEnd == bufferEnd || ch1 == 0x00 || ch1 == 0x1A)
         //{
-        //    m_msgHandler->errorMessage(token.m_endLine, "semicolon expected, not 'EOF'");
+        //    m_msgHandler->error(token.m_endLine, "semicolon expected, not 'EOF'");
         //    return RT_ERROR;
         //}
 
         //if(ch1 == 'l')
         //{
-        //    m_msgHandler->errorMessage(token.m_endLine, "'l' suffix is deprecated, use 'L' instead");
+        //    m_msgHandler->error(token.m_endLine, "'l' suffix is deprecated, use 'L' instead");
         //    return RT_ERROR;
         //}
 
         if(!isDelimiter(ch1))
         {
             token.m_end = ptrEnd;
-            m_msgHandler->errorMessage(token.m_endLine, "bad suffix on number, unexpected char '%c'", ch1);
+            m_msgHandler->error(token.m_endLine, "bad suffix on number, unexpected char '%c'", ch1);
             return RT_ERROR;
         }
 
@@ -1507,7 +1507,7 @@ acLexer::acReturnType acLexer::strToBinary(acToken &token, acCharVector &str)
     size_t len = str.size();
     if(len == 0)
     {
-        m_msgHandler->errorMessage(token.m_endLine, "binary digit expected");
+        m_msgHandler->error(token.m_endLine, "binary digit expected");
         return RT_ERROR;
     }
 
@@ -1524,7 +1524,7 @@ acLexer::acReturnType acLexer::strToBinary(acToken &token, acCharVector &str)
             ++token.m_integerValue;
             break;
         default:
-            m_msgHandler->errorMessage(token.m_endLine, "binary digit expected, not '%c'", *ptr);
+            m_msgHandler->error(token.m_endLine, "binary digit expected, not '%c'", *ptr);
             return RT_ERROR;
         }
     }
@@ -1549,7 +1549,7 @@ acLexer::acReturnType acLexer::strToOctal(acToken &token, acCharVector &str)
                 token.m_integerValue += ((*ptr) - '0');
                 break;
             default:
-                m_msgHandler->errorMessage(token.m_endLine, "octal digit expected, not '%c'", *ptr);
+                m_msgHandler->error(token.m_endLine, "octal digit expected, not '%c'", *ptr);
                 return RT_ERROR;
             }
         }
@@ -1565,7 +1565,7 @@ acLexer::acReturnType acLexer::strToDecimal(acToken &token, acCharVector &str)
     size_t len = str.size();
     if(len == 0)
     {
-        m_msgHandler->errorMessage(token.m_endLine, "decimal digit expected");
+        m_msgHandler->error(token.m_endLine, "decimal digit expected");
         return RT_ERROR;
     }
 
@@ -1580,7 +1580,7 @@ acLexer::acReturnType acLexer::strToDecimal(acToken &token, acCharVector &str)
             token.m_integerValue += ((*ptr) - '0');
             break;
         default:
-            m_msgHandler->errorMessage(token.m_endLine, "decimal digit expected, not '%c'", *ptr);
+            m_msgHandler->error(token.m_endLine, "decimal digit expected, not '%c'", *ptr);
             return RT_ERROR;
         }
     }
@@ -1595,7 +1595,7 @@ acLexer::acReturnType acLexer::strToHexadecimal(acToken &token, acCharVector &st
     size_t len = str.size();
     if(len == 0)
     {
-        m_msgHandler->errorMessage(token.m_endLine, "hexadecimal digit expected");
+        m_msgHandler->error(token.m_endLine, "hexadecimal digit expected");
         return RT_ERROR;
     }
 
@@ -1605,7 +1605,7 @@ acLexer::acReturnType acLexer::strToHexadecimal(acToken &token, acCharVector &st
         acChar ch = *ptr;
         if(toHex(ch, 0, false) != RT_OK)
         {
-            m_msgHandler->errorMessage(token.m_endLine, "hexadecimal digit expected, not '%c'", ch);
+            m_msgHandler->error(token.m_endLine, "hexadecimal digit expected, not '%c'", ch);
             return RT_ERROR;
         }
         token.m_integerValue *= 16;
@@ -1631,7 +1631,7 @@ int acLexer::decodeUTF8(acDchar &dch, acToken &token, acChar *buf, acChar *buffe
     if(len == 0)
     {
         token.m_end = buf;
-        m_msgHandler->errorMessage(token.m_endLine, "invalid UTF-8 sequence");
+        m_msgHandler->error(token.m_endLine, "invalid UTF-8 sequence");
         return -1;
     }
 
@@ -1674,7 +1674,7 @@ acLexer::acReturnType acLexer::decodeEscapeSequence(acDchar *dch, acToken &token
     if(buf == bufferEnd || (ch=*buf) == 0x00 || ch == 0x1A)
     {
         token.m_end = buf;
-        m_msgHandler->errorMessage(token.m_endLine, "escape sequence expected, not 'EOF'");
+        m_msgHandler->error(token.m_endLine, "escape sequence expected, not 'EOF'");
         return RT_ERROR;
     }
 
@@ -1690,7 +1690,7 @@ acLexer::acReturnType acLexer::decodeEscapeSequence(acDchar *dch, acToken &token
     case 0x0D:
     case 0x0A:
         token.m_end = buf - 1;
-        m_msgHandler->errorMessage(token.m_endLine, "escape sequence expected, not 'EOL'");
+        m_msgHandler->error(token.m_endLine, "escape sequence expected, not 'EOL'");
         return RT_ERROR;
 
     case '\'':
@@ -1743,7 +1743,7 @@ acLexer::acReturnType acLexer::decodeEscapeSequence(acDchar *dch, acToken &token
                 else
                 {
                     token.m_end = buf;
-                    m_msgHandler->errorMessage(token.m_endLine, "hex character expected, not 'EOF'");
+                    m_msgHandler->error(token.m_endLine, "hex character expected, not 'EOF'");
                     return RT_ERROR;
                 }
             }
@@ -1767,7 +1767,7 @@ acLexer::acReturnType acLexer::decodeEscapeSequence(acDchar *dch, acToken &token
                 else
                 {
                     token.m_end = buf;
-                    m_msgHandler->errorMessage(token.m_endLine, "hex character expected, not 'EOF'");
+                    m_msgHandler->error(token.m_endLine, "hex character expected, not 'EOF'");
                     return RT_ERROR;
                 }
             }
@@ -1792,7 +1792,7 @@ acLexer::acReturnType acLexer::decodeEscapeSequence(acDchar *dch, acToken &token
                 else
                 {
                     token.m_end = buf;
-                    m_msgHandler->errorMessage(token.m_endLine, "hex character expected, not 'EOF'");
+                    m_msgHandler->error(token.m_endLine, "hex character expected, not 'EOF'");
                     return RT_ERROR;
                 }
             }
@@ -1820,7 +1820,7 @@ acLexer::acReturnType acLexer::decodeEscapeSequence(acDchar *dch, acToken &token
         else
         {
             token.m_end = buf;
-            m_msgHandler->errorMessage(token.m_endLine, "undefined escape sequence \\%c", ch);
+            m_msgHandler->error(token.m_endLine, "undefined escape sequence \\%c", ch);
             return RT_ERROR;
         }
         break;
@@ -1836,11 +1836,11 @@ acLexer::acReturnType acLexer::toHex(acChar &ch, int line, bool showError)
     switch(ch)
     {
     case 0: case 0x1A:
-        if(showError) m_msgHandler->errorMessage(line, "hex character expected, not 'EOF'");
+        if(showError) m_msgHandler->error(line, "hex character expected, not 'EOF'");
         return RT_ERROR2;
 
     case 0x0D: case 0x0A:
-        if(showError) m_msgHandler->errorMessage(line, "hex character expected, not 'EOL'");
+        if(showError) m_msgHandler->error(line, "hex character expected, not 'EOL'");
         return RT_ERROR2;
 
     case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
@@ -1857,7 +1857,7 @@ acLexer::acReturnType acLexer::toHex(acChar &ch, int line, bool showError)
         break;
 
     default:
-        if(showError) m_msgHandler->errorMessage(line, "non-hex character '%c'", ch);
+        if(showError) m_msgHandler->error(line, "non-hex character '%c'", ch);
         return RT_ERROR;
     }
     return RT_OK;

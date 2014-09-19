@@ -12,8 +12,8 @@ extern int yyparse(void* YYPARSE_PARAM);
 
 #define PARSER ((acParser*)parser)
 
-//#define yyerror(MSG) PARSER->getMsgHandler()->errorMessage(PARSER->getCurrentToken(), MSG)
-#define yyerror(MSG) PARSER->getMsgHandler()->errorMessage(yylval.token, MSG)
+//#define yyerror(MSG) PARSER->getMsgHandler()->error(PARSER->getCurrentToken(), MSG)
+#define yyerror(MSG) PARSER->getMsgHandler()->error(yylval.token, MSG)
 //int yyerror(const char *s) { std::printf("Error: %s\n", s); return 1; }
 
 %}
@@ -235,7 +235,6 @@ postfix_expr:
     ;
 
 unary_op:
-    //TOK_AND
       TOK_PLUS
     | TOK_MINUS
     | TOK_CAT
@@ -362,9 +361,21 @@ string:
     ;
 
 keyvalue:
-      TOK_IDENTIFIER                                        { $$ = new KeyValueAST($1.getRawString(), NULL); PARSER->addNodeAST($$); }
-    | TOK_IDENTIFIER TOK_ASSIGN inner_expr                  { $$ = new KeyValueAST($1.getRawString(), $3); PARSER->addNodeAST($$); }
-    | TOK_LBRACKET expr TOK_RBRACKET TOK_ASSIGN inner_expr  { $$ = new KeyValueAST($2, $5); PARSER->addNodeAST($$); }
+      TOK_IDENTIFIER
+        {
+            $$ = new KeyValueAST($1.getRawString(), NULL);
+            PARSER->addNodeAST($$);
+        }
+    | TOK_IDENTIFIER TOK_ASSIGN inner_expr
+        {
+            $$ = new KeyValueAST($1.getRawString(), $3);
+            PARSER->addNodeAST($$);
+        }
+    | TOK_LBRACKET expr TOK_RBRACKET TOK_ASSIGN inner_expr
+        {
+            $$ = new KeyValueAST($2, $5);
+            PARSER->addNodeAST($$);
+        }
     | func_decl
         {
             GetVarAST* gv = $1->m_nameExpr;
@@ -377,7 +388,11 @@ keyvalue:
             PARSER->addNodeAST($$);
         }
     //json format
-    | string TOK_COLON inner_expr   { $$ = new KeyValueAST(((StringAST*)$1)->m_val, $3); PARSER->addNodeAST($$); }
+    | string TOK_COLON inner_expr
+        {
+            $$ = new KeyValueAST(((StringAST*)$1)->m_val, $3);
+            PARSER->addNodeAST($$);
+        }
     ;
 
 keyvalue_list:
@@ -436,6 +451,7 @@ getvar_postfix_expr:
       getvar_primary_expr                                   { $$ = $1; }
     | getvar_postfix_expr TOK_DOT TOK_IDENTIFIER            { $$ = new GetVarAST($1, $3.getRawString()); PARSER->addNodeAST($$); }
     | getvar_postfix_expr TOK_LBRACKET expr TOK_RBRACKET    { $$ = new GetVarAST($1, $3); PARSER->addNodeAST($$); }
+    ;
 
 var_decl:
       type_specifier getvar_postfix_expr                    
@@ -471,8 +487,18 @@ var_decl:
     ;
 
 func_decl_arglist:
-      TOK_IDENTIFIER                                            { $$ = new StringList(); PARSER->addNodeAST($$); $$->push_back($1.getRawString()); }
-    | type_specifier TOK_IDENTIFIER                             { $$ = new StringList(); PARSER->addNodeAST($$); $$->push_back($2.getRawString()); }
+      TOK_IDENTIFIER
+        {
+            $$ = new StringList();
+            PARSER->addNodeAST($$);
+            $$->push_back($1.getRawString());
+        }
+    | type_specifier TOK_IDENTIFIER
+        {
+            $$ = new StringList();
+            PARSER->addNodeAST($$);
+            $$->push_back($2.getRawString());
+        }
     | func_decl_arglist TOK_COMMA TOK_IDENTIFIER
         {
             $1->push_back($3.getRawString());
@@ -508,7 +534,8 @@ func_decl:
 
 local_func_decl:
       TOK_LOCAL func_decl   { $2->m_isLocal = true; $$ = $2; }
-
+    ;
+    
 anony_func_decl:
       TOK_FUNCTION TOK_LPAREN TOK_RPAREN block
         {
@@ -523,14 +550,21 @@ anony_func_decl:
     ;
 
 selection_stmt:
-      TOK_IF TOK_LPAREN expr TOK_RPAREN stmt TOK_ELSE stmt  { $$ = new IfElseAST($3, $5, $7); PARSER->addNodeAST($$); }
-    | TOK_IF TOK_LPAREN expr TOK_RPAREN stmt %prec IFX      { $$ = new IfElseAST($3, $5, NULL); PARSER->addNodeAST($$); }
+      TOK_IF TOK_LPAREN expr TOK_RPAREN stmt TOK_ELSE stmt
+        { $$ = new IfElseAST($3, $5, $7); PARSER->addNodeAST($$); }
+    | TOK_IF TOK_LPAREN expr TOK_RPAREN stmt %prec IFX
+        { $$ = new IfElseAST($3, $5, NULL); PARSER->addNodeAST($$); }
     | TOK_SWITCH TOK_LPAREN expr TOK_RPAREN TOK_LCURLY labeled_stmts TOK_RCURLY
         { $$ = new SwitchAST($3, $6); PARSER->addNodeAST($$); }
     ;
 
 labeled_stmts:
-      labeled_stmt                  { $$ = new NodeASTList(); PARSER->addNodeAST($$); $$->add_case_ast((CaseAST*)($1)); }
+      labeled_stmt
+        {
+            $$ = new NodeASTList();
+            PARSER->addNodeAST($$);
+            $$->add_case_ast((CaseAST*)($1));
+        }
     | labeled_stmts labeled_stmt
         {
             $1->add_case_ast((CaseAST*)($2));

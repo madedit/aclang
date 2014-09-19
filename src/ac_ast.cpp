@@ -405,7 +405,7 @@ Value* codeGenVarDecl(IRBuilder<>& builder, GetVarAST* varExpr, bool isLocal, ac
     {
         if(varExpr->m_parentExpr != 0 || varExpr->m_scope != GetVarAST::NONE)
         {
-            cg->getMsgHandler()->errorMessage("Error: cannot declare a local variable with parent scope.");
+            cg->getMsgHandler()->error("Error: cannot declare a local variable with parent scope.");
             cg->setCompileError(true);
             return 0;
         }
@@ -491,7 +491,7 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
 {
     if(m_isLocal && (m_nameExpr->m_parentExpr != 0 || m_nameExpr->m_scope != GetVarAST::NONE))
     {
-        cg->getMsgHandler()->errorMessage("Error: cannot declare a local function with parent scope.");
+        cg->getMsgHandler()->error("Error: cannot declare a local function with parent scope.");
         cg->setCompileError(true);
         return 0;
     }
@@ -948,7 +948,7 @@ Value* AdditiveAST::codeGen(acCodeGenerator* cg)
 
 Value* ShiftAST::codeGen(acCodeGenerator* cg)
 {
-    cg->getMsgHandler()->errorMessage("Error: ShiftAST not implemented yet QQ");
+    cg->getMsgHandler()->error("Error: ShiftAST not implemented yet QQ");
     cg->setCompileError(true);
     return 0;
 }
@@ -1110,11 +1110,11 @@ Value* AssignmentAST::codeGen(acCodeGenerator* cg)
         builder.CreateCall4(cg->m_gf_opDivVar, val, val, rhs, cg->m_gv_vm);
         break;
     case TOK_ANDASS:
-        cg->getMsgHandler()->errorMessage("Error: TOK_ANDASS not implemented yet QQ");
+        cg->getMsgHandler()->error("Error: TOK_ANDASS not implemented yet QQ");
         cg->setCompileError(true);
         return 0;
     case TOK_ORASS:
-        cg->getMsgHandler()->errorMessage("Error: TOK_ORASS not implemented yet QQ");
+        cg->getMsgHandler()->error("Error: TOK_ORASS not implemented yet QQ");
         cg->setCompileError(true);
         return 0;
     case TOK_MINUSASS:
@@ -1124,15 +1124,15 @@ Value* AssignmentAST::codeGen(acCodeGenerator* cg)
         builder.CreateCall4(cg->m_gf_opAddVar, val, val, rhs, cg->m_gv_vm);
         break;
     case TOK_SHLASS:
-        cg->getMsgHandler()->errorMessage("Error: TOK_SHLASS not implemented yet QQ");
+        cg->getMsgHandler()->error("Error: TOK_SHLASS not implemented yet QQ");
         cg->setCompileError(true);
         return 0;
     case TOK_SHRASS:
-        cg->getMsgHandler()->errorMessage("Error: TOK_SHRASS not implemented yet QQ");
+        cg->getMsgHandler()->error("Error: TOK_SHRASS not implemented yet QQ");
         cg->setCompileError(true);
         return 0;
     case TOK_USHRASS:
-        cg->getMsgHandler()->errorMessage("Error: TOK_USHRASS not implemented yet QQ");
+        cg->getMsgHandler()->error("Error: TOK_USHRASS not implemented yet QQ");
         cg->setCompileError(true);
         return 0;
     case TOK_MULASS:
@@ -1142,11 +1142,11 @@ Value* AssignmentAST::codeGen(acCodeGenerator* cg)
         builder.CreateCall4(cg->m_gf_opModVar, val, val, rhs, cg->m_gv_vm);
         break;
     case TOK_XORASS:
-        cg->getMsgHandler()->errorMessage("Error: TOK_XORASS not implemented yet QQ");
+        cg->getMsgHandler()->error("Error: TOK_XORASS not implemented yet QQ");
         cg->setCompileError(true);
         return 0;
     case TOK_CATASS:
-        cg->getMsgHandler()->errorMessage("Error: TOK_CATASS not implemented yet QQ");
+        cg->getMsgHandler()->error("Error: TOK_CATASS not implemented yet QQ");
         cg->setCompileError(true);
         return 0;
     }
@@ -1347,7 +1347,7 @@ Value* BreakAST::codeGen(acCodeGenerator* cg)
 
     if(block == 0)
     {
-        cg->getMsgHandler()->errorMessage("Error: 'break' statement not in loop or switch statement");
+        cg->getMsgHandler()->error("Error: 'break' statement not in loop or switch statement");
         cg->setCompileError(true);
         return 0;
     }
@@ -1366,7 +1366,7 @@ Value* ContinueAST::codeGen(acCodeGenerator* cg)
 
     if(block == 0)
     {
-        cg->getMsgHandler()->errorMessage("Error: 'continue' statement not in loop statement");
+        cg->getMsgHandler()->error("Error: 'continue' statement not in loop statement");
         cg->setCompileError(true);
         return 0;
     }

@@ -63,7 +63,7 @@ void acCodeGenerator::generateCode()
 {
     if(m_programBlockAST == 0)
     {
-        m_vm->getMsgHandler()->errorMessage("ProgramBlock is NULL, ignore...\n");
+        m_vm->getMsgHandler()->error("ProgramBlock is NULL, ignore...\n");
         m_mainFunction = 0;
         return;
     }
@@ -73,7 +73,7 @@ void acCodeGenerator::generateCode()
     LLVMContext& context = m_vm->getLLVMContext();
     Module* module = m_vm->getModule();
 
-    //m_vm->getMsgHandler()->errorMessage("Generating code...\n");
+    //m_vm->getMsgHandler()->error("Generating code...\n");
     
     /* Create the top level interpreter function to call as entry */
     std::vector<Type*> argTypes;
@@ -162,7 +162,7 @@ void acCodeGenerator::generateCode()
 
     if(m_vm->getPrintIR())
     {
-        m_vm->getMsgHandler()->errorMessage(">>>LLVM IR<<<\n");
+        m_vm->getMsgHandler()->error(">>>LLVM IR<<<\n");
         PassManager pm;
         pm.add(createPrintModulePass(outs()));
         pm.run(*module);
@@ -174,18 +174,18 @@ GenericValue acCodeGenerator::runCode()
 {
     if(m_mainFunction != 0)
     {
-        //m_vm->getMsgHandler()->errorMessage("Running code...\n");
+        //m_vm->getMsgHandler()->error("Running code...\n");
         ExecutionEngine* ee = m_vm->getExecutionEngine();
         std::vector<GenericValue> noargs;
         GenericValue v = ee->runFunction(m_mainFunction, noargs);
         //printf("ret = %d\n", v.IntVal.getZExtValue());
         if(v.IntVal.getZExtValue() == 0)
         {
-            //m_msgHandler->errorMessage("Code was run.\n");
+            //m_msgHandler->error("Code was run.\n");
         }
         else
         {
-            m_msgHandler->errorMessage("Encounter error!\n");
+            m_msgHandler->error("Encounter error!\n");
         }
 
         m_rootArgArray->m_data.clear();

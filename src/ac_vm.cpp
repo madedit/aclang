@@ -16,7 +16,7 @@ using namespace llvm;
 void llvm_fatal_error_handler(void *user_data, const std::string &reason, bool gen_crash_diag)
 {
     acVM* vm = (acVM*)user_data;
-    vm->getMsgHandler()->errorMessage("LLVM fatal error: %d\n", reason.c_str());
+    vm->getMsgHandler()->error("LLVM fatal error: %d\n", reason.c_str());
 }
 
 
@@ -44,7 +44,7 @@ acVM::acVM()
     m_executionEngine = factory.create();
     if(m_executionEngine == NULL)
     {
-        m_msgHandler.errorMessage("Could not create ExecutionEngine: %s\n", errStr.c_str());
+        m_msgHandler.error("Could not create ExecutionEngine: %s\n", errStr.c_str());
         m_initOkay = false;
     }
 
@@ -64,7 +64,7 @@ acVM::~acVM()
 void acVM::runtimeError(const std::string& errMsg)
 {
     m_isRuntimeError = true;
-    m_msgHandler.errorMessage(errMsg.c_str());
+    m_msgHandler.error(errMsg.c_str());
     longjmp(*m_codeGenerator->getErrorJmpBuf(), 1);
 }
 
