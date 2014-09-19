@@ -11,6 +11,7 @@ public:
     acMsgHandler()
     {
         m_filename.clear();
+        registerPrintMsg(printMsg);
     }
 
     void setFileName(const char* filename);
@@ -21,12 +22,16 @@ public:
     void error(const char *format, ...);
     void warning(const char *format, ...);
     void info(const char *format, ...);
+    void output(const char *format, ...);
 
     enum MessageLevel
     {
+        //compile-time & run-time message
         ERROR,
         WARNING,
-        INFO
+        INFO,
+        //program output, e.g. print()
+        OUTPUT,
     };
     typedef void(*PrintMsg)(int level, const char *msg);
     void registerPrintMsg(PrintMsg func);
@@ -34,7 +39,7 @@ public:
 protected:
     PrintMsg m_printMsgFunc;
     std::string m_filename;
-
+    static void printMsg(int level, const char *msg);
 };
 
 

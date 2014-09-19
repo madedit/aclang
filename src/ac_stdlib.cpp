@@ -52,7 +52,7 @@ void ac_stdlib_print(acVariable* thisVar, acArray* args, acVariable* retVar, acV
             str += s;
         }
     }
-    std::cout << str << std::endl;
+    vm->getMsgHandler()->output("%s\n", str.c_str());
 }
 
 void ac_stdlib_tobool(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
