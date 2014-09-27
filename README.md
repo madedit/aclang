@@ -6,6 +6,8 @@ A simple C-like dynamic Language
 Language Syntax
 ===============
 
+```javascript
+
     function fib(n)
     {
         local a = 1;
@@ -60,6 +62,7 @@ Language Syntax
     ]
     };
     print(json.phoneNumbers[0].number);
+```
 
 Feature
 =======
@@ -95,6 +98,8 @@ Todo
 
 **bindfunc** feature. You can bind function to any variable. Sample code as below:
 
+```javascript
+
     //operator overload    
     var t1 = { i = 10 }, t2 = { i = 20 };
     bindfunc( t1, "_add", function(a, b) { return a.i + b.i; } )
@@ -105,7 +110,7 @@ Todo
     bindfunc( str, "encode", function(encoding) { return this; } );
     bindfunc( str, "decode", function(encoding) { return this; } );
     str.decode("utf8").encode("big5");
-
+```
 License
 ======
 MIT License
