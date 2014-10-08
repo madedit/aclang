@@ -70,37 +70,43 @@ void acVariable::assignFrom(acVariable* v)
     m_gcColor = acGarbageCollector::GC_BLACK;//avoid to be gc
 }
 
-acVariable* acVariable::getBindFunc(char* name)
+acVariable* acVariable::getBindFunc(acOperatorFunc func)
 {
-    if(m_bindFuncTable == 0) return 0;
-    return m_bindFuncTable->get(name);
+    if(m_funcBinder == 0) return 0;
+    return m_funcBinder->m_funcArray[func];
+}
+
+acVariable* acVariable::getBindFunc(const char* name)
+{
+    if(m_funcBinder == 0) return 0;
+    return m_funcBinder->m_funcTable->get(name);
 }
 
 acVariable* acVariable::getBindFunc(acVariable* key)
 {
-    if(m_bindFuncTable == 0) return 0;
-    return m_bindFuncTable->get(key);
+    if(m_funcBinder == 0) return 0;
+    return m_funcBinder->m_funcTable->get(key);
 }
 
 void acVariable::setBindFunc(char* name, acVariable* func)
 {
-    if(!m_bftHasWritten)
-    {
+    //if(!m_bftHasWritten)
+    //{
         //clone bindFuncTable
 
-        m_bftHasWritten = true;
-    }
+    //    m_bftHasWritten = true;
+    //}
 
 }
 
 void acVariable::setBindFunc(acVariable* key, acVariable* func)
 {
-    if(!m_bftHasWritten)
-    {
+    //if(!m_bftHasWritten)
+    //{
         //clone bindFuncTable
 
-        m_bftHasWritten = true;
-    }
+    //    m_bftHasWritten = true;
+    //}
 }
 
 int acVariable::compare(acVariable* v, acVM* vm)

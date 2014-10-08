@@ -522,13 +522,9 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 {
     acVariable* value = 0;
 
-    if(isFuncCall && parent->m_bindFuncTable != 0 && key->m_valueType == acVT_STRING)
+    if(isFuncCall && (value = parent->getBindFunc(key)) != 0)
     {
-        value = parent->m_bindFuncTable->get(key);
-        if(value != 0)
-        {
-            return value;
-        }
+        return value;
     }
 
     if(parent->m_valueType == acVT_ARRAY)
@@ -679,13 +675,9 @@ void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncC
 {
     acVariable* value = 0;
 
-    if(isFuncCall && parent->m_bindFuncTable != 0)
+    if(isFuncCall && (value = parent->getBindFunc(name)) != 0)
     {
-        value = parent->m_bindFuncTable->get(name);
-        if(value != 0)
-        {
-            return value;
-        }
+        return value;
     }
 
     if(parent->m_valueType != acVT_TABLE)

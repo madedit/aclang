@@ -78,6 +78,7 @@ private:
     void addChildrenToGrayList(acTable* table);
     void addChildrenToGrayList(acFunction* func);
     void addChildrenToGrayList(acDelegate* dele);
+    void addChildrenToGrayList(acFuncBinder* fb);
     void addChildrenToGrayList(acUserFunc* uf);
 };
 

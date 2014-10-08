@@ -17,6 +17,7 @@ struct acString;
 struct acArray;
 struct acTable;
 struct acFunction;
+struct acFuncBinder;
 
 enum acVarType
 {
@@ -34,6 +35,7 @@ enum acVarType
     acVT_TABLE,
     acVT_FUNCTION,
     acVT_DELEGATE,
+    acVT_FUNCBINDER,
     //user data
     acVT_USERDATA,
     acVT_USERFUNC
@@ -51,7 +53,6 @@ enum acBaseFunc
     acBF_MAX
 };
 
-/*
 enum acOperatorFunc
 {
     acOF_ADD,// +
@@ -61,7 +62,6 @@ enum acOperatorFunc
     acOF_MOD,// %
     acOF_MAX,
 };
-*/
 
 #pragma pack(1)
 struct acGCObject
@@ -96,10 +96,8 @@ struct acVariable : acGCObject
 
     acHashValue m_hash;
     void**      m_baseFuncPtrs;
-    //acVariable* m_OperatorFuncs;
 
-    acTable*    m_bindFuncTable;
-    bool m_bftHasWritten;//copy-on-write
+    acFuncBinder* m_funcBinder;
 
     acVariable()
     {
@@ -118,6 +116,7 @@ struct acVariable : acGCObject
         m_int64 = 0;
         m_int32 = v;
         setBaseFuncPtrs(this);
+        m_funcBinder = 0;
     }
     void setValue(acInt32 v)
     {
@@ -125,12 +124,14 @@ struct acVariable : acGCObject
         m_int64 = 0;
         m_int32 = v;
         setBaseFuncPtrs(this);
+        m_funcBinder = 0;
     }
     void setValue(acInt64 v)
     {
         m_valueType = acVT_INT64;
         m_int64 = v;
         setBaseFuncPtrs(this);
+        m_funcBinder = 0;
     }
     void setValue(acFloat v)
     {
@@ -138,12 +139,14 @@ struct acVariable : acGCObject
         m_int64 = 0;
         m_float = v;
         setBaseFuncPtrs(this);
+        m_funcBinder = 0;
     }
     void setValue(acDouble v)
     {
         m_valueType = acVT_DOUBLE;
         m_double = v;
         setBaseFuncPtrs(this);
+        m_funcBinder = 0;
     }
     void setValue(acVariable* v)
     {
@@ -154,11 +157,13 @@ struct acVariable : acGCObject
         m_valueType = v->m_objType;
         m_gcobj = v;
         setBaseFuncPtrs(this);
+        m_funcBinder = 0;
     }
     void setValue(const char* str, acVM* vm);
     
     void assignFrom(acVariable* v);
-    acVariable* getBindFunc(char* name);
+    acVariable* getBindFunc(acOperatorFunc func);
+    acVariable* getBindFunc(const char* name);
     acVariable* getBindFunc(acVariable* key);
     void setBindFunc(char* name, acVariable* func);
     void setBindFunc(acVariable* key, acVariable* func);
@@ -396,6 +401,22 @@ struct acUserFunc : acGCObject
         , m_funcPtr(0)
     {
     }
+};
+
+
+struct acFuncBinder : acGCObject
+{
+    acTable* m_funcTable;
+    acVariable* m_funcArray[acOF_MAX];//function or userfunc
+
+    acFuncBinder()
+        : acGCObject(acVT_FUNCBINDER)
+        , m_funcTable(0)
+    {
+        memset(m_funcArray, 0, sizeof(m_funcArray));
+    }
+
+
 };
 
 std::string getVarTypeStr(acVarType vt);
