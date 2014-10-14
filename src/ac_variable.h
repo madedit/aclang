@@ -55,11 +55,12 @@ enum acBaseFunc
 
 enum acOperatorFunc
 {
-    acOF_ADD,// +
-    acOF_SUB,// -
-    acOF_MUL,// *
-    acOF_DIV,// /
-    acOF_MOD,// %
+    acOF_NEW,// new "_new"
+    acOF_ADD,// + "_add"
+    acOF_SUB,// - "_sub"
+    acOF_MUL,// * "_mul"
+    acOF_DIV,// / "_div"
+    acOF_MOD,// % "_mod"
     acOF_MAX,
 };
 

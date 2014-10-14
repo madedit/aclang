@@ -846,20 +846,34 @@ void opAssignVar_str(acVariable* v1, char* v2, acVM* vm)
     v1->setValue(s);
 }
 
+void callOpFunc(acVariable* func, acVariable* ret, acVariable* thisVar, acVariable* v1, acVariable* v2, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    acArray* args = (acArray*)gc->createObject(acVT_ARRAY);
+    gc->addTempObj(args);
+    args->add(v1);
+    args->add(v2);
+    callFunction(func, thisVar, args, vm);
+    ret->setValue(args->get(0));
+    gc->removeTempObj(args);
+}
+
 //ret = v1 + v2
 void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
-    //operator _add
-    acVariable* fadd = v1->getBindFunc("_add");
+    //operator "_add"
+    acVariable* fadd = v1->getBindFunc(acOF_ADD);
     if(fadd != 0)
     {
+        callOpFunc(fadd, ret, v1, v1, v2, vm);
         return;
     }
     else
     {
-        fadd = v2->getBindFunc("_add");
+        fadd = v2->getBindFunc(acOF_ADD);
         if(fadd != 0)
         {
+            callOpFunc(fadd, ret, v2, v1, v2, vm);
             return;
         }
     }

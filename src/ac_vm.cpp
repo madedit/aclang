@@ -93,6 +93,7 @@ bool acVM::runCode(const char* code, bool runGCFinally)
 {
     m_isRuntimeError = false;
     m_codeGenerator->setCompileError(false);
+    m_gc.clearTempObj();
 
     if(m_parser->setCode(code) == 0)
         return false;

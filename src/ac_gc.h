@@ -35,6 +35,7 @@ private:
     acVM* m_vm;
     CollectionState m_state;
     std::list<acGCObject*> m_rootList;
+    std::list<acGCObject*> m_tempList;//store temp variables to avoid being GCed
     std::list<acGCObject*> m_objectList;
     std::list<acGCObject*>::iterator m_sweepIter, m_sweepLastIter;
     std::set<acGCObject*> m_grayList;
@@ -54,7 +55,12 @@ public:
     acVariable* createVarWithData(acInt32 data);
 
     acVM* getVM() { return m_vm; }
+
     void addRootObj(acGCObject* obj) { m_rootList.push_back(obj); }
+    void addTempObj(acGCObject* obj) { m_tempList.push_back(obj); }
+    void removeTempObj(acGCObject* obj) { m_tempList.remove(obj); }
+    void clearTempObj() { m_tempList.clear(); }
+
     void incrementalGC(clock_t clocks);//run incremental gc
     void completeGC();//run one complete gc
     CollectionState getGCState() { return m_state; }
@@ -68,6 +74,7 @@ public:
 
 private:    
     void initGCColor(acGCObject* obj);
+    void addToGrayList(std::list<acGCObject*>& list);
     bool gcInit();
     bool gcMark(clock_t clocks);
     bool gcSweep(clock_t clocks);

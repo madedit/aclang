@@ -932,6 +932,7 @@ void uf_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* 
 
     //ret var = null
     acVariable* retVar = (acVariable*)gc->createObject(acVT_NULL);
+    gc->addTempObj(retVar);
 
     acUserFunc* uf = (acUserFunc*)var->m_gcobj;
 
@@ -948,6 +949,7 @@ void uf_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* 
     {
         argArray->add(retVar);
     }
+    gc->removeTempObj(retVar);
 }
 
 //======================================

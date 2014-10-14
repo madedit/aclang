@@ -154,13 +154,11 @@ void acGarbageCollector::initGCColor(acGCObject* obj)
     }
 }
 
-bool acGarbageCollector::gcInit()
+void acGarbageCollector::addToGrayList(std::list<acGCObject*>& list)
 {
-    if(m_objectList.size() == 0) return false;
-
-    //all objects are white, add children in roottable to grayList
-    std::list<acGCObject*>::iterator it = m_rootList.begin();
-    while(it != m_rootList.end())
+    std::list<acGCObject*>::iterator it = list.begin();
+    std::list<acGCObject*>::iterator itEnd = list.end();
+    while(it != itEnd)
     {
         acGCObject* obj = *it;
         obj->m_gcColor = GC_BLACK;
@@ -190,6 +188,15 @@ bool acGarbageCollector::gcInit()
         }
         ++it;
     }
+}
+
+bool acGarbageCollector::gcInit()
+{
+    if(m_objectList.size() == 0) return false;
+
+    //all objects are white, add children in roottable to grayList
+    addToGrayList(m_rootList);
+    addToGrayList(m_tempList);
 
     m_sweepIter = m_objectList.begin();
     m_sweepLastIter = m_objectList.end();
