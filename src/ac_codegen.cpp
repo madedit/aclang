@@ -862,18 +862,18 @@ void callOpFunc(acVariable* func, acVariable* ret, acVariable* thisVar, acVariab
 void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
     //operator "_add"
-    acVariable* fadd = v1->getBindFunc(acOF_ADD);
-    if(fadd != 0)
+    acVariable* func = v1->getBindFunc(acOF_ADD);
+    if(func != 0)
     {
-        callOpFunc(fadd, ret, v1, v1, v2, vm);
+        callOpFunc(func, ret, v1, v1, v2, vm);
         return;
     }
     else
     {
-        fadd = v2->getBindFunc(acOF_ADD);
-        if(fadd != 0)
+        func = v2->getBindFunc(acOF_ADD);
+        if(func != 0)
         {
-            callOpFunc(fadd, ret, v2, v1, v2, vm);
+            callOpFunc(func, ret, v2, v1, v2, vm);
             return;
         }
     }
@@ -946,6 +946,23 @@ void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 //ret = v1 - v2
 void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
+    //operator "_sub"
+    acVariable* func = v1->getBindFunc(acOF_SUB);
+    if(func != 0)
+    {
+        callOpFunc(func, ret, v1, v1, v2, vm);
+        return;
+    }
+    else
+    {
+        func = v2->getBindFunc(acOF_SUB);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
+    }
+
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1004,6 +1021,23 @@ void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 //ret = v1 * v2
 void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
+    //operator "_mul"
+    acVariable* func = v1->getBindFunc(acOF_MUL);
+    if(func != 0)
+    {
+        callOpFunc(func, ret, v1, v1, v2, vm);
+        return;
+    }
+    else
+    {
+        func = v2->getBindFunc(acOF_MUL);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
+    }
+
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1062,6 +1096,23 @@ void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 //ret = v1 / v2
 void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
+    //operator "_div"
+    acVariable* func = v1->getBindFunc(acOF_DIV);
+    if(func != 0)
+    {
+        callOpFunc(func, ret, v1, v1, v2, vm);
+        return;
+    }
+    else
+    {
+        func = v2->getBindFunc(acOF_DIV);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
+    }
+
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1120,6 +1171,23 @@ void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 //ret = v1 % v2
 void opModVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
+    //operator "_mod"
+    acVariable* func = v1->getBindFunc(acOF_MOD);
+    if(func != 0)
+    {
+        callOpFunc(func, ret, v1, v1, v2, vm);
+        return;
+    }
+    else
+    {
+        func = v2->getBindFunc(acOF_MOD);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
+    }
+
     switch(v1->m_valueType)
     {
     case acVT_INT32:

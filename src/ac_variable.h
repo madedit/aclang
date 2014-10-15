@@ -163,11 +163,13 @@ struct acVariable : acGCObject
     void setValue(const char* str, acVM* vm);
     
     void assignFrom(acVariable* v);
+
+    void bindFunc(char* name, acVariable* func);
+    void bindFunc(acVariable* key, acVariable* func, acVM* vm);
+    void bindFunc(acTable* table, acVM* vm);
     acVariable* getBindFunc(acOperatorFunc func);
     acVariable* getBindFunc(const char* name);
     acVariable* getBindFunc(acVariable* key);
-    void setBindFunc(char* name, acVariable* func);
-    void setBindFunc(acVariable* key, acVariable* func);
 
     acHashValue& getHash();
     static void getHash(int value, acHashValue& hash);
@@ -186,7 +188,6 @@ struct acVariable : acGCObject
     acArray* toArray() { return (acArray*)m_gcobj; }
 };
 #pragma pack()
-
 
 struct acString : acGCObject
 {
@@ -417,7 +418,11 @@ struct acFuncBinder : acGCObject
         memset(m_funcArray, 0, sizeof(m_funcArray));
     }
 
+    void cloneTo(acFuncBinder* dest);
+    void bindFunc(acVariable* key, acVariable* func);
+    void bindFunc(acTable* table);
 
+    acOperatorFunc getOpFunc(acVariable* var);
 };
 
 std::string getVarTypeStr(acVarType vt);

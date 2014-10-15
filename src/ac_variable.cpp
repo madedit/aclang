@@ -70,6 +70,28 @@ void acVariable::assignFrom(acVariable* v)
     m_gcColor = acGarbageCollector::GC_BLACK;//avoid to be gc
 }
 
+void acVariable::bindFunc(char* name, acVariable* func)
+{
+
+}
+
+void acVariable::bindFunc(acVariable* key, acVariable* func, acVM* vm)
+{
+    acFuncBinder* oldFB = m_funcBinder;
+    m_funcBinder = (acFuncBinder*)vm->getGarbageCollector()->createObject(acVT_FUNCBINDER);
+    if(oldFB != 0)
+    {
+        oldFB->cloneTo(m_funcBinder);
+    }
+    m_funcBinder->bindFunc(key, func);
+}
+
+void acVariable::bindFunc(acTable* table, acVM* vm)
+{
+    m_funcBinder = (acFuncBinder*)vm->getGarbageCollector()->createObject(acVT_FUNCBINDER);
+    m_funcBinder->bindFunc(table);
+}
+
 acVariable* acVariable::getBindFunc(acOperatorFunc func)
 {
     if(m_funcBinder == 0) return 0;
@@ -86,27 +108,6 @@ acVariable* acVariable::getBindFunc(acVariable* key)
 {
     if(m_funcBinder == 0) return 0;
     return m_funcBinder->m_funcTable->get(key);
-}
-
-void acVariable::setBindFunc(char* name, acVariable* func)
-{
-    //if(!m_bftHasWritten)
-    //{
-        //clone bindFuncTable
-
-    //    m_bftHasWritten = true;
-    //}
-
-}
-
-void acVariable::setBindFunc(acVariable* key, acVariable* func)
-{
-    //if(!m_bftHasWritten)
-    //{
-        //clone bindFuncTable
-
-    //    m_bftHasWritten = true;
-    //}
 }
 
 int acVariable::compare(acVariable* v, acVM* vm)
@@ -432,6 +433,79 @@ void acTable::add(int key, int value, acVM* vm)
     acVariable* keyVar = gc->createVarWithData(key);
     acVariable* valVar = gc->createVarWithData(value);
     add(keyVar, valVar);
+}
+
+//======================================
+void acFuncBinder::cloneTo(acFuncBinder* dest)
+{
+    m_funcTable->copyTo(dest->m_funcTable);
+    memcpy(dest->m_funcArray, m_funcArray, sizeof(m_funcArray));
+}
+
+void acFuncBinder::bindFunc(acVariable* key, acVariable* func)
+{
+    //add
+    if(func->m_valueType == acVT_FUNCTION || func->m_valueType == acVT_USERFUNC)
+    {
+        m_funcTable->add(key, func);
+        acOperatorFunc opfunc = getOpFunc(key);
+        if(opfunc < acOF_MAX)
+        {
+            m_funcArray[opfunc] = func;
+        }
+    }
+    else//remove
+    {
+        acOperatorFunc opfunc = getOpFunc(key);
+        if(opfunc < acOF_MAX)
+        {
+            m_funcArray[opfunc] = 0;
+        }
+    }
+}
+
+void acFuncBinder::bindFunc(acTable* table)
+{
+    table->copyTo(m_funcTable);
+    memset(m_funcArray, 0, sizeof(m_funcArray));
+
+    acTable::DataIterator it = m_funcTable->m_data.begin();
+    acTable::DataIterator itEnd = m_funcTable->m_data.end();
+    while(it != itEnd)
+    {
+        acTable::KeyValue& kv = it->second;
+        acOperatorFunc opfunc = getOpFunc(kv.key);
+        if(opfunc < acOF_MAX)
+        {
+            switch(kv.value->m_valueType)
+            {
+            case acVT_FUNCTION:
+            case acVT_USERFUNC:
+                m_funcArray[opfunc] = kv.value;
+                break;
+            }
+        }
+        ++it;
+    }
+}
+
+acOperatorFunc acFuncBinder::getOpFunc(acVariable* var)
+{
+    if(var->m_valueType == acVT_STRING)
+    {
+        acString* str = (acString*)var->m_gcobj;
+        std::string& s = str->m_data;
+        if(s.length() > 0 && s[0] == '_')
+        {
+            if(s == "_new") return acOF_NEW;
+            if(s == "_add") return acOF_ADD;
+            if(s == "_sub") return acOF_SUB;
+            if(s == "_mul") return acOF_MUL;
+            if(s == "_div") return acOF_DIV;
+            if(s == "_mod") return acOF_MOD;
+        }
+    }
+    return acOF_MAX;
 }
 
 //======================================

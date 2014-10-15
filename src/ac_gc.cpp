@@ -44,7 +44,11 @@ acGCObject* acGarbageCollector::createObject(acVarType type)
         obj = new acDelegate();
         break;
     case acVT_FUNCBINDER:
-        obj = new acFuncBinder();
+        {
+            acFuncBinder* fb = new acFuncBinder();
+            fb->m_funcTable = (acTable*)createObject(acVT_TABLE);
+            obj = fb;
+        }
         break;
 
     case acVT_USERDATA:
