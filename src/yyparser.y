@@ -4,19 +4,18 @@
 #include "ac_token.h"
 #include "ac_parser.h"
 
-#define YYLEX_PARAM parser
-#define YYPARSE_PARAM parser
-
-extern int yylex(YYSTYPE* yylval, void* YYLEX_PARAM);
-extern int yyparse(void* YYPARSE_PARAM);
+extern int yylex(YYSTYPE* yylval, void* parser);
+extern int yyparse(void* parser);
 
 #define PARSER ((acParser*)parser)
 
-//#define yyerror(MSG) PARSER->getMsgHandler()->error(PARSER->getCurrentToken(), MSG)
-#define yyerror(MSG) PARSER->getMsgHandler()->error(yylval.token, MSG)
+#define yyerror(P, MSG) ((acParser*)P)->getMsgHandler()->error(yylval.token, MSG)
 //int yyerror(const char *s) { std::printf("Error: %s\n", s); return 1; }
 
 %}
+
+%lex-param   {void* parser}
+%parse-param   {void* parser}
 
 %define api.pure full
 %debug
@@ -381,7 +380,7 @@ keyvalue:
             GetVarAST* gv = $1->m_nameExpr;
             if(gv->m_keyIdentifier.empty() || gv->m_parentExpr != 0 || gv->m_keyExpr != 0)
             {
-                yyerror("invalid function name in table, must be a string");
+                yyerror(parser, "invalid function name in table, must be a string");
                 YYABORT;
             }
             $$ = new KeyValueAST(gv->m_keyIdentifier, $1);
@@ -504,7 +503,7 @@ func_decl_arglist:
             $1->push_back($3.getRawString());
             if($1->m_hasDuplicateStr)
             {
-                yyerror("argument name is duplicate");
+                yyerror(parser, "argument name is duplicate");
                 YYABORT;
             }
         }
@@ -513,7 +512,7 @@ func_decl_arglist:
             $1->push_back($4.getRawString());
             if($1->m_hasDuplicateStr)
             {
-                yyerror("argument name is duplicate");
+                yyerror(parser, "argument name is duplicate");
                 YYABORT;
             }
         }
@@ -570,7 +569,7 @@ labeled_stmts:
             $1->add_case_ast((CaseAST*)($2));
             if($1->m_hasMultipleDefaultStmt)
             {
-                yyerror("multiple default labels in one switch");
+                yyerror(parser, "multiple default labels in one switch");
                 YYABORT;
             }
         }
@@ -607,7 +606,7 @@ foreach_stmt:
         {
             if($3->m_type != NodeAST::tGetVarAST)
             {
-                yyerror("for-each expression is illegal");
+                yyerror(parser, "for-each expression is illegal");
                 YYABORT;
             }
             $$ = new ForeachAST(0, NULL, (GetVarAST*)$3, $5, $7);
@@ -617,7 +616,7 @@ foreach_stmt:
         {
             if($3->m_type != NodeAST::tGetVarAST)
             {
-                yyerror("for-each expression is illegal");
+                yyerror(parser, "for-each expression is illegal");
                 YYABORT;
             }
             $$ = new ForeachAST(0, (GetVarAST*)$3, $5, $7, $9);
@@ -628,7 +627,7 @@ foreach_stmt:
             VariableDeclarationAST* node0 = (VariableDeclarationAST*)$3->m_nodeASTVec[0];
             if(node0->m_assignmentExpr != NULL)
             {
-                yyerror("for-each expression is illegal");
+                yyerror(parser, "for-each expression is illegal");
                 YYABORT;
             }
             GetVarAST* getvar0 = node0->m_varExpr;
@@ -640,7 +639,7 @@ foreach_stmt:
                 node1 = (VariableDeclarationAST*)$3->m_nodeASTVec[1];
                 if(node1->m_assignmentExpr != NULL)
                 {
-                    yyerror("for-each expression is illegal");
+                    yyerror(parser, "for-each expression is illegal");
                     YYABORT;
                 }
                 getvar1 = node1->m_varExpr;
