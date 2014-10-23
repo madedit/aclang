@@ -70,46 +70,6 @@ void acVariable::assignFrom(acVariable* v)
     m_gcColor = acGarbageCollector::GC_BLACK;//avoid to be gc
 }
 
-void acVariable::bindFunc(char* name, acVariable* func)
-{
-
-}
-
-void acVariable::bindFunc(acVariable* key, acVariable* func, acVM* vm)
-{
-    acFuncBinder* oldFB = m_funcBinder;
-    m_funcBinder = (acFuncBinder*)vm->getGarbageCollector()->createObject(acVT_FUNCBINDER);
-    if(oldFB != 0)
-    {
-        oldFB->cloneTo(m_funcBinder);
-    }
-    m_funcBinder->bindFunc(key, func);
-}
-
-void acVariable::bindFunc(acTable* table, acVM* vm)
-{
-    m_funcBinder = (acFuncBinder*)vm->getGarbageCollector()->createObject(acVT_FUNCBINDER);
-    m_funcBinder->bindFunc(table);
-}
-
-acVariable* acVariable::getBindFunc(acOperatorFunc func)
-{
-    if(m_funcBinder == 0) return 0;
-    return m_funcBinder->m_funcArray[func];
-}
-
-acVariable* acVariable::getBindFunc(const char* name)
-{
-    if(m_funcBinder == 0) return 0;
-    return m_funcBinder->m_funcTable->get(name);
-}
-
-acVariable* acVariable::getBindFunc(acVariable* key)
-{
-    if(m_funcBinder == 0) return 0;
-    return m_funcBinder->m_funcTable->get(key);
-}
-
 int acVariable::compare(acVariable* v, acVM* vm)
 {
     switch(m_valueType)
@@ -433,6 +393,46 @@ void acTable::add(int key, int value, acVM* vm)
     acVariable* keyVar = gc->createVarWithData(key);
     acVariable* valVar = gc->createVarWithData(value);
     add(keyVar, valVar);
+}
+
+void acTable::bindFunc(char* name, acVariable* func)
+{
+
+}
+
+void acTable::bindFunc(acVariable* key, acVariable* func, acVM* vm)
+{
+    acFuncBinder* oldFB = m_funcBinder;
+    m_funcBinder = (acFuncBinder*)vm->getGarbageCollector()->createObject(acVT_FUNCBINDER);
+    if(oldFB != 0)
+    {
+        oldFB->cloneTo(m_funcBinder);
+    }
+    m_funcBinder->bindFunc(key, func);
+}
+
+void acTable::bindFunc(acTable* table, acVM* vm)
+{
+    m_funcBinder = (acFuncBinder*)vm->getGarbageCollector()->createObject(acVT_FUNCBINDER);
+    m_funcBinder->bindFunc(table);
+}
+
+acVariable* acTable::getBindFunc(acOperatorFunc func)
+{
+    if(m_funcBinder == 0) return 0;
+    return m_funcBinder->m_funcArray[func];
+}
+
+acVariable* acTable::getBindFunc(const char* name)
+{
+    if(m_funcBinder == 0) return 0;
+    return m_funcBinder->m_funcTable->get(name);
+}
+
+acVariable* acTable::getBindFunc(acVariable* key)
+{
+    if(m_funcBinder == 0) return 0;
+    return m_funcBinder->m_funcTable->get(key);
 }
 
 //======================================

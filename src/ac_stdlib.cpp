@@ -103,6 +103,23 @@ void ac_stdlib_tostr(acVariable* thisVar, acArray* args, acVariable* retVar, acV
     retVar->setValue(toString(args->get(0), vm).c_str(), vm);
 }
 
+void ac_stdlib_bindfunc(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
+{
+    if(args->size() < 2)
+        vm->runtimeError("Error: bindfunc() must has two arguments");
+
+    acVariable* tab0 = args->get(0);
+    acVariable* tab1 = args->get(1);
+
+    if(tab0->m_valueType != acVT_TABLE)
+        vm->runtimeError("Error: bindfunc() args[0] must be a table");
+
+    if(tab1->m_valueType != acVT_TABLE)
+        vm->runtimeError("Error: bindfunc() args[1] must be a table");
+
+    tab0->toTable()->bindFunc(tab1->toTable(), vm);
+}
+
 void acStdLib::bindStdFunctions(acVM* vm)
 {
     vm->bindFunction("printAST", ac_stdlib_printAST);
@@ -117,4 +134,6 @@ void acStdLib::bindStdFunctions(acVM* vm)
     vm->bindFunction("tofloat",  ac_stdlib_tofloat);
     vm->bindFunction("todouble", ac_stdlib_todouble);
     vm->bindFunction("tostr",    ac_stdlib_tostr);
+
+    vm->bindFunction("bindfunc", ac_stdlib_bindfunc);
 }

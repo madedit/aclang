@@ -33,7 +33,7 @@ acVM::acVM()
     llvm::install_fatal_error_handler(&llvm_fatal_error_handler, this);
     InitializeNativeTarget();
 
-    std::string s = m_module->getTargetTriple();
+    //std::string s = m_module->getTargetTriple();
     //m_module->setTargetTriple("elf");
 
     std::string errStr;
@@ -65,6 +65,7 @@ void acVM::runtimeError(const std::string& errMsg)
 {
     m_isRuntimeError = true;
     m_msgHandler.error(errMsg.c_str());
+    m_gc.clearTempObj();
     longjmp(*m_codeGenerator->getErrorJmpBuf(), 1);
 }
 
@@ -75,10 +76,10 @@ extern "C"
 
 void acVM::bindFunction(const std::string& name, AC_FUNCTION func)
 {
-    acUserFunc* uf = (acUserFunc*)getGarbageCollector()->createObject(acVT_USERFUNC);
+    acUserFunc* uf = (acUserFunc*)m_gc.createObject(acVT_USERFUNC);
     uf->m_funcPtr = (void*)func;
 
-    acTable* rootTable = getCodeGenerator()->m_rootTable;
+    acTable* rootTable = m_codeGenerator->m_rootTable;
     acVariable* var = (acVariable*)addTableVar_str(rootTable, name.c_str(), this);
     var->setValue(uf);
 }
@@ -116,10 +117,11 @@ bool acVM::runCode(const char* code, bool runGCFinally)
     if(compileOk)
     {
         m_codeGenerator->generateCode();
+
         if(m_codeGenerator->isCompileError())
             compileOk = false;
-
-        m_codeGenerator->runCode();
+        else
+            m_codeGenerator->runCode();
     }
 
     m_parser->releaseNodeASTList();

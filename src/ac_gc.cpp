@@ -402,12 +402,6 @@ void acGarbageCollector::addChildrenToGrayList(acVariable* var)
     default:
         break;
     }
-
-    if(var->m_funcBinder != 0)
-    {
-        var->m_funcBinder->m_gcColor = GC_BLACK;
-        addChildrenToGrayList(var->m_funcBinder);
-    }
 }
 
 void acGarbageCollector::addChildrenToGrayList(acArray* array)
@@ -511,6 +505,12 @@ void acGarbageCollector::addChildrenToGrayList(acTable* table)
             break;
         }
         ++it;
+    }
+
+    if(table->m_funcBinder != 0)
+    {
+        table->m_funcBinder->m_gcColor = GC_BLACK;
+        addChildrenToGrayList(table->m_funcBinder);
     }
 }
 

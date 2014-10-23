@@ -520,13 +520,6 @@ void* createArray(acVariable* var, acVM* vm)
 //parent.key or parent[key]
 void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFuncCall, acVM* vm)
 {
-    acVariable* value = 0;
-
-    if(isFuncCall && (value = parent->getBindFunc(key)) != 0)
-    {
-        return value;
-    }
-
     if(parent->m_valueType == acVT_ARRAY)
     {
         int idx = 0;
@@ -591,9 +584,14 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
     }
 
     acTable* table = (acTable*)parent->m_gcobj;
-    value = table->get(key);
+    acVariable* value = table->get(key);
     if(value == 0)
     {
+        if(isFuncCall && (value = table->getBindFunc(key)) != 0)
+        {
+            return value;
+        }
+
         if(findInGlobal != 0)
         {
             acCodeGenerator* cg = vm->getCodeGenerator();
@@ -611,8 +609,6 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 }
 void* opGetVar_int(acVariable* parent, int idx, int findInGlobal, int isFuncCall, acVM* vm)
 {
-    acVariable* value = 0;
-
     if(parent->m_valueType == acVT_ARRAY)
     {
         acArray* arr = (acArray*)parent->m_gcobj;
@@ -651,7 +647,7 @@ void* opGetVar_int(acVariable* parent, int idx, int findInGlobal, int isFuncCall
     }
 
     acTable* table = (acTable*)parent->m_gcobj;
-    value = table->get(idx);
+    acVariable* value = table->get(idx);
     if(value == 0)
     {
         if(findInGlobal != 0)
@@ -673,13 +669,6 @@ void* opGetVar_int(acVariable* parent, int idx, int findInGlobal, int isFuncCall
 }
 void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncCall, acVM* vm)
 {
-    acVariable* value = 0;
-
-    if(isFuncCall && (value = parent->getBindFunc(name)) != 0)
-    {
-        return value;
-    }
-
     if(parent->m_valueType != acVT_TABLE)
     {
         vm->runtimeError(std::string("Error: attempt to get element '")+name+"' on '"+getVarTypeStr(parent->m_valueType)+"'");
@@ -687,9 +676,14 @@ void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncC
     }
 
     acTable* table = (acTable*)parent->m_gcobj;
-    value = table->get(name);
+    acVariable* value = table->get(name);
     if(value == 0)
     {
+        if(isFuncCall && (value = table->getBindFunc(name)) != 0)
+        {
+            return value;
+        }
+
         if(findInGlobal != 0)
         {
             acCodeGenerator* cg = vm->getCodeGenerator();
@@ -861,23 +855,6 @@ void callOpFunc(acVariable* func, acVariable* ret, acVariable* thisVar, acVariab
 //ret = v1 + v2
 void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
-    //operator "_add"
-    acVariable* func = v1->getBindFunc(acOF_ADD);
-    if(func != 0)
-    {
-        callOpFunc(func, ret, v1, v1, v2, vm);
-        return;
-    }
-    else
-    {
-        func = v2->getBindFunc(acOF_ADD);
-        if(func != 0)
-        {
-            callOpFunc(func, ret, v2, v1, v2, vm);
-            return;
-        }
-    }
-
     //call default add function; type promotion
     switch(v1->m_valueType)
     {
@@ -930,12 +907,34 @@ void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
     case acVT_STRING:
         addString(ret, v1, v2, vm);
         return;
+    case acVT_TABLE:
+        {
+            //operator "_add"
+            acVariable* func = v1->toTable()->getBindFunc(acOF_ADD);
+            if(func != 0)
+            {
+                callOpFunc(func, ret, v1, v1, v2, vm);
+                return;
+            }
+        }
+        break;
     }
 
     if(v2->m_valueType == acVT_STRING)
     {
         addString(ret, v1, v2, vm);
         return;
+    }
+
+    if(v2->m_valueType == acVT_TABLE)
+    {
+        //operator "_add"
+        acVariable* func = v2->toTable()->getBindFunc(acOF_ADD);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
     }
 
     vm->runtimeError(std::string("Error: attempt to use op '+' on berween '")+
@@ -946,23 +945,6 @@ void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 //ret = v1 - v2
 void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
-    //operator "_sub"
-    acVariable* func = v1->getBindFunc(acOF_SUB);
-    if(func != 0)
-    {
-        callOpFunc(func, ret, v1, v1, v2, vm);
-        return;
-    }
-    else
-    {
-        func = v2->getBindFunc(acOF_SUB);
-        if(func != 0)
-        {
-            callOpFunc(func, ret, v2, v1, v2, vm);
-            return;
-        }
-    }
-
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1011,6 +993,28 @@ void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
     case acVT_DOUBLE:
         subDouble(ret, v1, v2, vm);
         return;
+    case acVT_TABLE:
+        {
+            //operator "_sub"
+            acVariable* func = v1->toTable()->getBindFunc(acOF_SUB);
+            if(func != 0)
+            {
+                callOpFunc(func, ret, v1, v1, v2, vm);
+                return;
+            }
+        }
+        break;
+    }
+
+    if(v2->m_valueType == acVT_TABLE)
+    {
+        //operator "_sub"
+        acVariable* func = v2->toTable()->getBindFunc(acOF_SUB);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
     }
 
     vm->runtimeError(std::string("Error: attempt to use op '-' on berween '")+
@@ -1021,23 +1025,6 @@ void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 //ret = v1 * v2
 void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
-    //operator "_mul"
-    acVariable* func = v1->getBindFunc(acOF_MUL);
-    if(func != 0)
-    {
-        callOpFunc(func, ret, v1, v1, v2, vm);
-        return;
-    }
-    else
-    {
-        func = v2->getBindFunc(acOF_MUL);
-        if(func != 0)
-        {
-            callOpFunc(func, ret, v2, v1, v2, vm);
-            return;
-        }
-    }
-
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1086,6 +1073,28 @@ void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
     case acVT_DOUBLE:
         mulDouble(ret, v1, v2, vm);
         return;
+    case acVT_TABLE:
+        {
+            //operator "_mul"
+            acVariable* func = v1->toTable()->getBindFunc(acOF_MUL);
+            if(func != 0)
+            {
+                callOpFunc(func, ret, v1, v1, v2, vm);
+                return;
+            }
+        }
+        break;
+    }
+
+    if(v2->m_valueType == acVT_TABLE)
+    {
+        //operator "_mul"
+        acVariable* func = v2->toTable()->getBindFunc(acOF_MUL);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
     }
 
     vm->runtimeError(std::string("Error: attempt to use op '*' on berween '")+
@@ -1096,23 +1105,6 @@ void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 //ret = v1 / v2
 void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
-    //operator "_div"
-    acVariable* func = v1->getBindFunc(acOF_DIV);
-    if(func != 0)
-    {
-        callOpFunc(func, ret, v1, v1, v2, vm);
-        return;
-    }
-    else
-    {
-        func = v2->getBindFunc(acOF_DIV);
-        if(func != 0)
-        {
-            callOpFunc(func, ret, v2, v1, v2, vm);
-            return;
-        }
-    }
-
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1161,6 +1153,28 @@ void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
     case acVT_DOUBLE:
         divDouble(ret, v1, v2, vm);
         return;
+    case acVT_TABLE:
+        {
+            //operator "_div"
+            acVariable* func = v1->toTable()->getBindFunc(acOF_DIV);
+            if(func != 0)
+            {
+                callOpFunc(func, ret, v1, v1, v2, vm);
+                return;
+            }
+        }
+        break;
+    }
+
+    if(v2->m_valueType == acVT_TABLE)
+    {
+        //operator "_div"
+        acVariable* func = v2->toTable()->getBindFunc(acOF_DIV);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
     }
 
     vm->runtimeError(std::string("Error: attempt to use op '/' on berween '")+
@@ -1171,23 +1185,6 @@ void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 //ret = v1 % v2
 void opModVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 {
-    //operator "_mod"
-    acVariable* func = v1->getBindFunc(acOF_MOD);
-    if(func != 0)
-    {
-        callOpFunc(func, ret, v1, v1, v2, vm);
-        return;
-    }
-    else
-    {
-        func = v2->getBindFunc(acOF_MOD);
-        if(func != 0)
-        {
-            callOpFunc(func, ret, v2, v1, v2, vm);
-            return;
-        }
-    }
-
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1236,6 +1233,28 @@ void opModVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
     case acVT_DOUBLE:
         modDouble(ret, v1, v2, vm);
         return;
+    case acVT_TABLE:
+        {
+            //operator "_mod"
+            acVariable* func = v1->toTable()->getBindFunc(acOF_MOD);
+            if(func != 0)
+            {
+                callOpFunc(func, ret, v1, v1, v2, vm);
+                return;
+            }
+        }
+        break;
+    }
+
+    if(v2->m_valueType == acVT_TABLE)
+    {
+        //operator "_mod"
+        acVariable* func = v2->toTable()->getBindFunc(acOF_MOD);
+        if(func != 0)
+        {
+            callOpFunc(func, ret, v2, v1, v2, vm);
+            return;
+        }
     }
 
     vm->runtimeError(std::string("Error: attempt to use op '%' on berween '")+
