@@ -34,6 +34,15 @@ void ac_stdlib_typeof(acVariable* thisVar, acArray* args, acVariable* retVar, ac
     retVar->setValue(getVarTypeStr(args->get(0)->m_valueType).c_str(), vm);
 }
 
+void ac_stdlib_isfunction(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
+{
+    if(args->size() < 1)
+        vm->runtimeError("Error: typeof() has no argument");
+
+    std::string t = getVarTypeStr(args->get(0)->m_valueType);
+    retVar->setValue(t == "function" || t == "userfunc");
+}
+
 void ac_stdlib_print(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     std::string str;
@@ -120,13 +129,23 @@ void ac_stdlib_bindfunc(acVariable* thisVar, acArray* args, acVariable* retVar, 
     tab0->toTable()->bindFunc(tab1->toTable(), vm);
 }
 
+void ac_stdlib_clone(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
+{
+    if(args->size() < 1)
+        vm->runtimeError("Error: clone() has no argument");
+
+    args->get(0)->cloneTo(retVar, vm);
+}
+
 void acStdLib::bindStdFunctions(acVM* vm)
 {
     vm->bindFunction("printAST", ac_stdlib_printAST);
     vm->bindFunction("printIR",  ac_stdlib_printIR);
     vm->bindFunction("printGC",  ac_stdlib_printGC);
 
-    vm->bindFunction("typeof",   ac_stdlib_typeof);
+    vm->bindFunction("typeof",      ac_stdlib_typeof);
+    vm->bindFunction("isfunction",  ac_stdlib_isfunction);
+
     vm->bindFunction("print",    ac_stdlib_print);
     vm->bindFunction("tobool",   ac_stdlib_tobool);
     vm->bindFunction("toint32",  ac_stdlib_toint32);
@@ -136,4 +155,5 @@ void acStdLib::bindStdFunctions(acVM* vm)
     vm->bindFunction("tostr",    ac_stdlib_tostr);
 
     vm->bindFunction("bindfunc", ac_stdlib_bindfunc);
+    vm->bindFunction("clone",    ac_stdlib_clone);
 }

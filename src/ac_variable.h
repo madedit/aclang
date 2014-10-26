@@ -35,10 +35,11 @@ enum acVarType
     acVT_TABLE,
     acVT_FUNCTION,
     acVT_DELEGATE,
-    acVT_FUNCBINDER,
     //user data
     acVT_USERDATA,
-    acVT_USERFUNC
+    acVT_USERFUNC,
+    //helper data
+    acVT_FUNCBINDER,
 };
 
 enum acBaseFunc
@@ -155,6 +156,8 @@ struct acVariable : acGCObject
     void setValue(const char* str, acVM* vm);
     
     void assignFrom(acVariable* v);
+    void cloneTo(acVariable* v, acVM* vm);
+    void operator=(const acVariable& other);
 
     acHashValue& getHash();
     static void getHash(int value, acHashValue& hash);
@@ -169,8 +172,9 @@ struct acVariable : acGCObject
     acVariable* get(const char* key);
     acVariable* get(acVariable* key);
 
-    acTable* toTable() { return (acTable*)m_gcobj; }
+    acString* toString() { return (acString*)m_gcobj; }
     acArray* toArray() { return (acArray*)m_gcobj; }
+    acTable* toTable() { return (acTable*)m_gcobj; }
 };
 #pragma pack()
 
@@ -226,6 +230,7 @@ struct acString : acGCObject
 struct acArray : acGCObject
 {
     std::vector<acVariable*> m_data;
+    typedef std::vector<acVariable*>::iterator DataIterator;
     int m_iteratorIndex;//for foreach()
 
     acArray()
@@ -255,6 +260,8 @@ struct acArray : acGCObject
         ++m_iteratorIndex;
         return true;
     }
+
+    void cloneTo(acArray* other, acVM* vm);
 };
 
 struct acTable : acGCObject
@@ -333,12 +340,6 @@ struct acTable : acGCObject
         return it->second.value;
     }
 
-    void copyTo(acTable* other)
-    {
-        other->m_data = m_data;
-        other->m_funcBinder = m_funcBinder;
-    }
-
     void initIter() { m_iterator = m_data.begin(); }
     bool iterate(acVariable* key, acVariable* value)
     {
@@ -356,13 +357,14 @@ struct acTable : acGCObject
         return true;
     }
 
+    void cloneTo(acTable* other, acVM* vm);
+
     void bindFunc(char* name, acVariable* func);
     void bindFunc(acVariable* key, acVariable* func, acVM* vm);
     void bindFunc(acTable* table, acVM* vm);
     acVariable* getBindFunc(acOperatorFunc func);
     acVariable* getBindFunc(const char* name);
     acVariable* getBindFunc(acVariable* key);
-
 };
 
 struct acFunction : acGCObject
@@ -402,7 +404,6 @@ struct acUserFunc : acGCObject
     }
 };
 
-
 struct acFuncBinder : acGCObject
 {
     acTable* m_funcTable;
@@ -415,9 +416,9 @@ struct acFuncBinder : acGCObject
         memset(m_funcArray, 0, sizeof(m_funcArray));
     }
 
-    void cloneTo(acFuncBinder* dest);
+    void cloneTo(acFuncBinder* dest, acVM* vm);
     void bindFunc(acVariable* key, acVariable* func);
-    void bindFunc(acTable* table);
+    void bindFunc(acTable* table, acVM* vm);
 
     acOperatorFunc getOpFunc(acVariable* var);
 };

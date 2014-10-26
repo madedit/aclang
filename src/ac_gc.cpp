@@ -43,19 +43,20 @@ acGCObject* acGarbageCollector::createObject(acVarType type)
     case acVT_DELEGATE:
         obj = new acDelegate();
         break;
+
+    case acVT_USERDATA:
+        //obj = new acUserData();//TODO
+        break;
+    case acVT_USERFUNC:
+        obj = new acUserFunc();
+        break;
+
     case acVT_FUNCBINDER:
         {
             acFuncBinder* fb = new acFuncBinder();
             fb->m_funcTable = (acTable*)createObject(acVT_TABLE);
             obj = fb;
         }
-        break;
-
-    case acVT_USERDATA:
-        //obj = new acUserData();
-        break;
-    case acVT_USERFUNC:
-        obj = new acUserFunc();
         break;
     }
 

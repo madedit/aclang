@@ -70,6 +70,61 @@ void acVariable::assignFrom(acVariable* v)
     m_gcColor = acGarbageCollector::GC_BLACK;//avoid to be gc
 }
 
+void acVariable::cloneTo(acVariable* v, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    v->assignFrom(this);
+
+    switch(m_valueType)
+    {
+    case acVT_STRING:
+        {
+            acString* obj = (acString*)gc->createObject(acVT_STRING);
+            obj->setData(v->toString()->m_data);
+            v->m_gcobj = obj;
+        }
+        break;
+    case acVT_ARRAY:
+        {
+            acArray* obj = (acArray*)gc->createObject(acVT_ARRAY);
+            toArray()->cloneTo(obj, vm);
+            v->m_gcobj = obj;
+        }
+        break;
+    case acVT_TABLE:
+        {
+            acTable* obj = (acTable*)gc->createObject(acVT_TABLE);
+            toTable()->cloneTo(obj, vm);
+            v->m_gcobj = obj;
+        }
+        break;
+    case acVT_FUNCTION:
+        {
+            acFunction* obj = (acFunction*)gc->createObject(acVT_FUNCTION);
+            *obj = *(acFunction*)m_gcobj;
+            v->m_gcobj = obj;
+        }
+        break;
+    case acVT_DELEGATE:
+        {
+            acDelegate* obj = (acDelegate*)gc->createObject(acVT_DELEGATE);
+            *obj = *(acDelegate*)m_gcobj;
+            v->m_gcobj = obj;
+        }
+        break;
+    case acVT_USERDATA:
+        //TODO
+        break;
+    case acVT_USERFUNC:
+        {
+            acUserFunc* obj = (acUserFunc*)gc->createObject(acVT_USERFUNC);
+            *obj = *(acUserFunc*)m_gcobj;
+            v->m_gcobj = obj;
+        }
+        break;
+    }
+}
+
 int acVariable::compare(acVariable* v, acVM* vm)
 {
     switch(m_valueType)
@@ -365,6 +420,33 @@ acVariable* acArray::fillAndGet(int idx, acVM* vm)
     return m_data[idx];
 }
 
+void acArray::cloneTo(acArray* other, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    other->m_data.clear();
+    other->m_data.resize(m_data.size());
+
+    DataIterator it = m_data.begin();
+    DataIterator itEnd = m_data.end();
+    for(int idx = 0; it != itEnd; ++it, ++idx)
+    {
+        acVariable* value = *it;
+
+        if(value->m_valueType == acVT_STRING)
+        {
+            value = gc->createVarWithData(value->toString()->m_data.c_str());
+        }
+        else
+        {
+            acVariable* old = value;
+            value = (acVariable*)gc->createObject(acVT_NULL);
+            value->assignFrom(old);
+        }
+
+        other->m_data[idx] = value;
+    }
+}
+
 //======================================
 void acTable::add(const char* key, const char* value, acVM* vm)
 {
@@ -395,6 +477,48 @@ void acTable::add(int key, int value, acVM* vm)
     add(keyVar, valVar);
 }
 
+void acTable::cloneTo(acTable* other, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    other->m_data.clear();
+
+    DataIterator it = m_data.begin();
+    DataIterator itEnd = m_data.end();
+    for(; it != itEnd; ++it)
+    {
+        KeyValue& kv = it->second;
+        acVariable* key = kv.key;
+        acVariable* value = kv.value;
+
+        //clone key
+        if(key->m_valueType == acVT_STRING)
+        {
+            key = gc->createVarWithData(key->toString()->m_data.c_str());
+        }
+        else
+        {
+            acVariable* old = key;
+            key = (acVariable*)gc->createObject(acVT_NULL);
+            key->assignFrom(old);
+        }
+        //clone value
+        if(value->m_valueType == acVT_STRING)
+        {
+            value = gc->createVarWithData(value->toString()->m_data.c_str());
+        }
+        else
+        {
+            acVariable* old = value;
+            value = (acVariable*)gc->createObject(acVT_NULL);
+            value->assignFrom(old);
+        }
+
+        other->add(key, value);
+    }
+
+    other->m_funcBinder = m_funcBinder;
+}
+
 void acTable::bindFunc(char* name, acVariable* func)
 {
 
@@ -406,7 +530,7 @@ void acTable::bindFunc(acVariable* key, acVariable* func, acVM* vm)
     m_funcBinder = (acFuncBinder*)vm->getGarbageCollector()->createObject(acVT_FUNCBINDER);
     if(oldFB != 0)
     {
-        oldFB->cloneTo(m_funcBinder);
+        oldFB->cloneTo(m_funcBinder, vm);
     }
     m_funcBinder->bindFunc(key, func);
 }
@@ -414,7 +538,7 @@ void acTable::bindFunc(acVariable* key, acVariable* func, acVM* vm)
 void acTable::bindFunc(acTable* table, acVM* vm)
 {
     m_funcBinder = (acFuncBinder*)vm->getGarbageCollector()->createObject(acVT_FUNCBINDER);
-    m_funcBinder->bindFunc(table);
+    m_funcBinder->bindFunc(table, vm);
 }
 
 acVariable* acTable::getBindFunc(acOperatorFunc func)
@@ -436,9 +560,9 @@ acVariable* acTable::getBindFunc(acVariable* key)
 }
 
 //======================================
-void acFuncBinder::cloneTo(acFuncBinder* dest)
+void acFuncBinder::cloneTo(acFuncBinder* dest, acVM* vm)
 {
-    m_funcTable->copyTo(dest->m_funcTable);
+    m_funcTable->cloneTo(dest->m_funcTable, vm);
     memcpy(dest->m_funcArray, m_funcArray, sizeof(m_funcArray));
 }
 
@@ -464,9 +588,9 @@ void acFuncBinder::bindFunc(acVariable* key, acVariable* func)
     }
 }
 
-void acFuncBinder::bindFunc(acTable* table)
+void acFuncBinder::bindFunc(acTable* table, acVM* vm)
 {
-    table->copyTo(m_funcTable);
+    table->cloneTo(m_funcTable, vm);
     memset(m_funcArray, 0, sizeof(m_funcArray));
 
     acTable::DataIterator it = m_funcTable->m_data.begin();
