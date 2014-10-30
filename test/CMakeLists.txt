@@ -36,6 +36,9 @@ else(WIN32)
     target_link_libraries(aclang-test
         aclang
         ${LLVM_LIBS}
+        curses
+        dl
+        z
     )
 endif(WIN32)
 
