@@ -65,6 +65,8 @@ public:
         tForAST,
         tForeachAST,
         tNamespaceAST,
+        tNewAST,
+        tDeleteAST
     };
     NodeASTType m_type;
 
@@ -1327,6 +1329,58 @@ public:
             printf("m_block:\n");
             m_block->print(indent+2);
         }
+    }
+};
+
+class NewAST : public NodeAST
+{
+public:
+    NodeAST* m_varExpr;
+    NodeASTList* m_args;
+
+    NewAST(NodeAST* varExpr, NodeASTList* args)
+        : m_varExpr(varExpr)
+        , m_args(args)
+    {
+        m_type = tNewAST;
+    }
+
+    virtual Value* codeGen(acCodeGenerator* cg);
+    virtual void print(int indent)
+    {
+        printIndent(indent);
+        printf("[NewAST]: new\n");
+        printIndent(indent + 2);
+        printf("m_varExpr:\n");
+        m_varExpr->print(indent + 2);
+        if(m_args != 0)
+        {
+            printIndent(indent + 2);
+            printf("m_args:\n");
+            m_args->print(indent + 4);
+        }
+    }
+};
+
+class DeleteAST : public NodeAST
+{
+public:
+    GetVarAST* m_varExpr;
+
+    DeleteAST(GetVarAST* varExpr)
+        : m_varExpr(varExpr)
+    {
+        m_type = tDeleteAST;
+    }
+
+    virtual Value* codeGen(acCodeGenerator* cg);
+    virtual void print(int indent)
+    {
+        printIndent(indent);
+        printf("[DeleteAST]: delete\n");
+        printIndent(indent + 2);
+        printf("m_varExpr:\n");
+        m_varExpr->print(indent + 2);
     }
 };
 
