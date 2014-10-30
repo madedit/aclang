@@ -157,7 +157,6 @@ struct acVariable : acGCObject
     
     void assignFrom(acVariable* v);
     void cloneTo(acVariable* v, acVM* vm);
-    void operator=(const acVariable& other);
 
     acHashValue& getHash();
     static void getHash(int value, acHashValue& hash);
@@ -358,6 +357,7 @@ struct acTable : acGCObject
     }
 
     void cloneTo(acTable* other, acVM* vm);
+    void copyDataTo(acTable* other, acVM* vm);
 
     void bindFunc(char* name, acVariable* func);
     void bindFunc(acVariable* key, acVariable* func, acVM* vm);

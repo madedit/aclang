@@ -46,20 +46,14 @@ void ac_stdlib_isfunction(acVariable* thisVar, acArray* args, acVariable* retVar
 void ac_stdlib_print(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     std::string str;
-    std::string s;
     int count = args->size();
     for(int i = 0; i < count; ++i)
     {
-        s = toString(args->get(i), vm);
-        if(i == 0)
-        {
-            str = s;
-        }
-        else
+        if(i != 0)
         {
             str += "\t";
-            str += s;
         }
+        str += toString(args->get(i), vm);
     }
     vm->getMsgHandler()->output("%s\n", str.c_str());
 }
@@ -121,10 +115,10 @@ void ac_stdlib_bindfunc(acVariable* thisVar, acArray* args, acVariable* retVar, 
     acVariable* tab1 = args->get(1);
 
     if(tab0->m_valueType != acVT_TABLE)
-        vm->runtimeError("Error: bindfunc() args[0] must be a table");
+        vm->runtimeError("Error: bindfunc(): args[0] must be a table");
 
     if(tab1->m_valueType != acVT_TABLE)
-        vm->runtimeError("Error: bindfunc() args[1] must be a table");
+        vm->runtimeError("Error: bindfunc(): args[1] must be a table");
 
     tab0->toTable()->bindFunc(tab1->toTable(), vm);
 }
@@ -137,23 +131,49 @@ void ac_stdlib_clone(acVariable* thisVar, acArray* args, acVariable* retVar, acV
     args->get(0)->cloneTo(retVar, vm);
 }
 
+void ac_stdlib_inherit(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
+{
+    if(args->size() < 1)
+        vm->runtimeError("Error: clone() has no argument");
+
+    //check type
+    for(int i = 0; i < args->size(); ++i)
+    {
+        acVariable* var = args->get(i);
+        if(var->m_valueType != acVT_TABLE)
+            vm->runtimeError("Error: inherit(): all of args must be tables");
+    }
+
+    //clone first table
+    args->get(0)->cloneTo(retVar, vm);
+    acTable* retTab = retVar->toTable();
+
+    //copy all the other tables
+    for(int i = 1; i < args->size(); ++i)
+    {
+        acTable* tab = args->get(i)->toTable();
+        tab->copyDataTo(retTab, vm);
+    }
+}
+
 void acStdLib::bindStdFunctions(acVM* vm)
 {
-    vm->bindFunction("printAST", ac_stdlib_printAST);
-    vm->bindFunction("printIR",  ac_stdlib_printIR);
-    vm->bindFunction("printGC",  ac_stdlib_printGC);
+    vm->bindFunction("printAST",    ac_stdlib_printAST);
+    vm->bindFunction("printIR",     ac_stdlib_printIR);
+    vm->bindFunction("printGC",     ac_stdlib_printGC);
 
     vm->bindFunction("typeof",      ac_stdlib_typeof);
     vm->bindFunction("isfunction",  ac_stdlib_isfunction);
 
-    vm->bindFunction("print",    ac_stdlib_print);
-    vm->bindFunction("tobool",   ac_stdlib_tobool);
-    vm->bindFunction("toint32",  ac_stdlib_toint32);
-    vm->bindFunction("toint64",  ac_stdlib_toint64);
-    vm->bindFunction("tofloat",  ac_stdlib_tofloat);
-    vm->bindFunction("todouble", ac_stdlib_todouble);
-    vm->bindFunction("tostr",    ac_stdlib_tostr);
+    vm->bindFunction("print",       ac_stdlib_print);
+    vm->bindFunction("tobool",      ac_stdlib_tobool);
+    vm->bindFunction("toint32",     ac_stdlib_toint32);
+    vm->bindFunction("toint64",     ac_stdlib_toint64);
+    vm->bindFunction("tofloat",     ac_stdlib_tofloat);
+    vm->bindFunction("todouble",    ac_stdlib_todouble);
+    vm->bindFunction("tostr",       ac_stdlib_tostr);
 
-    vm->bindFunction("bindfunc", ac_stdlib_bindfunc);
-    vm->bindFunction("clone",    ac_stdlib_clone);
+    vm->bindFunction("bindfunc",    ac_stdlib_bindfunc);
+    vm->bindFunction("clone",       ac_stdlib_clone);
+    vm->bindFunction("inherit",     ac_stdlib_inherit);
 }

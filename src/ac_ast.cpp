@@ -116,7 +116,7 @@ Value* TableAST::codeGen(acCodeGenerator* cg)
 
     Value* table = builder.CreateCall2(cg->m_gf_createTable, val, cg->m_gv_vm);
 
-    //create contents in talbe
+    //create contents in table
     if(m_keyValueList != 0)
     {
         Twine kvName("kv");
@@ -619,7 +619,7 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     //function body codegen
     m_body->codeGen(cg);
 
-    if(builder.GetInsertBlock()->getTerminator() == false)
+    if(builder.GetInsertBlock()->getTerminator() == 0)
         builder.CreateBr(leave);
 
     builder.SetInsertPoint(leave);
@@ -1545,7 +1545,7 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
         cg->popBlock();
     }
 
-    if(builder.GetInsertBlock()->getTerminator() == false)
+    if(builder.GetInsertBlock()->getTerminator() == 0)
         builder.CreateBr(label_for_inc);
 
     builder.SetInsertPoint(label_for_inc);
@@ -1647,7 +1647,7 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
         cg->popBlock();
     }
 
-    if(builder.GetInsertBlock()->getTerminator() == false)
+    if(builder.GetInsertBlock()->getTerminator() == 0)
         builder.CreateBr(label_foreach_cond);
 
     //end

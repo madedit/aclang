@@ -98,30 +98,6 @@ void acVariable::cloneTo(acVariable* v, acVM* vm)
             v->m_gcobj = obj;
         }
         break;
-    case acVT_FUNCTION:
-        {
-            acFunction* obj = (acFunction*)gc->createObject(acVT_FUNCTION);
-            *obj = *(acFunction*)m_gcobj;
-            v->m_gcobj = obj;
-        }
-        break;
-    case acVT_DELEGATE:
-        {
-            acDelegate* obj = (acDelegate*)gc->createObject(acVT_DELEGATE);
-            *obj = *(acDelegate*)m_gcobj;
-            v->m_gcobj = obj;
-        }
-        break;
-    case acVT_USERDATA:
-        //TODO
-        break;
-    case acVT_USERFUNC:
-        {
-            acUserFunc* obj = (acUserFunc*)gc->createObject(acVT_USERFUNC);
-            *obj = *(acUserFunc*)m_gcobj;
-            v->m_gcobj = obj;
-        }
-        break;
     }
 }
 
@@ -479,8 +455,14 @@ void acTable::add(int key, int value, acVM* vm)
 
 void acTable::cloneTo(acTable* other, acVM* vm)
 {
-    acGarbageCollector* gc = vm->getGarbageCollector();
     other->m_data.clear();
+    other->m_funcBinder = m_funcBinder;
+    copyDataTo(other, vm);
+}
+
+void acTable::copyDataTo(acTable* other, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
 
     DataIterator it = m_data.begin();
     DataIterator itEnd = m_data.end();
