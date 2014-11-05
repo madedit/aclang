@@ -167,6 +167,7 @@ extern int yyparse(void* parser);
 %type <arglist> func_decl_arglist
 %type <nodelist> var_decl argument_expr_list labeled_stmts keyvalue_list element_list
 %type <getvar> getvar_primary_expr getvar_postfix_expr
+%type <node> new_expr delete_expr
 
 %start program
 
@@ -196,9 +197,10 @@ block:
     ;
 
 expr_stmt:
-      TOK_SEMICOLON         { $$ = NULL; }
-    | expr TOK_SEMICOLON    { $$ = $1; }
-    | block                 { $$ = $1; }
+      TOK_SEMICOLON             { $$ = NULL; }
+    | expr TOK_SEMICOLON        { $$ = $1; }
+    | delete_expr TOK_SEMICOLON { $$ = $1; }
+    | block                     { $$ = $1; }
     ;
 
 primary_expr:
@@ -212,6 +214,7 @@ primary_expr:
     //| anony_func_decl                   { $$ = $1; }
     | TOK_LPAREN inner_expr TOK_RPAREN  { $$ = $2; }
     | TOK_THIS %prec THISX              { $$ = new GetVarAST(NULL, "this"); PARSER->addNodeAST($$); }
+    | new_expr                          { $$ = $1; }
     ;
 
 argument_expr_list:
@@ -660,6 +663,15 @@ foreach_stmt:
 namespace_block:
       TOK_NAMESPACE getvar_postfix_expr TOK_LCURLY stmts TOK_RCURLY { $$ = new NamespaceAST($2, $4); PARSER->addNodeAST($$); }
     | TOK_NAMESPACE getvar_postfix_expr TOK_LCURLY TOK_RCURLY       { $$ = new NamespaceAST($2, NULL); PARSER->addNodeAST($$); }
+    ;
+
+new_expr:
+      TOK_NEW getvar_postfix_expr TOK_LPAREN TOK_RPAREN                     { $$ = new NewAST($2, NULL); PARSER->addNodeAST($$); }
+    | TOK_NEW getvar_postfix_expr TOK_LPAREN argument_expr_list TOK_RPAREN  { $$ = new NewAST($2, $4); PARSER->addNodeAST($$); }
+    ;
+
+delete_expr:
+      TOK_DELETE getvar_postfix_expr { $$ = new DeleteAST($2); PARSER->addNodeAST($$); }
     ;
 
 %%

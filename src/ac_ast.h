@@ -1335,10 +1335,10 @@ public:
 class NewAST : public NodeAST
 {
 public:
-    NodeAST* m_varExpr;
+    GetVarAST* m_varExpr;
     NodeASTList* m_args;
 
-    NewAST(NodeAST* varExpr, NodeASTList* args)
+    NewAST(GetVarAST* varExpr, NodeASTList* args)
         : m_varExpr(varExpr)
         , m_args(args)
     {

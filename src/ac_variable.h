@@ -308,6 +308,18 @@ struct acTable : acGCObject
     void add(int key, const char* value, acVM* vm);
     void add(int key, int value, acVM* vm);
 
+    void remove(int idx)
+    {
+        acHashValue hash;
+        acVariable::getHash(idx, hash);
+        m_data.erase(hash);
+    }
+    void remove(const char* key)
+    {
+        acHashValue hash;
+        acVariable::getHash(key, hash);
+        m_data.erase(hash);
+    }
     void remove(acVariable* key)
     {
         m_data.erase(key->getHash());

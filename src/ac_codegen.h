@@ -133,6 +133,10 @@ public:
     Function* m_gf_opToBoolVar;
     Function* m_gf_opInitIter;
     Function* m_gf_opIterateVar;
+    Function* m_gf_opNew;
+    Function* m_gf_opDelete;
+    Function* m_gf_opDelete_int;
+    Function* m_gf_opDelete_str;
 
 public:
     acCodeGenerator(acVM* vm);

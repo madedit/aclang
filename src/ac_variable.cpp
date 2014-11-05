@@ -497,8 +497,6 @@ void acTable::copyDataTo(acTable* other, acVM* vm)
 
         other->add(key, value);
     }
-
-    other->m_funcBinder = m_funcBinder;
 }
 
 void acTable::bindFunc(char* name, acVariable* func)

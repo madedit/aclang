@@ -583,7 +583,7 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
         return 0;
     }
 
-    acTable* table = (acTable*)parent->m_gcobj;
+    acTable* table = parent->toTable();
     acVariable* value = table->get(key);
     if(value == 0)
     {
@@ -646,7 +646,7 @@ void* opGetVar_int(acVariable* parent, int idx, int findInGlobal, int isFuncCall
         return 0;
     }
 
-    acTable* table = (acTable*)parent->m_gcobj;
+    acTable* table = parent->toTable();
     acVariable* value = table->get(idx);
     if(value == 0)
     {
@@ -675,7 +675,7 @@ void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncC
         return 0;
     }
 
-    acTable* table = (acTable*)parent->m_gcobj;
+    acTable* table = parent->toTable();
     acVariable* value = table->get(name);
     if(value == 0)
     {
@@ -741,7 +741,7 @@ void* opNewVar(acVariable* parent, acVariable* key, acVM* vm)
         break;
     case acVT_TABLE:
         {
-            acTable* tab = (acTable*)parent->m_gcobj;
+            acTable* tab = parent->toTable();
             var = (acVariable*)gc->createObject(acVT_NULL);
             tab->add(key, var);
         }
@@ -776,7 +776,7 @@ void* opNewVar_int(acVariable* parent, int key, acVM* vm)
         break;
     case acVT_TABLE:
         {
-            var = (acVariable*)addTableVar_int((acTable*)parent->m_gcobj, key, vm);
+            var = (acVariable*)addTableVar_int(parent->toTable(), key, vm);
         }
         break;
     default:
@@ -793,7 +793,7 @@ void* opNewVar_str(acVariable* parent, char* key, acVM* vm)
     {
     case acVT_TABLE:
         {
-            var = (acVariable*)addTableVar_str((acTable*)parent->m_gcobj, key, vm);
+            var = (acVariable*)addTableVar_str(parent->toTable(), key, vm);
         }
         break;
     default:
@@ -1564,6 +1564,118 @@ int opIterateVar(acVariable* var, acVariable* key, acVariable* value, acVM* vm)
     return false;
 }
 
+void* opNew(acVariable* thisVar, acArray* argArray, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    acVariable* newVar = (acVariable*)gc->createObject(acVT_NULL);
+
+    thisVar->cloneTo(newVar, vm);
+
+    if(newVar->m_valueType == acVT_TABLE)
+    {
+        acVariable* newFunc = newVar->toTable()->getBindFunc(acOF_NEW);
+        if(newFunc != 0)
+        {
+            callFunction(newFunc, newVar, argArray, vm);
+        }
+    }
+
+    return newVar;
+}
+
+//delete parent.key or var parent[key]
+void opDelete(acVariable* parent, acVariable* key, int findInGlobal, acVM* vm)
+{
+    if(parent->m_valueType != acVT_TABLE)
+    {
+        vm->runtimeError(std::string("Error: attempt to delete element '") + toString(key, vm) + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        return;
+    }
+
+    acTable* table = parent->toTable();
+    acVariable* value = table->get(key);
+    if(value != 0)
+    {
+        table->remove(key);
+        return;
+    }
+
+    if(findInGlobal != 0)
+    {
+        acCodeGenerator* cg = vm->getCodeGenerator();
+        value = cg->getRootTable()->get(key);
+        if(value != 0)
+        {
+            cg->getRootTable()->remove(key);
+            return;
+        }
+    }
+
+    vm->runtimeError(std::string("Error: delete element '") + toString(key, vm) + "' not found");
+}
+void opDelete_int(acVariable* parent, int key, int findInGlobal, acVM* vm)
+{
+    if(parent->m_valueType != acVT_TABLE)
+    {
+        std::stringstream ss;
+        ss << key;
+        vm->runtimeError(std::string("Error: attempt to delete element '") + ss.str() + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        return;
+    }
+
+    acTable* table = parent->toTable();
+    acVariable* value = table->get(key);
+    if(value != 0)
+    {
+        table->remove(key);
+        return;
+    }
+
+    if(findInGlobal != 0)
+    {
+        acCodeGenerator* cg = vm->getCodeGenerator();
+        value = cg->getRootTable()->get(key);
+        if(value != 0)
+        {
+            cg->getRootTable()->remove(key);
+            return;
+        }
+    }
+
+    std::stringstream ss;
+    ss << key;
+    vm->runtimeError(std::string("Error: delete element '") + ss.str() + "' not found");
+}
+void opDelete_str(acVariable* parent, char* key, int findInGlobal, acVM* vm)
+{
+    if(parent->m_valueType != acVT_TABLE)
+    {
+        vm->runtimeError(std::string("Error: attempt to delete element '") + key + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        return;
+    }
+
+    acTable* table = parent->toTable();
+    acVariable* value = table->get(key);
+    if(value != 0)
+    {
+        table->remove(key);
+        return;
+    }
+
+    if(findInGlobal != 0)
+    {
+        acCodeGenerator* cg = vm->getCodeGenerator();
+        value = cg->getRootTable()->get(key);
+        if(value != 0)
+        {
+            cg->getRootTable()->remove(key);
+            return;
+        }
+    }
+
+    vm->runtimeError(std::string("Error: delete element '") + key + "' not found");
+}
+
 }//extern"C"
 }//namespace
 
@@ -1921,4 +2033,28 @@ void acCodeGenerator::createGlobalFunctions()
                                  voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opIterateVar, (void*)opIterateVar);
+
+    m_gf_opNew = cast<Function>(mod->getOrInsertFunction("opNew",
+        voidPtrTy,//ret
+        voidPtrTy, voidPtrTy, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opNew, (void*)opNew);
+
+    m_gf_opDelete = cast<Function>(mod->getOrInsertFunction("opDelete",
+        voidTy,//ret
+        voidPtrTy, voidPtrTy, int32Ty, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opDelete, (void*)opDelete);
+
+    m_gf_opDelete_int = cast<Function>(mod->getOrInsertFunction("opDelete_int",
+        voidTy,//ret
+        voidPtrTy, int32Ty, int32Ty, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opDelete_int, (void*)opDelete_int);
+
+    m_gf_opDelete_str = cast<Function>(mod->getOrInsertFunction("opDelete_str",
+        voidTy,//ret
+        voidPtrTy, charPtrTy, int32Ty, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opDelete_str, (void*)opDelete_str);
 }

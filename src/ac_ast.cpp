@@ -1662,3 +1662,150 @@ Value* NamespaceAST::codeGen(acCodeGenerator* cg)
 {
     return 0;
 }
+
+Value* NewAST::codeGen(acCodeGenerator* cg)
+{
+    acCodeGenBlock* block = cg->currentBlock();
+    IRBuilder<>& builder = cg->getIRBuilder();
+
+    Value* orgVar = m_varExpr->codeGen(cg);
+
+    Value* tmpVar = builder.CreateCall3(cg->m_gf_getArrayVar_int,
+        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+    Value* argArray = builder.CreateCall2(cg->m_gf_createArray, tmpVar, cg->m_gv_vm, Twine("v_argArray"));
+
+    //push args
+    if(m_args != 0)
+    {
+        NodeASTVec::iterator it = m_args->m_nodeASTVec.begin();
+        NodeASTVec::iterator itend = m_args->m_nodeASTVec.end();
+        for(; it != itend; ++it)
+        {
+            Value* arg = builder.CreateCall3(cg->m_gf_newArrayVar, argArray, builder.getInt32(-1), cg->m_gv_vm);
+            codeGenAssignment(builder, arg, *it, cg);
+        }
+    }
+
+    //call opNew
+    return builder.CreateCall3(cg->m_gf_opNew, orgVar, argArray, cg->m_gv_vm, Twine("v_new_var"));
+}
+
+inline Value* codeGenDelete(IRBuilder<>& builder, Value* parent, NodeAST* keyExpr, int findInGlobal, acCodeGenerator* cg)
+{
+    switch(keyExpr->m_type)
+    {
+    case NodeAST::tInt32AST:
+        {
+            Int32AST* ast = (Int32AST*)keyExpr;
+            return builder.CreateCall4(cg->m_gf_opDelete_int, parent, builder.getInt32(ast->m_val), builder.getInt32(findInGlobal), cg->m_gv_vm);
+        }
+        break;
+    case NodeAST::tInt64AST:
+        {
+            Int64AST* ast = (Int64AST*)keyExpr;
+            return builder.CreateCall4(cg->m_gf_opDelete_int, parent, builder.getInt32(ast->m_val), builder.getInt32(findInGlobal), cg->m_gv_vm);
+        }
+        break;
+    case NodeAST::tStringAST:
+        {
+            StringAST* ast = (StringAST*)keyExpr;
+            return builder.CreateCall4(cg->m_gf_opDelete_str,
+                parent,
+                builder.CreateGlobalStringPtr(ast->m_val),
+                builder.getInt32(findInGlobal),
+                cg->m_gv_vm);
+        }
+        break;
+    }
+
+    Value* key = keyExpr->codeGen(cg);
+    return builder.CreateCall4(cg->m_gf_opDelete, parent, key, builder.getInt32(findInGlobal), cg->m_gv_vm);
+}
+
+Value* DeleteAST::codeGen(acCodeGenerator* cg)
+{
+    acCodeGenBlock* block = cg->currentBlock();
+    IRBuilder<>& builder = cg->getIRBuilder();
+    Value* val = 0;
+
+    ConstantInt* zero = builder.getInt32(0);
+
+    if(m_varExpr->m_parentExpr != 0)
+    {
+        Value* parent = m_varExpr->m_parentExpr->codeGen(cg);
+
+        if(m_varExpr->m_keyExpr != 0)
+        {
+            val = codeGenDelete(builder, m_varExpr->m_parent, m_varExpr->m_keyExpr, 0, cg);
+        }
+        else
+        {
+            val = builder.CreateCall4(cg->m_gf_opDelete_str,
+                parent,
+                builder.CreateGlobalStringPtr(m_varExpr->m_keyIdentifier),
+                zero,
+                cg->m_gv_vm);
+        }
+    }
+    else
+    {
+        switch(m_varExpr->m_scope)
+        {
+        case GetVarAST::NONE:
+            if(m_varExpr->m_keyExpr != 0)
+            {
+                val = codeGenDelete(builder, block->m_thisVar, m_varExpr->m_keyExpr, 1, cg);
+            }
+            else
+            {
+                //find in localvar first
+                val = cg->findLocalVar(m_varExpr->m_keyIdentifier);
+
+                if(val != 0)
+                {
+                    cg->getMsgHandler()->error("Error: cannot delete a local variable");
+                    cg->setCompileError(true);
+                    return 0;
+                }
+
+                //then find in this & global table
+                val = builder.CreateCall4(cg->m_gf_opDelete_str,
+                    block->m_thisVar,
+                    builder.CreateGlobalStringPtr(m_varExpr->m_keyIdentifier),
+                    builder.getInt32(1),
+                    cg->m_gv_vm);
+            }
+            break;
+        case GetVarAST::THIS:
+            if(m_varExpr->m_keyExpr != 0)
+            {
+                val = codeGenDelete(builder, block->m_thisVar, m_varExpr->m_keyExpr, 0, cg);
+            }
+            else
+            {
+                val = builder.CreateCall4(cg->m_gf_opGetVar_str,
+                    block->m_thisVar,
+                    builder.CreateGlobalStringPtr(m_varExpr->m_keyIdentifier),
+                    zero,
+                    cg->m_gv_vm);
+            }
+            break;
+        case GetVarAST::GLOBAL:
+            if(m_varExpr->m_keyExpr != 0)
+            {
+                val = codeGenDelete(builder, cg->m_gv_rootTableVar, m_varExpr->m_keyExpr, 0, cg);
+            }
+            else
+            {
+                val = builder.CreateCall4(cg->m_gf_opGetVar_str,
+                    cg->m_gv_rootTableVar,
+                    builder.CreateGlobalStringPtr(m_varExpr->m_keyIdentifier),
+                    zero,
+                    cg->m_gv_vm);
+            }
+            break;
+        }
+    }
+
+    return val;
+}
