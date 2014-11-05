@@ -104,6 +104,53 @@ var funcs = {
 
 print( t1+t2 ); //--> "abcqwe"
 ```
+```javascript
+// new, clone(), inherit()
+var A =
+{
+    i = 0,
+    f = function(){print("A:"+i);},
+};
+::bindfunc(A,
+{
+    _new = function(v)
+    {
+        //print("op new()")
+        i = v;
+    },
+    _add = function(lhs, rhs)
+    {
+        //print("op+");
+        local v = ::clone(lhs);
+        v.i += rhs.i;
+        return v;
+    },
+    _sub = function(lhs, rhs) { print("op-");},
+    _mul = function(lhs, rhs) { print("op*");},
+    _div = function(lhs, rhs) { print("op/");},
+    _mod = function(lhs, rhs) { print("op%");},
+});
+
+//B inherit A, and then override function 'f'
+var B = ::inherit(A, 
+{
+    f = function(){print("B:"+i);},
+});
+
+var a = new A(5), b = new B(10);
+var c = a+b;
+a.f(); //--> "A:5"
+b.f(); //--> "B:10"
+c.f(); //--> "A:15"
+```
+```javascript
+//delete a element in a table
+var t = { a = 1, b = 2, c = 3 };
+for(local i,v : t) print(i, v);
+delete t.b; // delete 'b' in 't'
+for(local i,v : t) print(i, v);
+delete t; // delete 't' in root-table
+```
 
 Download
 ========
