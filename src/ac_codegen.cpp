@@ -448,7 +448,19 @@ void* addTableVar_str(acTable* tab, const char* name, acVM* vm)
     return var;
 }
 
-void* addTableVar_int(acTable* tab, int idx, acVM* vm)
+void* addTableVar_int32(acTable* tab, acInt32 idx, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+
+    acVariable* key = (acVariable*)gc->createObject(acVT_VAR);
+    key->setValue(idx);
+
+    acVariable* var = (acVariable*)gc->createObject(acVT_NULL);
+    tab->add(key, var);
+    return var;
+}
+
+void* addTableVar_int64(acTable* tab, acInt64 idx, acVM* vm)
 {
     acGarbageCollector* gc = vm->getGarbageCollector();
 
@@ -607,11 +619,11 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 
     return value;
 }
-void* opGetVar_int(acVariable* parent, int idx, int findInGlobal, int isFuncCall, acVM* vm)
+void* opGetVar_int32(acVariable* parent, acInt32 idx, int findInGlobal, int isFuncCall, acVM* vm)
 {
     if(parent->m_valueType == acVT_ARRAY)
     {
-        acArray* arr = (acArray*)parent->m_gcobj;
+        acArray* arr = parent->toArray();
         if(idx < 0 || idx >= arr->size())
         {
             std::stringstream ss;
@@ -625,7 +637,7 @@ void* opGetVar_int(acVariable* parent, int idx, int findInGlobal, int isFuncCall
 
     if(parent->m_valueType == acVT_STRING)
     {
-        acString* str = (acString*)parent->m_gcobj;
+        acString* str = parent->toString();
         if(idx < 0 || idx >= (int)str->m_data.size())
         {
             std::stringstream ss;
@@ -643,6 +655,66 @@ void* opGetVar_int(acVariable* parent, int idx, int findInGlobal, int isFuncCall
         std::stringstream ss;
         ss << idx;
         vm->runtimeError(std::string("Error: attempt to get element '")+ss.str()+"' on '"+getVarTypeStr(parent->m_valueType)+"'");
+        return 0;
+    }
+
+    acTable* table = parent->toTable();
+    acVariable* value = table->get(idx);
+    if(value == 0)
+    {
+        if(findInGlobal != 0)
+        {
+            acCodeGenerator* cg = vm->getCodeGenerator();
+            value = cg->getRootTable()->get(idx);
+        }
+
+        if(value == 0)
+        {
+            std::stringstream ss;
+            ss << idx;
+            vm->runtimeError(std::string("Error: element '") + ss.str() + "' not found");
+            return 0;
+        }
+    }
+
+    return value;
+}
+void* opGetVar_int64(acVariable* parent, acInt64 idx, int findInGlobal, int isFuncCall, acVM* vm)
+{
+    if(parent->m_valueType == acVT_ARRAY)
+    {
+        acArray* arr = parent->toArray();
+        if(idx < 0 || idx >= arr->size())
+        {
+            std::stringstream ss;
+            ss << idx;
+            vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
+            return 0;
+        }
+
+        return arr->m_data[idx];
+    }
+
+    if(parent->m_valueType == acVT_STRING)
+    {
+        acString* str = parent->toString();
+        if(idx < 0 || idx >= (acInt64)str->m_data.size())
+        {
+            std::stringstream ss;
+            ss << idx;
+            vm->runtimeError(std::string("Error: string index out of bounds: ") + ss.str());
+            return 0;
+        }
+
+        acGarbageCollector* gc = vm->getGarbageCollector();
+        return gc->createVarWithData((acInt32)str->m_data[idx]);
+    }
+
+    if(parent->m_valueType != acVT_TABLE)
+    {
+        std::stringstream ss;
+        ss << idx;
+        vm->runtimeError(std::string("Error: attempt to get element '") + ss.str() + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
         return 0;
     }
 
@@ -753,7 +825,7 @@ void* opNewVar(acVariable* parent, acVariable* key, acVM* vm)
 
     return var;
 }
-void* opNewVar_int(acVariable* parent, int key, acVM* vm)
+void* opNewVar_int32(acVariable* parent, acInt32 key, acVM* vm)
 {
     acGarbageCollector* gc = vm->getGarbageCollector();
     acVariable* var = 0;
@@ -761,7 +833,7 @@ void* opNewVar_int(acVariable* parent, int key, acVM* vm)
     {
     case acVT_ARRAY:
         {
-            acArray* arr = (acArray*)parent->m_gcobj;
+            acArray* arr = parent->toArray();
             if(key < 0 || key >= arr->size())
             {
                 std::stringstream ss;
@@ -776,11 +848,44 @@ void* opNewVar_int(acVariable* parent, int key, acVM* vm)
         break;
     case acVT_TABLE:
         {
-            var = (acVariable*)addTableVar_int(parent->toTable(), key, vm);
+            var = (acVariable*)addTableVar_int32(parent->toTable(), key, vm);
         }
         break;
     default:
         vm->runtimeError(std::string("Error: attempt to create new var on '")+getVarTypeStr(parent->m_valueType)+"'");
+        break;
+    }
+
+    return var;
+}
+void* opNewVar_int64(acVariable* parent, acInt64 key, acVM* vm)
+{
+    acGarbageCollector* gc = vm->getGarbageCollector();
+    acVariable* var = 0;
+    switch(parent->m_valueType)
+    {
+    case acVT_ARRAY:
+        {
+            acArray* arr = parent->toArray();
+            if(key < 0 || key >= arr->size())
+            {
+                std::stringstream ss;
+                ss << key;
+                vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
+                return 0;
+            }
+
+            var = (acVariable*)gc->createObject(acVT_NULL);
+            arr->m_data[key] = var;
+        }
+        break;
+    case acVT_TABLE:
+        {
+            var = (acVariable*)addTableVar_int64(parent->toTable(), key, vm);
+        }
+        break;
+    default:
+        vm->runtimeError(std::string("Error: attempt to create new var on '") + getVarTypeStr(parent->m_valueType) + "'");
         break;
     }
 
@@ -1613,7 +1718,40 @@ void opDelete(acVariable* parent, acVariable* key, int findInGlobal, acVM* vm)
 
     vm->runtimeError(std::string("Error: delete element '") + toString(key, vm) + "' not found");
 }
-void opDelete_int(acVariable* parent, int key, int findInGlobal, acVM* vm)
+void opDelete_int32(acVariable* parent, acInt32 key, int findInGlobal, acVM* vm)
+{
+    if(parent->m_valueType != acVT_TABLE)
+    {
+        std::stringstream ss;
+        ss << key;
+        vm->runtimeError(std::string("Error: attempt to delete element '") + ss.str() + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        return;
+    }
+
+    acTable* table = parent->toTable();
+    acVariable* value = table->get(key);
+    if(value != 0)
+    {
+        table->remove(key);
+        return;
+    }
+
+    if(findInGlobal != 0)
+    {
+        acCodeGenerator* cg = vm->getCodeGenerator();
+        value = cg->getRootTable()->get(key);
+        if(value != 0)
+        {
+            cg->getRootTable()->remove(key);
+            return;
+        }
+    }
+
+    std::stringstream ss;
+    ss << key;
+    vm->runtimeError(std::string("Error: delete element '") + ss.str() + "' not found");
+}
+void opDelete_int64(acVariable* parent, acInt64 key, int findInGlobal, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
@@ -1841,11 +1979,17 @@ void acCodeGenerator::createGlobalFunctions()
                                  NULL) );
     ee->addGlobalMapping(m_gf_opGetVar, (void*)opGetVar);
 
-    m_gf_opGetVar_int = cast<Function>(mod->getOrInsertFunction("opGetVar_int",
+    m_gf_opGetVar_int32 = cast<Function>(mod->getOrInsertFunction("opGetVar_int32",
                                  voidPtrTy,//ret
                                  voidPtrTy, int32Ty, int32Ty, int32Ty, voidPtrTy,//args
                                  NULL) );
-    ee->addGlobalMapping(m_gf_opGetVar_int, (void*)opGetVar_int);
+    ee->addGlobalMapping(m_gf_opGetVar_int32, (void*)opGetVar_int32);
+
+    m_gf_opGetVar_int64 = cast<Function>(mod->getOrInsertFunction("opGetVar_int64",
+        voidPtrTy,//ret
+        voidPtrTy, int64Ty, int32Ty, int32Ty, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opGetVar_int64, (void*)opGetVar_int64);
 
     m_gf_opGetVar_str = cast<Function>(mod->getOrInsertFunction("opGetVar_str",
                                  voidPtrTy,//ret
@@ -1859,11 +2003,17 @@ void acCodeGenerator::createGlobalFunctions()
                                  NULL) );
     ee->addGlobalMapping(m_gf_opNewVar, (void*)opNewVar);
 
-    m_gf_opNewVar_int = cast<Function>(mod->getOrInsertFunction("opNewVar_int",
+    m_gf_opNewVar_int32 = cast<Function>(mod->getOrInsertFunction("opNewVar_int32",
                                  voidPtrTy,//ret
                                  voidPtrTy, int32Ty, voidPtrTy,//args
                                  NULL) );
-    ee->addGlobalMapping(m_gf_opNewVar_int, (void*)opNewVar_int);
+    ee->addGlobalMapping(m_gf_opNewVar_int32, (void*)opNewVar_int32);
+
+    m_gf_opNewVar_int64 = cast<Function>(mod->getOrInsertFunction("opNewVar_int64",
+        voidPtrTy,//ret
+        voidPtrTy, int64Ty, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opNewVar_int64, (void*)opNewVar_int64);
 
     m_gf_opNewVar_str = cast<Function>(mod->getOrInsertFunction("opNewVar_str",
                                  voidPtrTy,//ret
@@ -2046,11 +2196,17 @@ void acCodeGenerator::createGlobalFunctions()
         NULL));
     ee->addGlobalMapping(m_gf_opDelete, (void*)opDelete);
 
-    m_gf_opDelete_int = cast<Function>(mod->getOrInsertFunction("opDelete_int",
+    m_gf_opDelete_int32 = cast<Function>(mod->getOrInsertFunction("opDelete_int32",
         voidTy,//ret
         voidPtrTy, int32Ty, int32Ty, voidPtrTy,//args
         NULL));
-    ee->addGlobalMapping(m_gf_opDelete_int, (void*)opDelete_int);
+    ee->addGlobalMapping(m_gf_opDelete_int32, (void*)opDelete_int32);
+
+    m_gf_opDelete_int64 = cast<Function>(mod->getOrInsertFunction("opDelete_int64",
+        voidTy,//ret
+        voidPtrTy, int64Ty, int32Ty, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opDelete_int64, (void*)opDelete_int64);
 
     m_gf_opDelete_str = cast<Function>(mod->getOrInsertFunction("opDelete_str",
         voidTy,//ret

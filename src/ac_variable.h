@@ -159,7 +159,8 @@ struct acVariable : acGCObject
     void cloneTo(acVariable* v, acVM* vm);
 
     acHashValue& getHash();
-    static void getHash(int value, acHashValue& hash);
+    static void getHash(acInt32 value, acHashValue& hash);
+    static void getHash(acInt64 value, acHashValue& hash);
     static void getHash(const char* str, acHashValue& hash);
     static void setBaseFuncPtrs(acVariable* var);
 
@@ -167,7 +168,8 @@ struct acVariable : acGCObject
     int compare(acVariable* v, acVM* vm);
 
     //get child var by index/key. for array & table.
-    acVariable* get(int idx);
+    acVariable* get(acInt32 idx);
+    acVariable* get(acInt64 idx);
     acVariable* get(const char* key);
     acVariable* get(acVariable* key);
 
@@ -308,7 +310,13 @@ struct acTable : acGCObject
     void add(int key, const char* value, acVM* vm);
     void add(int key, int value, acVM* vm);
 
-    void remove(int idx)
+    void remove(acInt32 idx)
+    {
+        acHashValue hash;
+        acVariable::getHash(idx, hash);
+        m_data.erase(hash);
+    }
+    void remove(acInt64 idx)
     {
         acHashValue hash;
         acVariable::getHash(idx, hash);
@@ -324,8 +332,17 @@ struct acTable : acGCObject
     {
         m_data.erase(key->getHash());
     }
-    //get value by int
-    acVariable* get(int idx)
+    //get value by int32
+    acVariable* get(acInt32 idx)
+    {
+        acHashValue hash;
+        acVariable::getHash(idx, hash);
+        DataIterator it = m_data.find(hash);
+        if(it == m_data.end()) return 0;
+        return it->second.value;
+    }
+    //get value by int64
+    acVariable* get(acInt64 idx)
     {
         acHashValue hash;
         acVariable::getHash(idx, hash);

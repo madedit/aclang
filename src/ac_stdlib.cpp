@@ -134,7 +134,7 @@ void ac_stdlib_clone(acVariable* thisVar, acArray* args, acVariable* retVar, acV
 void ac_stdlib_inherit(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm)
 {
     if(args->size() < 1)
-        vm->runtimeError("Error: clone() has no argument");
+        vm->runtimeError("Error: inherit() has no argument");
 
     //check type
     for(int i = 0; i < args->size(); ++i)

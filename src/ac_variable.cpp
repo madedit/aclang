@@ -265,11 +265,18 @@ acHashValue& acVariable::getHash()
     return m_hash;
 }
 
-void acVariable::getHash(int value, acHashValue& hash)
+void acVariable::getHash(acInt32 value, acHashValue& hash)
 {
     hash.u64_0 = (acUInt64)value;
     hash.u32_2 = 0;
     hash.u32_3 = acVT_INT32;
+}
+
+void acVariable::getHash(acInt64 value, acHashValue& hash)
+{
+    hash.u64_0 = value;
+    hash.u32_2 = 0;
+    hash.u32_3 = acVT_INT64;
 }
 
 void acVariable::getHash(const char* str, acHashValue& hash)
@@ -285,7 +292,31 @@ void acVariable::getHash(const char* str, acHashValue& hash)
 }
 
 //======================================
-acVariable* acVariable::get(int idx)
+acVariable* acVariable::get(acInt32 idx)
+{
+    switch(m_valueType)
+    {
+    case acVT_ARRAY:
+        {
+            acArray* arr = (acArray*)m_gcobj;
+            if(idx < 0 || idx >= arr->size())
+                return 0;
+
+            return arr->get(idx);
+        }
+        break;
+    case acVT_TABLE:
+        {
+            acTable* tab = (acTable*)m_gcobj;
+            return tab->get(idx);
+        }
+        break;
+    }
+
+    return 0;
+}
+
+acVariable* acVariable::get(acInt64 idx)
 {
     switch(m_valueType)
     {

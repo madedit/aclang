@@ -101,10 +101,12 @@ public:
     Function* m_gf_createTable;
     Function* m_gf_createArray;
     Function* m_gf_opGetVar;
-    Function* m_gf_opGetVar_int;
+    Function* m_gf_opGetVar_int32;
+    Function* m_gf_opGetVar_int64;
     Function* m_gf_opGetVar_str;
     Function* m_gf_opNewVar;
-    Function* m_gf_opNewVar_int;
+    Function* m_gf_opNewVar_int32;
+    Function* m_gf_opNewVar_int64;
     Function* m_gf_opNewVar_str;
     Function* m_gf_opAssignVar;
     Function* m_gf_opAssignVar_null;
@@ -135,7 +137,8 @@ public:
     Function* m_gf_opIterateVar;
     Function* m_gf_opNew;
     Function* m_gf_opDelete;
-    Function* m_gf_opDelete_int;
+    Function* m_gf_opDelete_int32;
+    Function* m_gf_opDelete_int64;
     Function* m_gf_opDelete_str;
 
 public:

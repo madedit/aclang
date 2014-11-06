@@ -249,13 +249,13 @@ inline Value* codeGenGetVar(IRBuilder<>& builder, Value* parent, NodeAST* keyExp
     case NodeAST::tInt32AST:
         {
             Int32AST* ast = (Int32AST*)keyExpr;
-            return builder.CreateCall5(cg->m_gf_opGetVar_int, parent, builder.getInt32(ast->m_val), builder.getInt32(findInGlobal), builder.getInt32(isFuncCall), cg->m_gv_vm);
+            return builder.CreateCall5(cg->m_gf_opGetVar_int32, parent, builder.getInt32(ast->m_val), builder.getInt32(findInGlobal), builder.getInt32(isFuncCall), cg->m_gv_vm);
         }
         break;
     case NodeAST::tInt64AST:
         {
             Int64AST* ast = (Int64AST*)keyExpr;
-            return builder.CreateCall5(cg->m_gf_opGetVar_int, parent, builder.getInt32(ast->m_val), builder.getInt32(findInGlobal), builder.getInt32(isFuncCall), cg->m_gv_vm);
+            return builder.CreateCall5(cg->m_gf_opGetVar_int64, parent, builder.getInt64(ast->m_val), builder.getInt32(findInGlobal), builder.getInt32(isFuncCall), cg->m_gv_vm);
         }
         break;
     case NodeAST::tStringAST:
@@ -376,13 +376,13 @@ inline Value* codeGenNewVar(IRBuilder<>& builder, Value* parent, NodeAST* keyExp
     case NodeAST::tInt32AST:
         {
             Int32AST* ast = (Int32AST*)keyExpr;
-            return builder.CreateCall3(cg->m_gf_opNewVar_int, parent, builder.getInt32(ast->m_val), cg->m_gv_vm);
+            return builder.CreateCall3(cg->m_gf_opNewVar_int32, parent, builder.getInt32(ast->m_val), cg->m_gv_vm);
         }
         break;
     case NodeAST::tInt64AST:
         {
             Int64AST* ast = (Int64AST*)keyExpr;
-            return builder.CreateCall3(cg->m_gf_opNewVar_int, parent, builder.getInt32(ast->m_val), cg->m_gv_vm);
+            return builder.CreateCall3(cg->m_gf_opNewVar_int64, parent, builder.getInt64(ast->m_val), cg->m_gv_vm);
         }
         break;
     case NodeAST::tStringAST:
@@ -1697,13 +1697,13 @@ inline Value* codeGenDelete(IRBuilder<>& builder, Value* parent, NodeAST* keyExp
     case NodeAST::tInt32AST:
         {
             Int32AST* ast = (Int32AST*)keyExpr;
-            return builder.CreateCall4(cg->m_gf_opDelete_int, parent, builder.getInt32(ast->m_val), builder.getInt32(findInGlobal), cg->m_gv_vm);
+            return builder.CreateCall4(cg->m_gf_opDelete_int32, parent, builder.getInt32(ast->m_val), builder.getInt32(findInGlobal), cg->m_gv_vm);
         }
         break;
     case NodeAST::tInt64AST:
         {
             Int64AST* ast = (Int64AST*)keyExpr;
-            return builder.CreateCall4(cg->m_gf_opDelete_int, parent, builder.getInt32(ast->m_val), builder.getInt32(findInGlobal), cg->m_gv_vm);
+            return builder.CreateCall4(cg->m_gf_opDelete_int64, parent, builder.getInt64(ast->m_val), builder.getInt32(findInGlobal), cg->m_gv_vm);
         }
         break;
     case NodeAST::tStringAST:
@@ -1732,7 +1732,7 @@ Value* DeleteAST::codeGen(acCodeGenerator* cg)
 
     if(m_varExpr->m_parentExpr != 0)
     {
-        Value* parent = m_varExpr->m_parentExpr->codeGen(cg);
+        m_varExpr->m_parent = m_varExpr->m_parentExpr->codeGen(cg);
 
         if(m_varExpr->m_keyExpr != 0)
         {
@@ -1741,7 +1741,7 @@ Value* DeleteAST::codeGen(acCodeGenerator* cg)
         else
         {
             val = builder.CreateCall4(cg->m_gf_opDelete_str,
-                parent,
+                m_varExpr->m_parent,
                 builder.CreateGlobalStringPtr(m_varExpr->m_keyIdentifier),
                 zero,
                 cg->m_gv_vm);
