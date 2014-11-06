@@ -18,7 +18,7 @@ Feature
 Language Syntax
 ---------------
 ```javascript
-function fib(n)
+function fib(n) //create function 'fib' in root-table
 {
     local a = 1;
     local b = 1;
@@ -30,17 +30,19 @@ function fib(n)
     }
     return b;
 }
-var table = { n = 10 };
-var table.f = fib;
+var table = { n = 10 }; //create 'table' in root-table
+var table.f = fib;      //create 'f' in 'table'
 print( "fib(10)=" + table.f(table.n) );
 ```
 ```javascript
+//create a local variable 'array'
 local array = [ function(a, b){ print(a, b); }, 1, 3, 5 ];
 for(local i,v : array)
 {
     if(typeof(v) == "function")
     {
-        var ::func = v; //store 'v' in global ::func
+        //create 'func' in global scope (root-table)
+        var ::func = v;
     }
     else
     {
@@ -53,7 +55,7 @@ for(local i,v : array)
 function newCounter()
 {
     local i = 0;
-    return function () {   // anonymous function
+    return function () { // anonymous function
         ++i;
         return i;
     }
@@ -125,13 +127,13 @@ var A =
         v.i += rhs.i;
         return v;
     },
-    _sub = function(lhs, rhs) { print("op-");},
-    _mul = function(lhs, rhs) { print("op*");},
-    _div = function(lhs, rhs) { print("op/");},
-    _mod = function(lhs, rhs) { print("op%");},
+    _sub = function(lhs, rhs) { print("op-"); },
+    _mul = function(lhs, rhs) { print("op*"); },
+    _div = function(lhs, rhs) { print("op/"); },
+    _mod = function(lhs, rhs) { print("op%"); },
 });
 
-//B inherit A, and then override function 'f'
+//B inherit from A, and then override function 'f'
 var B = ::inherit(A, 
 {
     f = function(){print("B:"+i);},
@@ -139,6 +141,7 @@ var B = ::inherit(A,
 
 var a = new A(5), b = new B(10);
 var c = a+b;
+
 a.f(); //--> "A:5"
 b.f(); //--> "B:10"
 c.f(); //--> "A:15"
@@ -146,10 +149,17 @@ c.f(); //--> "A:15"
 ```javascript
 //delete a element in a table
 var t = { a = 1, b = 2, c = 3 };
+print(">>> t =");
 for(local i,v : t) print(i, v);
+
 delete t.b; // delete 'b' in 't'
+print(">>> t =");
 for(local i,v : t) print(i, v);
+
 delete t; // delete 't' in root-table
+print(">>> roottable =");
+//print elements in root-table (this-table)
+for(local i,v : this) print(i, v);
 ```
 
 Download
