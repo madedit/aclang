@@ -586,9 +586,6 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
 
     //used strings in the function
     std::list<std::string>* strList = new std::list<std::string>();
-    int aaa = sizeof(std::list<std::string>);
-    int bbb = sizeof(*strList);
-
     cg->pushBlock(entry, leave, this, acCodeGenBlock::FUNCTION, 0, 0, 0, 0, 0, strList);
     m_localblock = cg->currentBlock();
 
