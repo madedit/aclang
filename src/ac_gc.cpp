@@ -1,6 +1,8 @@
 /* see copyright notice in aclang.h */
 
 #include "ac_gc.h"
+#include "ac_vm.h"
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -307,9 +309,22 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
                 if(m_printGC)
                     printf("gc: delete function: %p\n", obj);
 
-                //TODO
-                //delete llvm function
-                delete (acFunction*)obj;
+                {
+                    acFunction* func = (acFunction*)obj;
+
+                    ExecutionEngine* ee = m_vm->getExecutionEngine();
+                    ee->freeMachineCodeForFunction(func->m_llvmFunc);
+                    //func->m_llvmFunc->replaceAllUsesWith(UndefValue::get(func->m_llvmFunc->getType()));
+                    //func->m_llvmFunc->deleteBody();
+                    //func->m_llvmFunc->eraseFromParent();
+
+                    if(func->m_stringList != 0)
+                    {
+                        delete func->m_stringList;
+                    }
+
+                    delete func;
+                }
                 break;
 
             case acVT_DELEGATE:

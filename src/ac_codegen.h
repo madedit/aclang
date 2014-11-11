@@ -9,6 +9,7 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <list>
+#include <vector>
 #include <setjmp.h>
 
 using namespace llvm;
@@ -46,6 +47,7 @@ struct acCodeGenBlock
     int m_tmpArraySize;
     std::list<std::pair<std::string, Value*> > m_localVars;
     bool m_isBlockEnd;
+    std::list<std::string>* m_stringList;
 };
 
 class acCodeGenerator
@@ -67,6 +69,7 @@ protected:
     acVariable* m_rootTableVar;
     acArray* m_rootArgArray;
     acArray* m_rootTmpArray;
+    std::list<std::string> m_stringList;
 
     std::list<acCodeGenBlock*> m_blocks;
 
@@ -97,6 +100,7 @@ public:
     Function* m_gf_createUpValueTable;
     Function* m_gf_createFunc;
     Function* m_gf_setFuncPtr;
+    Function* m_gf_setFuncStringList;
     Function* m_gf_createTmpArray;
     Function* m_gf_createTable;
     Function* m_gf_createArray;
@@ -162,12 +166,17 @@ public:
     llvm::GenericValue runCode();
 
     acCodeGenBlock* currentBlock() { return m_blocks.front(); }
-    void pushBlock(BasicBlock* bblock, BasicBlock* leave, NodeAST* ast, acCodeGenBlock::BlockType type,
-                   Value* retVar, Value* thisVar, Value* argArray, Value* tmpArray, int tmpArraySize);
+    void pushBlock(BasicBlock* bblock, BasicBlock* leave,
+                   NodeAST* ast, acCodeGenBlock::BlockType type,
+                   Value* retVar, Value* thisVar, Value* argArray,
+                   Value* tmpArray, int tmpArraySize,
+                   std::list<std::string>* strList);
     void popBlock();
     Value* findLocalVar(const std::string& name);
     acCodeGenBlock* findWhereIsBreak();
     acCodeGenBlock* findWhereIsContinue();
+
+    Value* createStringPtr(const std::string& str, acCodeGenBlock* block, IRBuilder<>& builder);
 
     void setCompileError(bool v) { m_isCompileError = v; }
     bool isCompileError() { return m_isCompileError; }

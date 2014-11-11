@@ -144,8 +144,9 @@ void acCodeGenerator::generateCode()
 
     /* Push a new variable/block context */
     pushBlock(label_begin, label_end, m_programBlockAST, acCodeGenBlock::FUNCTION,
-              retVar, m_gv_rootTableVar, m_gv_rootArgArray, m_gv_rootTmpArray, 0);
-
+              retVar, m_gv_rootTableVar, m_gv_rootArgArray, m_gv_rootTmpArray, 0,
+              &m_stringList);
+    m_stringList.clear();
 
     currentBlock()->m_localVars.push_back(std::make_pair("this", m_gv_rootTableVar));
     m_programBlockAST->codeGen(this); /* emit bytecode for the toplevel block */
@@ -196,8 +197,11 @@ GenericValue acCodeGenerator::runCode()
     return GenericValue();
 }
 
-void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave, NodeAST* ast, acCodeGenBlock::BlockType type,
-                                Value* retVar, Value* thisVar, Value* argArray, Value* tmpArray, int tmpArraySize)
+void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave,
+    NodeAST* ast, acCodeGenBlock::BlockType type,
+    Value* retVar, Value* thisVar, Value* argArray,
+    Value* tmpArray, int tmpArraySize,
+    std::list<std::string>* strList)
 {
     acCodeGenBlock* block = new acCodeGenBlock();
     block->m_bblock = bblock;
@@ -210,6 +214,7 @@ void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave, NodeAST* 
     block->m_tmpArray = tmpArray;
     block->m_tmpArraySize = tmpArraySize;
     block->m_isBlockEnd = false;
+    block->m_stringList = strList;
     m_blocks.push_front(block);
 }
 
@@ -318,6 +323,37 @@ acCodeGenBlock* acCodeGenerator::findWhereIsContinue()
         ++it;
     }
     return 0;
+}
+
+llvm::Value* acCodeGenerator::createStringPtr(const std::string& str, acCodeGenBlock* block, IRBuilder<>& builder)
+{
+    std::list<std::string>* strList = block->m_stringList;
+    std::list<std::string>::iterator it = strList->begin(), end = strList->end();
+
+    const char* strPtr = 0;
+    for(; it != end; ++it)
+    {
+        if((*it) == str)
+        {
+            strPtr = it->c_str();
+            break;
+        }
+    }
+    
+    if(strPtr == 0)
+    {
+        strList->push_back(str);
+        strPtr = strList->back().c_str();
+    }
+
+    return builder.CreateIntToPtr(
+            (sizeof(const char*) == sizeof(uint64_t) ?
+                builder.getInt64((uint64_t)strPtr) :
+                builder.getInt32((uint32_t)strPtr)
+            ),
+            builder.getInt8PtrTy(),
+            Twine("str_").concat(str)
+        );
 }
 
 void acCodeGenerator::createCoreFunctions()
@@ -495,10 +531,17 @@ void* createFunc(acVariable* funcVar, acVM* vm)
     return func;
 }
 
-void setFuncPtr(acVariable* funcVar, void* funcPtr)
+void setFuncPtr(acVariable* funcVar, llvm::Function* llvmFunc, void* funcPtr)
 {
     acFunction* func = (acFunction*)funcVar->m_gcobj;
+    func->m_llvmFunc = llvmFunc;
     func->m_funcPtr = funcPtr;
+}
+
+void setFuncStringList(acVariable* funcVar, std::list<std::string>* strList)
+{
+    acFunction* func = (acFunction*)funcVar->m_gcobj;
+    func->m_stringList = strList;
 }
 
 void* createTmpArray(acArray* arr, acVM* vm)
@@ -1950,9 +1993,15 @@ void acCodeGenerator::createGlobalFunctions()
 
     m_gf_setFuncPtr = cast<Function>(mod->getOrInsertFunction("setFuncPtr",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_setFuncPtr, (void*)setFuncPtr);
+
+    m_gf_setFuncStringList = cast<Function>(mod->getOrInsertFunction("setFuncStringList",
+        voidTy,//ret
+        voidPtrTy, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_setFuncStringList, (void*)setFuncStringList);
 
     m_gf_createTmpArray = cast<Function>(mod->getOrInsertFunction("createTmpArray",
                                  voidPtrTy,//ret
