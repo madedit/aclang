@@ -61,10 +61,11 @@ Module* acCodeGenerator::getModule()
 
 void acCodeGenerator::generateCode()
 {
+    eraseMainFunction();
+
     if(m_programBlockAST == 0)
     {
         m_vm->getMsgHandler()->error("ProgramBlock is NULL, ignore...\n");
-        m_mainFunction = 0;
         return;
     }
 
@@ -356,6 +357,19 @@ llvm::Value* acCodeGenerator::createStringPtr(const std::string& str, acCodeGenB
         );
 }
 
+void acCodeGenerator::eraseMainFunction()
+{
+    if(m_mainFunction != 0)
+    {
+        ExecutionEngine* ee = m_vm->getExecutionEngine();
+        ee->freeMachineCodeForFunction(m_mainFunction);
+        m_mainFunction->replaceAllUsesWith(UndefValue::get(m_mainFunction->getType()));
+        m_mainFunction->deleteBody();
+        m_mainFunction->eraseFromParent();
+        m_mainFunction = 0;
+    }
+}
+
 void acCodeGenerator::createCoreFunctions()
 {
     createGlobalValues();
@@ -531,10 +545,11 @@ void* createFunc(acVariable* funcVar, acVM* vm)
     return func;
 }
 
-void setFuncPtr(acVariable* funcVar, llvm::Function* llvmFunc, void* funcPtr)
+void setFuncPtr(acVariable* funcVar, llvm::Function* llvmFunc, llvm::ConstantExpr* castExpr, void* funcPtr)
 {
     acFunction* func = (acFunction*)funcVar->m_gcobj;
     func->m_llvmFunc = llvmFunc;
+    func->m_castExpr = castExpr;
     func->m_funcPtr = funcPtr;
 }
 
@@ -1993,7 +2008,7 @@ void acCodeGenerator::createGlobalFunctions()
 
     m_gf_setFuncPtr = cast<Function>(mod->getOrInsertFunction("setFuncPtr",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_setFuncPtr, (void*)setFuncPtr);
 

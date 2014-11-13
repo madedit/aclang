@@ -184,6 +184,7 @@ public:
 
 protected:
     void llvm_fatal_error_handler(void *user_data, const std::string &reason, bool gen_crash_diag);
+    void eraseMainFunction();
     void createCoreFunctions();
     void createGlobalValues();
     void createGlobalFunctions();

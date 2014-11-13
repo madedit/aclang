@@ -314,9 +314,11 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
 
                     ExecutionEngine* ee = m_vm->getExecutionEngine();
                     ee->freeMachineCodeForFunction(func->m_llvmFunc);
+                    func->m_castExpr->replaceAllUsesWith(UndefValue::get(func->m_castExpr->getType()));
+                    func->m_castExpr->destroyConstant();
                     //func->m_llvmFunc->replaceAllUsesWith(UndefValue::get(func->m_llvmFunc->getType()));
-                    //func->m_llvmFunc->deleteBody();
-                    //func->m_llvmFunc->eraseFromParent();
+                    func->m_llvmFunc->deleteBody();
+                    func->m_llvmFunc->eraseFromParent();
 
                     if(func->m_stringList != 0)
                     {

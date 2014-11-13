@@ -6,6 +6,7 @@
 #include "ac_config.h"
 #include "ac_hashvalue.h"
 #include <llvm/IR/Function.h>
+#include <llvm/IR/Constants.h>
 #include <list>
 #include <map>
 #include <string>
@@ -399,6 +400,7 @@ struct acTable : acGCObject
 struct acFunction : acGCObject
 {
     llvm::Function* m_llvmFunc;
+    llvm::ConstantExpr* m_castExpr;
     void* m_funcPtr;
     acTable* m_upValueTable;
     std::list<std::string>* m_stringList;
@@ -406,6 +408,7 @@ struct acFunction : acGCObject
     acFunction()
         : acGCObject(acVT_FUNCTION)
         , m_llvmFunc(0)
+        , m_castExpr(0)
         , m_funcPtr(0)
         , m_upValueTable(0)
         , m_stringList(0)
