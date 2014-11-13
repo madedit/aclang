@@ -584,7 +584,7 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
 
     //store function values
     m_buildUpValueTableInsertPoint = builder.CreateCall4(cg->m_gf_setFuncPtr,
-        m_funcVar, llvmFuncToPtr, castExprToPtr, funcPtr);
+        m_funcVar, llvmFuncToPtr, castExprToPtr, llvmFuncPtr);
 
     //function init
     BasicBlock* entry = BasicBlock::Create(context, "entry", llvmFunc, 0);
