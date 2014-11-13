@@ -670,7 +670,7 @@ Value* FunctionAST::codeGenForUpValue(acCodeGenerator* cg, const std::string& na
 {
     Value* val = 0;
     
-    //add upValue to upValueTable
+    //add upValue to upValueTable in upblock
     IRBuilder<> upbuilder(m_upblock->m_bblock);
     upbuilder.SetInsertPoint(m_buildUpValueTableInsertPoint);
 
@@ -679,14 +679,15 @@ Value* FunctionAST::codeGenForUpValue(acCodeGenerator* cg, const std::string& na
         m_upValueTable = upbuilder.CreateCall2(cg->m_gf_createUpValueTable, m_funcVar, cg->m_gv_vm, Twine("UpValTab"));
     }
 
-    Twine tname(name);
     Value* namePtr = cg->createStringPtr(name, m_upblock, upbuilder);
     upbuilder.CreateCall4(cg->m_gf_addTableKeyValue_str, m_upValueTable, namePtr, upValue, cg->m_gv_vm);
 
-    //get upValue from upValueTable
+    //get upValue from upValueTable in localblock
     IRBuilder<> builder(m_localblock->m_bblock);
     builder.SetInsertPoint(m_localUpValueInsertPoint);
-    val = builder.CreateCall3(cg->m_gf_getTableVar, m_localUpValueTable, namePtr, cg->m_gv_vm, tname);
+
+    Value* localNamePtr = cg->createStringPtr(name, m_localblock, builder);
+    val = builder.CreateCall3(cg->m_gf_getTableVar, m_localUpValueTable, localNamePtr, cg->m_gv_vm, Twine("v_").concat(name));
     
     //add upvalue to localvars
     m_localblock->m_localVars.push_back(std::make_pair(name, val));
