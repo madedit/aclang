@@ -567,24 +567,19 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
 
     //build function
     builder.CreateCall2(cg->m_gf_createFunc, m_funcVar, cg->m_gv_vm);
-    Value* llvmFuncPtr = builder.CreateCast(Instruction::BitCast, llvmFunc, voidPtrTy);
 
     Value* llvmFuncToPtr;
-    Value* castExprToPtr;
     if(sizeof(void*) == sizeof(uint64_t))
     {
         llvmFuncToPtr = builder.CreateIntToPtr(builder.getInt64(uint64_t(llvmFunc)), voidPtrTy);
-        castExprToPtr = builder.CreateIntToPtr(builder.getInt64(uint64_t(llvmFuncPtr)), voidPtrTy);
     }
     else
     {
         llvmFuncToPtr = builder.CreateIntToPtr(builder.getInt32(uint32_t(llvmFunc)), voidPtrTy);
-        castExprToPtr = builder.CreateIntToPtr(builder.getInt32(uint32_t(llvmFuncPtr)), voidPtrTy);
     }
 
     //store function values
-    m_buildUpValueTableInsertPoint = builder.CreateCall4(cg->m_gf_setFuncPtr,
-        m_funcVar, llvmFuncToPtr, castExprToPtr, llvmFuncPtr);
+    m_buildUpValueTableInsertPoint = builder.CreateCall2(cg->m_gf_setFuncPtr, m_funcVar, llvmFuncToPtr);
 
     //function init
     BasicBlock* entry = BasicBlock::Create(context, "entry", llvmFunc, 0);

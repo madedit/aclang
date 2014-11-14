@@ -1027,6 +1027,10 @@ void func_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
     acFunction* func = (acFunction*)var->m_gcobj;
 
     typedef void (*PFN)(void*, void*, void*);
+    if(func->m_funcPtr == 0)
+    {
+        func->m_funcPtr = ee->getPointerToFunction(func->m_llvmFunc);
+    }
     PFN pfn = reinterpret_cast<PFN>(func->m_funcPtr);
     pfn(thisVar, argArray, func->m_upValueTable);
 }
@@ -1075,6 +1079,10 @@ void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
         {
             acFunction* func = (acFunction*)dele->m_funcVar->m_gcobj;
             typedef void(*PFN)(void*, void*, void*);
+            if(func->m_funcPtr == 0)
+            {
+                func->m_funcPtr = ee->getPointerToFunction(func->m_llvmFunc);
+            }
             PFN pfn = reinterpret_cast<PFN>(func->m_funcPtr);
             pfn(thisVar, argArray, func->m_upValueTable);
         }
