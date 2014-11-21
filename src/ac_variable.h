@@ -14,11 +14,13 @@
 
 class acVM;
 class acGarbageCollector;
+struct acGCObject;
 struct acString;
 struct acArray;
 struct acTable;
 struct acFunction;
 struct acFuncBinder;
+struct acFunctionData;
 
 enum acVarType
 {
@@ -41,6 +43,7 @@ enum acVarType
     acVT_USERFUNC,
     //helper data
     acVT_FUNCBINDER,
+    acVT_FUNCTIONDATA,
 };
 
 enum acBaseFunc
@@ -399,17 +402,15 @@ struct acTable : acGCObject
 
 struct acFunction : acGCObject
 {
-    llvm::Function* m_llvmFunc;
-    void* m_funcPtr;
+    acFunctionData* m_funcData;
     acTable* m_upValueTable;
-    std::list<std::string>* m_stringList;
+    std::list<acGCObject*>* m_createdFuncDataList;
 
     acFunction()
         : acGCObject(acVT_FUNCTION)
-        , m_llvmFunc(0)
-        , m_funcPtr(0)
+        , m_funcData(0)
         , m_upValueTable(0)
-        , m_stringList(0)
+        , m_createdFuncDataList(0)
     {
     }
 };
@@ -455,6 +456,21 @@ struct acFuncBinder : acGCObject
     void bindFunc(acTable* table, acVM* vm);
 
     acOperatorFunc getOpFunc(acVariable* var);
+};
+
+struct acFunctionData : acGCObject
+{
+    llvm::Function* m_llvmFunc;
+    void* m_funcPtr;
+    std::list<std::string>* m_stringList;
+
+    acFunctionData()
+        : acGCObject(acVT_FUNCTIONDATA)
+        , m_llvmFunc(0)
+        , m_funcPtr(0)
+        , m_stringList(0)
+    {
+    }
 };
 
 std::string getVarTypeStr(acVarType vt);

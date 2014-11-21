@@ -1025,13 +1025,14 @@ void func_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
     acGarbageCollector* gc = vm->getGarbageCollector();
 
     acFunction* func = (acFunction*)var->m_gcobj;
+    acFunctionData* funcData = (acFunctionData*)func->m_funcData;
 
     typedef void (*PFN)(void*, void*, void*);
-    if(func->m_funcPtr == 0)
+    if(funcData->m_funcPtr == 0)
     {
-        func->m_funcPtr = ee->getPointerToFunction(func->m_llvmFunc);
+        funcData->m_funcPtr = ee->getPointerToFunction(funcData->m_llvmFunc);
     }
-    PFN pfn = reinterpret_cast<PFN>(func->m_funcPtr);
+    PFN pfn = reinterpret_cast<PFN>(funcData->m_funcPtr);
     pfn(thisVar, argArray, func->m_upValueTable);
 }
 
@@ -1078,12 +1079,13 @@ void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
     case acVT_FUNCTION:
         {
             acFunction* func = (acFunction*)dele->m_funcVar->m_gcobj;
+            acFunctionData* funcData = (acFunctionData*)func->m_funcData;
             typedef void(*PFN)(void*, void*, void*);
-            if(func->m_funcPtr == 0)
+            if(funcData->m_funcPtr == 0)
             {
-                func->m_funcPtr = ee->getPointerToFunction(func->m_llvmFunc);
+                funcData->m_funcPtr = ee->getPointerToFunction(funcData->m_llvmFunc);
             }
-            PFN pfn = reinterpret_cast<PFN>(func->m_funcPtr);
+            PFN pfn = reinterpret_cast<PFN>(funcData->m_funcPtr);
             pfn(thisVar, argArray, func->m_upValueTable);
         }
         break;

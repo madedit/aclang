@@ -146,8 +146,9 @@ void acCodeGenerator::generateCode()
     /* Push a new variable/block context */
     pushBlock(label_begin, label_end, m_programBlockAST, acCodeGenBlock::FUNCTION,
               retVar, m_gv_rootTableVar, m_gv_rootArgArray, m_gv_rootTmpArray, 0,
-              &m_stringList);
+              &m_stringList, &m_funcDataList);
     m_stringList.clear();
+    m_funcDataList.clear();
 
     currentBlock()->m_localVars.push_back(std::make_pair("this", m_gv_rootTableVar));
     m_programBlockAST->codeGen(this); /* emit bytecode for the toplevel block */
@@ -202,7 +203,7 @@ void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave,
     NodeAST* ast, acCodeGenBlock::BlockType type,
     Value* retVar, Value* thisVar, Value* argArray,
     Value* tmpArray, int tmpArraySize,
-    std::list<std::string>* strList)
+    std::list<std::string>* strList, std::list<acGCObject*>* funcDataList)
 {
     acCodeGenBlock* block = new acCodeGenBlock();
     block->m_bblock = bblock;
@@ -216,6 +217,7 @@ void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave,
     block->m_tmpArraySize = tmpArraySize;
     block->m_isBlockEnd = false;
     block->m_stringList = strList;
+    block->m_funcDataList = funcDataList;
     m_blocks.push_front(block);
 }
 
@@ -537,24 +539,28 @@ void* createUpValueTable(acVariable* funcVar, acVM* vm)
     return tab;
 }
 
-void* createFunc(acVariable* funcVar, acVM* vm)
+void createFunc(acVariable* funcVar, acVM* vm)
 {
     acGarbageCollector* gc = vm->getGarbageCollector();
     acFunction* func = (acFunction*)gc->createObject(acVT_FUNCTION);
     funcVar->setValue(func);
-    return func;
 }
 
-void setFuncPtr(acVariable* funcVar, llvm::Function* llvmFunc)
+void assignFunc(acVariable* funcVar, acFunction* func)
 {
-    acFunction* func = (acFunction*)funcVar->m_gcobj;
-    func->m_llvmFunc = llvmFunc;
+    funcVar->setValue(func);
 }
 
-void setFuncStringList(acVariable* funcVar, std::list<std::string>* strList)
+void setFuncPtr(acVariable* funcVar, acFunctionData* funcData)
 {
     acFunction* func = (acFunction*)funcVar->m_gcobj;
-    func->m_stringList = strList;
+    func->m_funcData = funcData;
+}
+
+void setFuncMiscData(acVariable* funcVar, std::list<acGCObject*>* funcList)
+{
+    acFunction* func = (acFunction*)funcVar->m_gcobj;
+    func->m_createdFuncDataList = funcList;
 }
 
 void* createTmpArray(acArray* arr, acVM* vm)
@@ -2004,17 +2010,23 @@ void acCodeGenerator::createGlobalFunctions()
                                  NULL) );
     ee->addGlobalMapping(m_gf_createFunc, (void*)createFunc);
 
+    m_gf_assignFunc = cast<Function>(mod->getOrInsertFunction("assignFunc",
+        voidTy,//ret
+        voidPtrTy, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_assignFunc, (void*)assignFunc);
+
     m_gf_setFuncPtr = cast<Function>(mod->getOrInsertFunction("setFuncPtr",
                                  voidTy,//ret
                                  voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_setFuncPtr, (void*)setFuncPtr);
 
-    m_gf_setFuncStringList = cast<Function>(mod->getOrInsertFunction("setFuncStringList",
+    m_gf_setFuncMiscData = cast<Function>(mod->getOrInsertFunction("setFuncMiscData",
         voidTy,//ret
         voidPtrTy, voidPtrTy,//args
         NULL));
-    ee->addGlobalMapping(m_gf_setFuncStringList, (void*)setFuncStringList);
+    ee->addGlobalMapping(m_gf_setFuncMiscData, (void*)setFuncMiscData);
 
     m_gf_createTmpArray = cast<Function>(mod->getOrInsertFunction("createTmpArray",
                                  voidPtrTy,//ret

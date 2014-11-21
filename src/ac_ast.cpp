@@ -513,14 +513,24 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     static int count = 0;
     name += Twine(count++).str();
     std::string funcName;
-    if(m_nameExpr != 0 && m_nameExpr->m_keyIdentifier.length() > 0)
+    if(m_nameExpr != 0)
     {
-        funcName = "_";
-        funcName += m_nameExpr->m_keyIdentifier;
+        if(m_nameExpr->m_keyIdentifier.length() > 0)
+        {
+            funcName = "_";
+            funcName += m_nameExpr->m_keyIdentifier;
+        }
+    }
+    else
+    {
+        funcName = ".anony";
     }
     Twine name2 = Twine(name).concat(funcName);
 
     llvm::Function* llvmFunc = Function::Create(funcType, GlobalValue::InternalLinkage, name2, cg->getModule());
+    acFunctionData* acFuncData = (acFunctionData*)cg->getGarbageCollector()->createObject(acVT_FUNCTIONDATA);
+    acFuncData->m_llvmFunc = llvmFunc;
+    m_upblock->m_funcDataList->push_back(acFuncData);
 
     m_funcVar = 0;
     if(m_isLocal)
@@ -568,18 +578,18 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     //build function
     builder.CreateCall2(cg->m_gf_createFunc, m_funcVar, cg->m_gv_vm);
 
-    Value* llvmFuncToPtr;
+    Value* acFuncDataToPtr;
     if(sizeof(void*) == sizeof(uint64_t))
     {
-        llvmFuncToPtr = builder.CreateIntToPtr(builder.getInt64(uint64_t(llvmFunc)), voidPtrTy);
+        acFuncDataToPtr = builder.CreateIntToPtr(builder.getInt64(uint64_t(acFuncData)), voidPtrTy);
     }
     else
     {
-        llvmFuncToPtr = builder.CreateIntToPtr(builder.getInt32(uint32_t(llvmFunc)), voidPtrTy);
+        acFuncDataToPtr = builder.CreateIntToPtr(builder.getInt32(uint32_t(acFuncData)), voidPtrTy);
     }
 
     //store function values
-    m_buildUpValueTableInsertPoint = builder.CreateCall2(cg->m_gf_setFuncPtr, m_funcVar, llvmFuncToPtr);
+    m_buildUpValueTableInsertPoint = builder.CreateCall2(cg->m_gf_setFuncPtr, m_funcVar, acFuncDataToPtr);
 
     //function init
     BasicBlock* entry = BasicBlock::Create(context, "entry", llvmFunc, 0);
@@ -588,7 +598,10 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
 
     //used strings in the function
     std::list<std::string>* strList = new std::list<std::string>();
-    cg->pushBlock(entry, leave, this, acCodeGenBlock::FUNCTION, 0, 0, 0, 0, 0, strList);
+    acFuncData->m_stringList = strList;
+
+    std::list<acGCObject*>* funcList = new std::list<acGCObject*>();
+    cg->pushBlock(entry, leave, this, acCodeGenBlock::FUNCTION, 0, 0, 0, 0, 0, strList, funcList);
     m_localblock = cg->currentBlock();
 
     //this, args, upvalues
@@ -643,23 +656,39 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
 
     cg->popBlock();
 
-    if(strList->size() > 0)
+    //setFuncMiscData
+    Value* funcListToPtr;
+    bool setMiscData = false;
+
+    if(funcList->size() > 0)
     {
-        builder.SetInsertPoint(m_buildUpValueTableInsertPoint);
-        //save the stringList to m_funcVar
-        builder.CreateCall2(cg->m_gf_setFuncStringList, m_funcVar,
-            builder.CreateIntToPtr(
-                (sizeof(void*) == sizeof(uint64_t) ?
-                    builder.getInt64(uint64_t(strList)) :
-                    builder.getInt32(uint32_t(strList))
-                ),
-                voidPtrTy
-            )
-        );
+        if(sizeof(void*) == sizeof(uint64_t))
+        {
+            funcListToPtr = builder.CreateIntToPtr(builder.getInt64(uint64_t(funcList)), voidPtrTy);
+        }
+        else
+        {
+            funcListToPtr = builder.CreateIntToPtr(builder.getInt32(uint32_t(funcList)), voidPtrTy);
+        }
+        setMiscData = true;
     }
     else
     {
-        delete strList;
+        if(sizeof(void*) == sizeof(uint64_t))
+        {
+            funcListToPtr = builder.CreateIntToPtr(builder.getInt64(0), voidPtrTy);
+        }
+        else
+        {
+            funcListToPtr = builder.CreateIntToPtr(builder.getInt32(0), voidPtrTy);
+        }
+        delete funcList;
+    }
+    
+    if(setMiscData)
+    {
+        builder.SetInsertPoint(m_buildUpValueTableInsertPoint);
+        builder.CreateCall2(cg->m_gf_setFuncMiscData, m_funcVar, funcListToPtr);
     }
 
     //restore InsertPoint
@@ -1212,7 +1241,7 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
         {
             cg->pushBlock(label_if_then, label_if_else, this, acCodeGenBlock::IF_THEN,
                 block->m_retVar, block->m_thisVar, block->m_argArray,
-                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
             m_thenStmt->codeGen(cg);
             cg->popBlock();
         }
@@ -1223,7 +1252,7 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
 
         cg->pushBlock(label_if_else, label_if_end, this, acCodeGenBlock::IF_ELSE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
         m_elseStmt->codeGen(cg);
         cg->popBlock();
 
@@ -1242,7 +1271,7 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
         {
             cg->pushBlock(label_if_then, label_if_end, this, acCodeGenBlock::IF_THEN,
                 block->m_retVar, block->m_thisVar, block->m_argArray,
-                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
             m_thenStmt->codeGen(cg);
             cg->popBlock();
         }
@@ -1302,7 +1331,7 @@ Value* SwitchAST::codeGen(acCodeGenerator* cg)
 
     cg->pushBlock(label_switch_begin, label_switch_end, this, acCodeGenBlock::SWITCH, 
         block->m_retVar, block->m_thisVar, block->m_argArray,
-        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
     block = cg->currentBlock();
 
     it = m_labeledStmts->m_nodeASTVec.begin();
@@ -1348,7 +1377,7 @@ Value* SwitchAST::codeGen(acCodeGenerator* cg)
         {
             cg->pushBlock(swblock, nextBlock, this, acCodeGenBlock::CODE, 
                 block->m_retVar, block->m_thisVar, block->m_argArray,
-                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
             ast->m_stmts->codeGen(cg);
             cg->popBlock();
         }
@@ -1468,7 +1497,7 @@ Value* WhileAST::codeGen(acCodeGenerator* cg)
     {
         cg->pushBlock(label_while_loop, label_while_end, this, acCodeGenBlock::WHILE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
         m_stmt->codeGen(cg);
         cg->popBlock();
     }
@@ -1501,7 +1530,7 @@ Value* DoWhileAST::codeGen(acCodeGenerator* cg)
     {
         cg->pushBlock(label_dowhile_loop, label_dowhile_end, this, acCodeGenBlock::WHILE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
         m_stmt->codeGen(cg);
         cg->popBlock();
     }
@@ -1539,7 +1568,7 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
 
     cg->pushBlock(label_for_init, label_for_end, this, acCodeGenBlock::FOR,
         block->m_retVar, block->m_thisVar, block->m_argArray,
-        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
     block = cg->currentBlock();
 
     //init
@@ -1574,7 +1603,7 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
     {
         cg->pushBlock(label_for_loop, label_for_inc, this, acCodeGenBlock::CODE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
         m_stmt->codeGen(cg);
         cg->popBlock();
     }
@@ -1610,7 +1639,7 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
 
     cg->pushBlock(label_foreach_init, label_foreach_end, this, acCodeGenBlock::FOREACH,
         block->m_retVar, block->m_thisVar, block->m_argArray,
-        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
     block = cg->currentBlock();
 
     //init
@@ -1676,7 +1705,7 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
     {
         cg->pushBlock(label_foreach_loop, label_foreach_end, this, acCodeGenBlock::CODE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList);
+            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
         m_stmt->codeGen(cg);
         cg->popBlock();
     }

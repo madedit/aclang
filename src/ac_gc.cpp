@@ -60,6 +60,10 @@ acGCObject* acGarbageCollector::createObject(acVarType type)
             obj = fb;
         }
         break;
+
+    case acVT_FUNCTIONDATA:
+        obj = new acFunctionData();
+        break;
     }
 
     m_objectList.push_back(obj);
@@ -136,8 +140,8 @@ void acGarbageCollector::changeGCColor(acGCObject* obj)
             case acVT_TABLE:
             case acVT_FUNCTION:
             case acVT_DELEGATE:
-            case acVT_FUNCBINDER:
             case acVT_USERFUNC:
+            case acVT_FUNCBINDER:
                 obj->m_gcColor = GC_GRAY;
                 m_grayList.insert(obj);
                 break;
@@ -186,11 +190,11 @@ void acGarbageCollector::addToGrayList(std::list<acGCObject*>& list)
         case acVT_DELEGATE:
             addChildrenToGrayList((acDelegate*)obj);
             break;
-        case acVT_FUNCBINDER:
-            addChildrenToGrayList((acFuncBinder*)obj);
-            break;
         case acVT_USERFUNC:
             addChildrenToGrayList((acUserFunc*)obj);
+            break;
+        case acVT_FUNCBINDER:
+            addChildrenToGrayList((acFuncBinder*)obj);
             break;
         }
         ++it;
@@ -243,11 +247,11 @@ bool acGarbageCollector::gcMark(clock_t clocks)
             case acVT_DELEGATE:
                 addChildrenToGrayList((acDelegate*)obj);
                 break;
-            case acVT_FUNCBINDER:
-                addChildrenToGrayList((acFuncBinder*)obj);
-                break;
             case acVT_USERFUNC:
                 addChildrenToGrayList((acUserFunc*)obj);
+                break;
+            case acVT_FUNCBINDER:
+                addChildrenToGrayList((acFuncBinder*)obj);
                 break;
             }
 
@@ -312,15 +316,9 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
                 {
                     acFunction* func = (acFunction*)obj;
 
-                    ExecutionEngine* ee = m_vm->getExecutionEngine();
-                    ee->freeMachineCodeForFunction(func->m_llvmFunc);
-                    func->m_llvmFunc->replaceAllUsesWith(UndefValue::get(func->m_llvmFunc->getType()));
-                    func->m_llvmFunc->deleteBody();
-                    func->m_llvmFunc->eraseFromParent();
-
-                    if(func->m_stringList != 0)
+                    if(func->m_createdFuncDataList != 0)
                     {
-                        delete func->m_stringList;
+                        delete func->m_createdFuncDataList;
                     }
 
                     delete func;
@@ -335,6 +333,14 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
                 delete (acDelegate*)obj;
                 break;
 
+            case acVT_USERFUNC:
+                if(m_printGC)
+                    printf("gc: delete userfunc: %p\n", obj);
+
+                //TODO
+                delete (acUserFunc*)obj;
+                break;
+
             case acVT_FUNCBINDER:
                 if(m_printGC)
                     printf("gc: delete funcbinder: %p\n", obj);
@@ -342,12 +348,25 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
                 delete (acFuncBinder*)obj;
                 break;
 
-            case acVT_USERFUNC:
+            case acVT_FUNCTIONDATA:
                 if(m_printGC)
-                    printf("gc: delete userfunc: %p\n", obj);
+                    printf("gc: delete funcdata: %p\n", obj);
 
-                //TODO
-                delete (acUserFunc*)obj;
+                {
+                    acFunctionData* funcData = (acFunctionData*)obj;
+                    ExecutionEngine* ee = m_vm->getExecutionEngine();
+                    ee->freeMachineCodeForFunction(funcData->m_llvmFunc);
+                    funcData->m_llvmFunc->replaceAllUsesWith(UndefValue::get(funcData->m_llvmFunc->getType()));
+                    funcData->m_llvmFunc->deleteBody();
+                    funcData->m_llvmFunc->eraseFromParent();
+
+                    if(funcData->m_stringList != 0)
+                    {
+                        delete funcData->m_stringList;
+                    }
+
+                    delete funcData;
+                }
                 break;
 
             default:
@@ -397,6 +416,7 @@ void acGarbageCollector::addChildrenToGrayList(acVariable* var)
     switch(var->m_valueType)
     {
     case acVT_STRING:
+    case acVT_FUNCTIONDATA:
         var->m_gcobj->m_gcColor = GC_BLACK;
         break;
     case acVT_VAR:
@@ -404,8 +424,8 @@ void acGarbageCollector::addChildrenToGrayList(acVariable* var)
     case acVT_TABLE:
     case acVT_FUNCTION:
     case acVT_DELEGATE:
-    case acVT_FUNCBINDER:
     case acVT_USERFUNC:
+    case acVT_FUNCBINDER:
         {
             acGCObject* obj = var->m_gcobj;
             if(obj->m_gcColor == GC_WHITE)
@@ -433,6 +453,7 @@ void acGarbageCollector::addChildrenToGrayList(acArray* array)
         switch(var->m_valueType)
         {
         case acVT_STRING:
+        case acVT_FUNCTIONDATA:
             var->m_gcobj->m_gcColor = GC_BLACK;
             break;
         case acVT_VAR:
@@ -440,8 +461,8 @@ void acGarbageCollector::addChildrenToGrayList(acArray* array)
         case acVT_TABLE:
         case acVT_FUNCTION:
         case acVT_DELEGATE:
-        case acVT_FUNCBINDER:
         case acVT_USERFUNC:
+        case acVT_FUNCBINDER:
             {
                 acGCObject* obj = var->m_gcobj;
                 if(obj->m_gcColor == GC_WHITE)
@@ -472,6 +493,7 @@ void acGarbageCollector::addChildrenToGrayList(acTable* table)
         switch(key->m_valueType)
         {
         case acVT_STRING:
+        case acVT_FUNCTIONDATA:
             key->m_gcobj->m_gcColor = GC_BLACK;
             break;
         case acVT_VAR:
@@ -479,8 +501,8 @@ void acGarbageCollector::addChildrenToGrayList(acTable* table)
         case acVT_TABLE:
         case acVT_FUNCTION:
         case acVT_DELEGATE:
-        case acVT_FUNCBINDER:
         case acVT_USERFUNC:
+        case acVT_FUNCBINDER:
             {
                 acGCObject* obj = key->m_gcobj;
                 if(obj->m_gcColor == GC_WHITE)
@@ -499,6 +521,7 @@ void acGarbageCollector::addChildrenToGrayList(acTable* table)
         switch(var->m_valueType)
         {
         case acVT_STRING:
+        case acVT_FUNCTIONDATA:
             var->m_gcobj->m_gcColor = GC_BLACK;
             break;
         case acVT_VAR:
@@ -506,8 +529,8 @@ void acGarbageCollector::addChildrenToGrayList(acTable* table)
         case acVT_TABLE:
         case acVT_FUNCTION:
         case acVT_DELEGATE:
-        case acVT_FUNCBINDER:
         case acVT_USERFUNC:
+        case acVT_FUNCBINDER:
             {
                 acGCObject* obj = var->m_gcobj;
                 if(obj->m_gcColor == GC_WHITE)
@@ -532,10 +555,17 @@ void acGarbageCollector::addChildrenToGrayList(acTable* table)
 
 void acGarbageCollector::addChildrenToGrayList(acFunction* func)
 {
+    func->m_funcData->m_gcColor = GC_BLACK;
+
     if(func->m_upValueTable != 0)
     {
         func->m_upValueTable->m_gcColor = GC_BLACK;
         addChildrenToGrayList(func->m_upValueTable);
+    }
+
+    if(func->m_createdFuncDataList != 0)
+    {
+        addToGrayList(*(func->m_createdFuncDataList));
     }
 }
 

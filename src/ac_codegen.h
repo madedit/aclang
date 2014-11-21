@@ -16,6 +16,7 @@ using namespace llvm;
 class acVM;
 class acMsgHandler;
 class acGarbageCollector;
+struct acGCObject;
 struct acArray;
 struct acTable;
 struct acVariable;
@@ -48,6 +49,7 @@ struct acCodeGenBlock
     std::list<std::pair<std::string, Value*> > m_localVars;
     bool m_isBlockEnd;
     std::list<std::string>* m_stringList;
+    std::list<acGCObject*>* m_funcDataList;
 };
 
 class acCodeGenerator
@@ -70,6 +72,7 @@ protected:
     acArray* m_rootArgArray;
     acArray* m_rootTmpArray;
     std::list<std::string> m_stringList;
+    std::list<acGCObject*> m_funcDataList;
 
     std::list<acCodeGenBlock*> m_blocks;
 
@@ -99,8 +102,9 @@ public:
     Function* m_gf_getTableVar;
     Function* m_gf_createUpValueTable;
     Function* m_gf_createFunc;
+    Function* m_gf_assignFunc;
     Function* m_gf_setFuncPtr;
-    Function* m_gf_setFuncStringList;
+    Function* m_gf_setFuncMiscData;
     Function* m_gf_createTmpArray;
     Function* m_gf_createTable;
     Function* m_gf_createArray;
@@ -170,7 +174,7 @@ public:
                    NodeAST* ast, acCodeGenBlock::BlockType type,
                    Value* retVar, Value* thisVar, Value* argArray,
                    Value* tmpArray, int tmpArraySize,
-                   std::list<std::string>* strList);
+                   std::list<std::string>* strList, std::list<acGCObject*>* funcList);
     void popBlock();
     Value* findLocalVar(const std::string& name);
     acCodeGenBlock* findWhereIsBreak();
