@@ -4,6 +4,7 @@
 #define AC_VARIABLE_H
 
 #include "ac_config.h"
+#include "ac_codegen.h"
 #include "ac_hashvalue.h"
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Constants.h>
@@ -463,12 +464,14 @@ struct acFunctionData : acGCObject
     llvm::Function* m_llvmFunc;
     void* m_funcPtr;
     std::list<std::string>* m_stringList;
+    std::list<acDebugInfo>* m_debugInfoList;
 
     acFunctionData()
         : acGCObject(acVT_FUNCTIONDATA)
         , m_llvmFunc(0)
         , m_funcPtr(0)
         , m_stringList(0)
+        , m_debugInfoList(0)
     {
     }
 };

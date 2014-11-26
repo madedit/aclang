@@ -10,21 +10,22 @@ class acMsgHandler
 public:
     acMsgHandler()
     {
-        m_filename.clear();
+        m_filename = "input";
         registerPrintMsg(printMsg);
     }
 
     void setFileName(const char* filename);
-    std::string getFileName() { return m_filename; }
+    std::string& getFileName() { return m_filename; }
 
     void error(acToken& tok, const char *format, ...);
+    void error(const char *file, int line, const char *format, ...);
     void error(int line, const char *format, ...);
     void error(const char *format, ...);
     void warning(const char *format, ...);
     void info(const char *format, ...);
     void output(const char *format, ...);
 
-    enum MessageLevel
+    enum MessageType
     {
         //compile-time & run-time message
         ERROR,
@@ -33,13 +34,13 @@ public:
         //program output, e.g. print()
         OUTPUT,
     };
-    typedef void(*PrintMsg)(int level, const char *msg);
+    typedef void(*PrintMsg)(int type, const char *msg);
     void registerPrintMsg(PrintMsg func);
 
 protected:
     PrintMsg m_printMsgFunc;
     std::string m_filename;
-    static void printMsg(int level, const char *msg);
+    static void printMsg(int type, const char *msg);
 };
 
 

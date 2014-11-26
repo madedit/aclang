@@ -315,12 +315,7 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
 
                 {
                     acFunction* func = (acFunction*)obj;
-
-                    if(func->m_createdFuncDataList != 0)
-                    {
-                        delete func->m_createdFuncDataList;
-                    }
-
+                    delete func->m_createdFuncDataList;
                     delete func;
                 }
                 break;
@@ -360,11 +355,8 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
                     funcData->m_llvmFunc->deleteBody();
                     funcData->m_llvmFunc->eraseFromParent();
 
-                    if(funcData->m_stringList != 0)
-                    {
-                        delete funcData->m_stringList;
-                    }
-
+                    delete funcData->m_stringList;
+                    delete funcData->m_debugInfoList;
                     delete funcData;
                 }
                 break;
@@ -391,7 +383,7 @@ bool acGarbageCollector::gcFinal(clock_t clocks)
     clock_t beginClock = clock();
     std::list<acGCObject*>::iterator endIter = m_objectList.end();
 
-    //mark new created objects between GC cycle as while
+    //mark new created objects between GC cycle as white
     if(m_sweepIter != endIter)
     {
         do

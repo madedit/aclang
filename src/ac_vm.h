@@ -25,6 +25,7 @@ protected:
     acCodeGenerator* m_codeGenerator;
     acGarbageCollector m_gc;
     bool m_isRuntimeError;
+    acDebugInfo* m_debugInfo;
 
         //for debug
     bool m_printAST;
@@ -44,6 +45,7 @@ public:
     acParser* getParser() { return m_parser; }
     acCodeGenerator* getCodeGenerator() { return m_codeGenerator; }
     acGarbageCollector* getGarbageCollector() { return &m_gc; }
+    void setDebugInfo(acDebugInfo* debugInfo) { m_debugInfo = debugInfo; }
     void runtimeError(const std::string& errMsg);
 
     typedef void(*AC_FUNCTION)(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm);

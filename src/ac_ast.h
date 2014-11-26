@@ -69,10 +69,12 @@ public:
         tDeleteAST
     };
     NodeASTType m_type;
+    int m_line; //for debuginfo
 
-    NodeAST() : m_type(tNodeAST) {}
+    NodeAST() : m_type(tNodeAST), m_line(0) {}
     virtual ~NodeAST() {}
     virtual Value* codeGen(acCodeGenerator* cg) = 0;
+    void setLine(int line) { m_line = line; }
     virtual void print(int indent) = 0;
     void printIndent(int indent)
     {

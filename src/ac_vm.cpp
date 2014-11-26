@@ -27,6 +27,7 @@ acVM::acVM()
     , m_msgHandler()
     , m_gc(this)
     , m_isRuntimeError(false)
+    , m_debugInfo(0)
     , m_printAST(false)
     , m_printIR(false)
 {
@@ -64,7 +65,15 @@ acVM::~acVM()
 void acVM::runtimeError(const std::string& errMsg)
 {
     m_isRuntimeError = true;
-    m_msgHandler.error(errMsg.c_str());
+    if(m_debugInfo != 0)
+    {
+        m_msgHandler.error(m_debugInfo->file, m_debugInfo->line, errMsg.c_str());
+        m_debugInfo = 0;
+    }
+    else
+    {
+        m_msgHandler.error(errMsg.c_str());
+    }
     m_gc.clearTempObj();
     longjmp(*m_codeGenerator->getErrorJmpBuf(), 1);
 }

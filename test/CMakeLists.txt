@@ -38,6 +38,7 @@ else(WIN32)
         ${LLVM_LIBS}
         curses
         dl
+        pthread
         z
     )
 endif(WIN32)

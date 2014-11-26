@@ -204,7 +204,7 @@ expr_stmt:
     ;
 
 primary_expr:
-      TOK_NULL                          { $$ = new NullAST(); PARSER->addNodeAST($$); }
+      TOK_NULL                          { $$ = new NullAST(); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     | boolean                           { $$ = $1; }
     | numeric                           { $$ = $1; }
     | string                            { $$ = $1; }
@@ -213,7 +213,7 @@ primary_expr:
     | getvar_primary_expr               { $$ = $1; }
     //| anony_func_decl                   { $$ = $1; }
     | TOK_LPAREN inner_expr TOK_RPAREN  { $$ = $2; }
-    | TOK_THIS %prec THISX              { $$ = new GetVarAST(NULL, "this"); PARSER->addNodeAST($$); }
+    | TOK_THIS %prec THISX              { $$ = new GetVarAST(NULL, "this"); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     | new_expr                          { $$ = $1; }
     ;
 
@@ -228,8 +228,8 @@ argument_expr_list:
 
 postfix_expr:
       primary_expr                                          { $$ = $1; }
-    | postfix_expr TOK_DOT TOK_IDENTIFIER                   { $$ = new GetVarAST($1, $3.getRawString()); PARSER->addNodeAST($$); }
-    | postfix_expr TOK_LBRACKET expr TOK_RBRACKET           { $$ = new GetVarAST($1, $3); PARSER->addNodeAST($$); }
+    | postfix_expr TOK_DOT TOK_IDENTIFIER                   { $$ = new GetVarAST($1, $3.getRawString()); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | postfix_expr TOK_LBRACKET expr TOK_RBRACKET           { $$ = new GetVarAST($1, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     | postfix_expr TOK_LPAREN TOK_RPAREN                    { $$ = new CallAST($1, NULL); PARSER->addNodeAST($$); }
     | postfix_expr TOK_LPAREN argument_expr_list TOK_RPAREN { $$ = new CallAST($1, $3); PARSER->addNodeAST($$); }
     | postfix_expr TOK_PLUSPLUS                             { $$ = new PostfixIncrementAST($1, TOK_PLUSPLUS); PARSER->addNodeAST($$); }
@@ -388,6 +388,7 @@ keyvalue:
             }
             $$ = new KeyValueAST(gv->m_keyIdentifier, $1);
             PARSER->addNodeAST($$);
+            $$->setLine($1->m_line);
         }
     //json format
     | string TOK_COLON inner_expr
@@ -441,18 +442,18 @@ var_decl_stmt:
     ;
     
 getvar_primary_expr:
-      TOK_IDENTIFIER                            { $$ = new GetVarAST(NULL, $1.getRawString(), GetVarAST::NONE); PARSER->addNodeAST($$); }
-    | TOK_COLONCOLON TOK_IDENTIFIER             { $$ = new GetVarAST(NULL, $2.getRawString(), GetVarAST::GLOBAL); PARSER->addNodeAST($$); }
-    | TOK_THIS TOK_DOT TOK_IDENTIFIER           { $$ = new GetVarAST(NULL, $3.getRawString(), GetVarAST::THIS); PARSER->addNodeAST($$); }
-    | TOK_THIS TOK_LBRACKET expr TOK_RBRACKET   { $$ = new GetVarAST(NULL, $3, GetVarAST::THIS); PARSER->addNodeAST($$); }
-    //| table TOK_DOT TOK_IDENTIFIER              { $$ = new GetVarAST($1, $3.getRawString(), GetVarAST::NONE); PARSER->addNodeAST($$); }
-    //| table TOK_LBRACKET expr TOK_RBRACKET      { $$ = new GetVarAST($1, $3, GetVarAST::NONE); PARSER->addNodeAST($$); }
+      TOK_IDENTIFIER                            { $$ = new GetVarAST(NULL, $1.getRawString(), GetVarAST::NONE); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_COLONCOLON TOK_IDENTIFIER             { $$ = new GetVarAST(NULL, $2.getRawString(), GetVarAST::GLOBAL); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | TOK_THIS TOK_DOT TOK_IDENTIFIER           { $$ = new GetVarAST(NULL, $3.getRawString(), GetVarAST::THIS); PARSER->addNodeAST($$); $$->setLine($3.m_beginLine); }
+    | TOK_THIS TOK_LBRACKET expr TOK_RBRACKET   { $$ = new GetVarAST(NULL, $3, GetVarAST::THIS); PARSER->addNodeAST($$); $$->setLine($4.m_beginLine); }
+    //| table TOK_DOT TOK_IDENTIFIER              { $$ = new GetVarAST($1, $3.getRawString(), GetVarAST::NONE); PARSER->addNodeAST($$); $$->setLine($3.m_beginLine); }
+    //| table TOK_LBRACKET expr TOK_RBRACKET      { $$ = new GetVarAST($1, $3, GetVarAST::NONE); PARSER->addNodeAST($$); $$->setLine($4.m_beginLine); }
     ;
 
 getvar_postfix_expr:
       getvar_primary_expr                                   { $$ = $1; }
-    | getvar_postfix_expr TOK_DOT TOK_IDENTIFIER            { $$ = new GetVarAST($1, $3.getRawString()); PARSER->addNodeAST($$); }
-    | getvar_postfix_expr TOK_LBRACKET expr TOK_RBRACKET    { $$ = new GetVarAST($1, $3); PARSER->addNodeAST($$); }
+    | getvar_postfix_expr TOK_DOT TOK_IDENTIFIER            { $$ = new GetVarAST($1, $3.getRawString()); PARSER->addNodeAST($$); $$->setLine($3.m_beginLine); }
+    | getvar_postfix_expr TOK_LBRACKET expr TOK_RBRACKET    { $$ = new GetVarAST($1, $3); PARSER->addNodeAST($$); $$->setLine($4.m_beginLine); }
     ;
 
 var_decl:

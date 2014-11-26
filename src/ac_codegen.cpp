@@ -146,9 +146,7 @@ void acCodeGenerator::generateCode()
     /* Push a new variable/block context */
     pushBlock(label_begin, label_end, m_programBlockAST, acCodeGenBlock::FUNCTION,
               retVar, m_gv_rootTableVar, m_gv_rootArgArray, m_gv_rootTmpArray, 0,
-              &m_stringList, &m_funcDataList);
-    m_stringList.clear();
-    m_funcDataList.clear();
+              &m_stringList, &m_funcDataList, &m_debugInfoList);
 
     currentBlock()->m_localVars.push_back(std::make_pair("this", m_gv_rootTableVar));
     m_programBlockAST->codeGen(this); /* emit bytecode for the toplevel block */
@@ -191,8 +189,13 @@ GenericValue acCodeGenerator::runCode()
             m_msgHandler->error("Encounter error!\n");
         }
 
+        //release unused data
         m_rootArgArray->m_data.clear();
         m_rootTmpArray->m_data.clear();
+        m_stringList.clear();
+        m_funcDataList.clear();
+        m_debugInfoList.clear();
+
         return v;
     }
 
@@ -203,7 +206,8 @@ void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave,
     NodeAST* ast, acCodeGenBlock::BlockType type,
     Value* retVar, Value* thisVar, Value* argArray,
     Value* tmpArray, int tmpArraySize,
-    std::list<std::string>* strList, std::list<acGCObject*>* funcDataList)
+    std::list<std::string>* strList, std::list<acGCObject*>* funcDataList,
+    std::list<acDebugInfo>* debugInfoList)
 {
     acCodeGenBlock* block = new acCodeGenBlock();
     block->m_bblock = bblock;
@@ -218,6 +222,7 @@ void acCodeGenerator::pushBlock(BasicBlock* bblock, BasicBlock* leave,
     block->m_isBlockEnd = false;
     block->m_stringList = strList;
     block->m_funcDataList = funcDataList;
+    block->m_debugInfoList = debugInfoList;
     m_blocks.push_front(block);
 }
 
@@ -351,11 +356,51 @@ llvm::Value* acCodeGenerator::createStringPtr(const std::string& str, acCodeGenB
 
     return builder.CreateIntToPtr(
             (sizeof(const char*) == sizeof(uint64_t) ?
-                builder.getInt64((uint64_t)strPtr) :
-                builder.getInt32((uint32_t)strPtr)
+                builder.getInt64((uintptr_t)strPtr) :
+                builder.getInt32((uintptr_t)strPtr)
             ),
-            builder.getInt8PtrTy(),
-            Twine("str_").concat(str)
+            builder.getInt8PtrTy()
+        );
+}
+
+Value* acCodeGenerator::createDebugInfoPtr(int line, acCodeGenBlock* block, IRBuilder<>& builder)
+{
+    return createDebugInfoPtr(getMsgHandler()->getFileName().c_str(), line, block, builder);
+}
+
+Value* acCodeGenerator::createDebugInfoPtr(const char* file, int line, acCodeGenBlock* block, IRBuilder<>& builder)
+{
+    //add file to stringList
+    std::list<std::string>* strList = block->m_stringList;
+    std::list<std::string>::iterator it = strList->begin(), end = strList->end();
+
+    const char* strPtr = 0;
+    for(; it != end; ++it)
+    {
+        if((*it) == file)
+        {
+            strPtr = it->c_str();
+            break;
+        }
+    }
+
+    if(strPtr == 0)
+    {
+        strList->push_back(std::string(file));
+        strPtr = strList->back().c_str();
+    }
+
+    block->m_debugInfoList->push_back(acDebugInfo());
+    acDebugInfo* debugInfo = &(block->m_debugInfoList->back());
+    debugInfo->file = strPtr;
+    debugInfo->line = line;
+
+    return builder.CreateIntToPtr(
+            (sizeof(acDebugInfo*) == sizeof(uint64_t) ?
+                builder.getInt64((uintptr_t)debugInfo) :
+                builder.getInt32((uintptr_t)debugInfo)
+            ),
+            builder.getInt8PtrTy()
         );
 }
 
@@ -592,7 +637,7 @@ void* createArray(acVariable* var, acVM* vm)
 }
 
 //parent.key or parent[key]
-void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFuncCall, acVM* vm)
+void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFuncCall, acDebugInfo* debugInfo, acVM* vm)
 {
     if(parent->m_valueType == acVT_ARRAY)
     {
@@ -606,6 +651,7 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
             idx = (int)key->m_int64;
             break;
         default:
+            vm->setDebugInfo(debugInfo);
             vm->runtimeError(std::string("Error: attempt to index array by '")+getVarTypeStr(key->m_valueType)+"'");
             return 0;
         }
@@ -615,6 +661,7 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
         {
             std::stringstream ss;
             ss << idx;
+            vm->setDebugInfo(debugInfo);
             vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
             return 0;
         }
@@ -634,6 +681,7 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
             idx = (int)key->m_int64;
             break;
         default:
+            vm->setDebugInfo(debugInfo);
             vm->runtimeError(std::string("Error: attempt to index string by '") + getVarTypeStr(key->m_valueType) + "'");
             return 0;
         }
@@ -643,6 +691,7 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
         {
             std::stringstream ss;
             ss << idx;
+            vm->setDebugInfo(debugInfo);
             vm->runtimeError(std::string("Error: string index out of bounds: ") + ss.str());
             return 0;
         }
@@ -653,6 +702,7 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 
     if(parent->m_valueType != acVT_TABLE)
     {
+        vm->setDebugInfo(debugInfo);
         vm->runtimeError(std::string("Error: attempt to get element '")+toString(key, vm)+"' on '"+getVarTypeStr(parent->m_valueType)+"'");
         return 0;
     }
@@ -674,6 +724,7 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 
         if(value == 0)
         {
+            vm->setDebugInfo(debugInfo);
             vm->runtimeError(std::string("Error: element '") + toString(key, vm) + "' not found");
             return 0;
         }
@@ -2049,7 +2100,7 @@ void acCodeGenerator::createGlobalFunctions()
     //
     m_gf_opGetVar = cast<Function>(mod->getOrInsertFunction("opGetVar",
                                  voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy, int32Ty, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opGetVar, (void*)opGetVar);
 

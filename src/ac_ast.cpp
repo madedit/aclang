@@ -242,7 +242,14 @@ Value* ArrayAST::codeGen(acCodeGenerator* cg)
     return val;
 }
 
-inline Value* codeGenGetVar(IRBuilder<>& builder, Value* parent, NodeAST* keyExpr, int findInGlobal, int isFuncCall, acCodeGenerator* cg)
+inline CallInst *CreateCall6(IRBuilder<>& builder, Value *Callee, Value *Arg1, Value *Arg2, Value *Arg3,
+    Value *Arg4, Value *Arg5, Value *Arg6)
+{
+    Value *Args[] = { Arg1, Arg2, Arg3, Arg4, Arg5, Arg6 };
+    return builder.Insert(CallInst::Create(Callee, Args));
+}
+
+inline Value* codeGenGetVar(IRBuilder<>& builder, Value* parent, NodeAST* keyExpr, int findInGlobal, int isFuncCall, Value* debugInfo, acCodeGenerator* cg)
 {
     switch(keyExpr->m_type)
     {
@@ -273,7 +280,7 @@ inline Value* codeGenGetVar(IRBuilder<>& builder, Value* parent, NodeAST* keyExp
     }
 
     Value* key = keyExpr->codeGen(cg);
-    return builder.CreateCall5(cg->m_gf_opGetVar, parent, key, builder.getInt32(findInGlobal), builder.getInt32(isFuncCall), cg->m_gv_vm);
+    return CreateCall6(builder, cg->m_gf_opGetVar, parent, key, builder.getInt32(findInGlobal), builder.getInt32(isFuncCall), debugInfo, cg->m_gv_vm);
 }
 
 Value* GetVarAST::codeGen(acCodeGenerator* cg)
@@ -291,7 +298,7 @@ Value* GetVarAST::codeGen(acCodeGenerator* cg)
 
         if(m_keyExpr != 0)
         {
-            val = codeGenGetVar(builder, m_parent, m_keyExpr, 0, m_isFuncCall, cg);
+            val = codeGenGetVar(builder, m_parent, m_keyExpr, 0, m_isFuncCall, cg->createDebugInfoPtr(m_line, block, builder), cg);
         }
         else
         {
@@ -311,7 +318,7 @@ Value* GetVarAST::codeGen(acCodeGenerator* cg)
         case NONE:
             if(m_keyExpr != 0)
             {
-                val = codeGenGetVar(builder, block->m_thisVar, m_keyExpr, 1, m_isFuncCall, cg);
+                val = codeGenGetVar(builder, block->m_thisVar, m_keyExpr, 1, m_isFuncCall, cg->createDebugInfoPtr(m_line, block, builder), cg);
             }
             else
             {
@@ -334,7 +341,7 @@ Value* GetVarAST::codeGen(acCodeGenerator* cg)
         case THIS:
             if(m_keyExpr != 0)
             {
-                val = codeGenGetVar(builder, block->m_thisVar, m_keyExpr, 0, m_isFuncCall, cg);
+                val = codeGenGetVar(builder, block->m_thisVar, m_keyExpr, 0, m_isFuncCall, cg->createDebugInfoPtr(m_line, block, builder), cg);
             }
             else
             {
@@ -350,7 +357,7 @@ Value* GetVarAST::codeGen(acCodeGenerator* cg)
         case GLOBAL:
             if(m_keyExpr != 0)
             {
-                val = codeGenGetVar(builder, cg->m_gv_rootTableVar, m_keyExpr, 0, m_isFuncCall, cg);
+                val = codeGenGetVar(builder, cg->m_gv_rootTableVar, m_keyExpr, 0, m_isFuncCall, cg->createDebugInfoPtr(m_line, block, builder), cg);
             }
             else
             {
@@ -581,11 +588,11 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     Value* acFuncDataToPtr;
     if(sizeof(void*) == sizeof(uint64_t))
     {
-        acFuncDataToPtr = builder.CreateIntToPtr(builder.getInt64(uint64_t(acFuncData)), voidPtrTy);
+        acFuncDataToPtr = builder.CreateIntToPtr(builder.getInt64(uintptr_t(acFuncData)), voidPtrTy);
     }
     else
     {
-        acFuncDataToPtr = builder.CreateIntToPtr(builder.getInt32(uint32_t(acFuncData)), voidPtrTy);
+        acFuncDataToPtr = builder.CreateIntToPtr(builder.getInt32(uintptr_t(acFuncData)), voidPtrTy);
     }
 
     //store function values
@@ -596,12 +603,14 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     BasicBlock* leave = BasicBlock::Create(context, "leave", llvmFunc, 0);
     builder.SetInsertPoint(entry);
 
-    //used strings in the function
+    //used strings & debugInfos in the function
     std::list<std::string>* strList = new std::list<std::string>();
+    std::list<acDebugInfo>* debugInfoList = new std::list<acDebugInfo>();
     acFuncData->m_stringList = strList;
+    acFuncData->m_debugInfoList = debugInfoList;
 
-    std::list<acGCObject*>* funcList = new std::list<acGCObject*>();
-    cg->pushBlock(entry, leave, this, acCodeGenBlock::FUNCTION, 0, 0, 0, 0, 0, strList, funcList);
+    std::list<acGCObject*>* funcDataList = new std::list<acGCObject*>();
+    cg->pushBlock(entry, leave, this, acCodeGenBlock::FUNCTION, 0, 0, 0, 0, 0, strList, funcDataList, debugInfoList);
     m_localblock = cg->currentBlock();
 
     //this, args, upvalues
@@ -657,18 +666,18 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     cg->popBlock();
 
     //setFuncMiscData
-    Value* funcListToPtr;
+    Value* funcDataListToPtr;
     bool setMiscData = false;
 
-    if(funcList->size() > 0)
+    if(funcDataList->size() > 0)
     {
         if(sizeof(void*) == sizeof(uint64_t))
         {
-            funcListToPtr = builder.CreateIntToPtr(builder.getInt64(uint64_t(funcList)), voidPtrTy);
+            funcDataListToPtr = builder.CreateIntToPtr(builder.getInt64(uintptr_t(funcDataList)), voidPtrTy);
         }
         else
         {
-            funcListToPtr = builder.CreateIntToPtr(builder.getInt32(uint32_t(funcList)), voidPtrTy);
+            funcDataListToPtr = builder.CreateIntToPtr(builder.getInt32(uintptr_t(funcDataList)), voidPtrTy);
         }
         setMiscData = true;
     }
@@ -676,19 +685,19 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     {
         if(sizeof(void*) == sizeof(uint64_t))
         {
-            funcListToPtr = builder.CreateIntToPtr(builder.getInt64(0), voidPtrTy);
+            funcDataListToPtr = builder.CreateIntToPtr(builder.getInt64(0), voidPtrTy);
         }
         else
         {
-            funcListToPtr = builder.CreateIntToPtr(builder.getInt32(0), voidPtrTy);
+            funcDataListToPtr = builder.CreateIntToPtr(builder.getInt32(0), voidPtrTy);
         }
-        delete funcList;
+        delete funcDataList;
     }
     
     if(setMiscData)
     {
         builder.SetInsertPoint(m_buildUpValueTableInsertPoint);
-        builder.CreateCall2(cg->m_gf_setFuncMiscData, m_funcVar, funcListToPtr);
+        builder.CreateCall2(cg->m_gf_setFuncMiscData, m_funcVar, funcDataListToPtr);
     }
 
     //restore InsertPoint
@@ -1241,7 +1250,8 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
         {
             cg->pushBlock(label_if_then, label_if_else, this, acCodeGenBlock::IF_THEN,
                 block->m_retVar, block->m_thisVar, block->m_argArray,
-                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+                block->m_tmpArray, block->m_tmpArraySize,
+                block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
             m_thenStmt->codeGen(cg);
             cg->popBlock();
         }
@@ -1252,7 +1262,8 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
 
         cg->pushBlock(label_if_else, label_if_end, this, acCodeGenBlock::IF_ELSE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+            block->m_tmpArray, block->m_tmpArraySize,
+            block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
         m_elseStmt->codeGen(cg);
         cg->popBlock();
 
@@ -1271,7 +1282,8 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
         {
             cg->pushBlock(label_if_then, label_if_end, this, acCodeGenBlock::IF_THEN,
                 block->m_retVar, block->m_thisVar, block->m_argArray,
-                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+                block->m_tmpArray, block->m_tmpArraySize,
+                block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
             m_thenStmt->codeGen(cg);
             cg->popBlock();
         }
@@ -1331,7 +1343,8 @@ Value* SwitchAST::codeGen(acCodeGenerator* cg)
 
     cg->pushBlock(label_switch_begin, label_switch_end, this, acCodeGenBlock::SWITCH, 
         block->m_retVar, block->m_thisVar, block->m_argArray,
-        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+        block->m_tmpArray, block->m_tmpArraySize,
+        block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
     block = cg->currentBlock();
 
     it = m_labeledStmts->m_nodeASTVec.begin();
@@ -1377,7 +1390,8 @@ Value* SwitchAST::codeGen(acCodeGenerator* cg)
         {
             cg->pushBlock(swblock, nextBlock, this, acCodeGenBlock::CODE, 
                 block->m_retVar, block->m_thisVar, block->m_argArray,
-                block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+                block->m_tmpArray, block->m_tmpArraySize,
+                block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
             ast->m_stmts->codeGen(cg);
             cg->popBlock();
         }
@@ -1497,7 +1511,8 @@ Value* WhileAST::codeGen(acCodeGenerator* cg)
     {
         cg->pushBlock(label_while_loop, label_while_end, this, acCodeGenBlock::WHILE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+            block->m_tmpArray, block->m_tmpArraySize,
+            block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
         m_stmt->codeGen(cg);
         cg->popBlock();
     }
@@ -1530,7 +1545,8 @@ Value* DoWhileAST::codeGen(acCodeGenerator* cg)
     {
         cg->pushBlock(label_dowhile_loop, label_dowhile_end, this, acCodeGenBlock::WHILE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+            block->m_tmpArray, block->m_tmpArraySize,
+            block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
         m_stmt->codeGen(cg);
         cg->popBlock();
     }
@@ -1568,7 +1584,8 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
 
     cg->pushBlock(label_for_init, label_for_end, this, acCodeGenBlock::FOR,
         block->m_retVar, block->m_thisVar, block->m_argArray,
-        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+        block->m_tmpArray, block->m_tmpArraySize,
+        block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
     block = cg->currentBlock();
 
     //init
@@ -1603,7 +1620,8 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
     {
         cg->pushBlock(label_for_loop, label_for_inc, this, acCodeGenBlock::CODE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+            block->m_tmpArray, block->m_tmpArraySize,
+            block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
         m_stmt->codeGen(cg);
         cg->popBlock();
     }
@@ -1639,7 +1657,8 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
 
     cg->pushBlock(label_foreach_init, label_foreach_end, this, acCodeGenBlock::FOREACH,
         block->m_retVar, block->m_thisVar, block->m_argArray,
-        block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+        block->m_tmpArray, block->m_tmpArraySize,
+        block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
     block = cg->currentBlock();
 
     //init
@@ -1705,7 +1724,8 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
     {
         cg->pushBlock(label_foreach_loop, label_foreach_end, this, acCodeGenBlock::CODE,
             block->m_retVar, block->m_thisVar, block->m_argArray,
-            block->m_tmpArray, block->m_tmpArraySize, block->m_stringList, block->m_funcDataList);
+            block->m_tmpArray, block->m_tmpArraySize,
+            block->m_stringList, block->m_funcDataList, block->m_debugInfoList);
         m_stmt->codeGen(cg);
         cg->popBlock();
     }

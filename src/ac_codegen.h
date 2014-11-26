@@ -21,6 +21,12 @@ struct acArray;
 struct acTable;
 struct acVariable;
 
+struct acDebugInfo
+{
+    const char* file;
+    int line;
+};
+
 struct acCodeGenBlock
 {
     BasicBlock* m_bblock;
@@ -50,6 +56,7 @@ struct acCodeGenBlock
     bool m_isBlockEnd;
     std::list<std::string>* m_stringList;
     std::list<acGCObject*>* m_funcDataList;
+    std::list<acDebugInfo>* m_debugInfoList;
 };
 
 class acCodeGenerator
@@ -73,6 +80,7 @@ protected:
     acArray* m_rootTmpArray;
     std::list<std::string> m_stringList;
     std::list<acGCObject*> m_funcDataList;
+    std::list<acDebugInfo> m_debugInfoList;
 
     std::list<acCodeGenBlock*> m_blocks;
 
@@ -174,13 +182,16 @@ public:
                    NodeAST* ast, acCodeGenBlock::BlockType type,
                    Value* retVar, Value* thisVar, Value* argArray,
                    Value* tmpArray, int tmpArraySize,
-                   std::list<std::string>* strList, std::list<acGCObject*>* funcList);
+                   std::list<std::string>* strList, std::list<acGCObject*>* funcList,
+                   std::list<acDebugInfo>* debugInfoList);
     void popBlock();
     Value* findLocalVar(const std::string& name);
     acCodeGenBlock* findWhereIsBreak();
     acCodeGenBlock* findWhereIsContinue();
 
     Value* createStringPtr(const std::string& str, acCodeGenBlock* block, IRBuilder<>& builder);
+    Value* createDebugInfoPtr(int line, acCodeGenBlock* block, IRBuilder<>& builder);
+    Value* createDebugInfoPtr(const char* file, int line, acCodeGenBlock* block, IRBuilder<>& builder);
 
     void setCompileError(bool v) { m_isCompileError = v; }
     bool isCompileError() { return m_isCompileError; }
