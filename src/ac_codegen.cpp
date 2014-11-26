@@ -15,6 +15,10 @@
 #include <sstream>
 #include <setjmp.h>
 
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
+
 using namespace llvm;
 
 acCodeGenerator::acCodeGenerator(acVM* vm)
@@ -641,28 +645,32 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 {
     if(parent->m_valueType == acVT_ARRAY)
     {
-        int idx = 0;
+        acInt64 idx = 0;
         switch(key->m_valueType)
         {
         case acVT_INT32:
             idx = key->m_int32;
             break;
         case acVT_INT64:
-            idx = (int)key->m_int64;
+            idx = key->m_int64;
             break;
         default:
-            vm->setDebugInfo(debugInfo);
-            vm->runtimeError(std::string("Error: attempt to index array by '")+getVarTypeStr(key->m_valueType)+"'");
+            {
+                char msg[128];
+                sprintf(msg, "Error: attempt to index array by '%s'", getVarTypeStr(key->m_valueType).c_str());
+                vm->setDebugInfo(debugInfo);
+                vm->runtimeError(msg);
+            }
             return 0;
         }
 
         acArray* arr = (acArray*)parent->m_gcobj;
-        if(idx < 0 || idx >= arr->size())
+        if(idx < 0 || idx >= (acInt64)arr->size())
         {
-            std::stringstream ss;
-            ss << idx;
+            char msg[128];
+            sprintf(msg, "Error: array index out of bounds: %ld", idx);
             vm->setDebugInfo(debugInfo);
-            vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
+            vm->runtimeError(msg);
             return 0;
         }
 
@@ -671,7 +679,7 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 
     if(parent->m_valueType == acVT_STRING)
     {
-        int idx = 0;
+        acInt64 idx = 0;
         switch(key->m_valueType)
         {
         case acVT_INT32:
@@ -681,18 +689,22 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
             idx = (int)key->m_int64;
             break;
         default:
-            vm->setDebugInfo(debugInfo);
-            vm->runtimeError(std::string("Error: attempt to index string by '") + getVarTypeStr(key->m_valueType) + "'");
+            {
+                char msg[128];
+                sprintf(msg, "Error: attempt to index string by '%s'", getVarTypeStr(key->m_valueType).c_str());
+                vm->setDebugInfo(debugInfo);
+                vm->runtimeError(msg);
+            }
             return 0;
         }
 
         acString* str = (acString*)parent->m_gcobj;
-        if(idx < 0 || idx >= str->m_data.size())
+        if(idx < 0 || idx >= (acInt64)str->m_data.size())
         {
-            std::stringstream ss;
-            ss << idx;
+            char msg[128];
+            sprintf(msg, "Error: string index out of bounds: %ld", idx);
             vm->setDebugInfo(debugInfo);
-            vm->runtimeError(std::string("Error: string index out of bounds: ") + ss.str());
+            vm->runtimeError(msg);
             return 0;
         }
 
@@ -702,8 +714,10 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 
     if(parent->m_valueType != acVT_TABLE)
     {
+        char msg[128];
+        sprintf(msg, "Error: attempt to get element on '%s'", getVarTypeStr(parent->m_valueType).c_str());
         vm->setDebugInfo(debugInfo);
-        vm->runtimeError(std::string("Error: attempt to get element '")+toString(key, vm)+"' on '"+getVarTypeStr(parent->m_valueType)+"'");
+        vm->runtimeError(msg);
         return 0;
     }
 
@@ -724,8 +738,12 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 
         if(value == 0)
         {
+            char s1[64];
+            s1[snprintf(s1, 63, "%s", toString(key, vm).c_str())] = 0;
+            char msg[128];
+            sprintf(msg, "Error: element '%s' not found", s1);
             vm->setDebugInfo(debugInfo);
-            vm->runtimeError(std::string("Error: element '") + toString(key, vm) + "' not found");
+            vm->runtimeError(msg);
             return 0;
         }
     }
@@ -739,9 +757,9 @@ void* opGetVar_int32(acVariable* parent, acInt32 idx, int findInGlobal, int isFu
         acArray* arr = parent->toArray();
         if(idx < 0 || idx >= arr->size())
         {
-            std::stringstream ss;
-            ss << idx;
-            vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
+            char msg[128];
+            sprintf(msg, "Error: array index out of bounds: %d", idx);
+            vm->runtimeError(msg);
             return 0;
         }
 
@@ -753,9 +771,9 @@ void* opGetVar_int32(acVariable* parent, acInt32 idx, int findInGlobal, int isFu
         acString* str = parent->toString();
         if(idx < 0 || idx >= (int)str->m_data.size())
         {
-            std::stringstream ss;
-            ss << idx;
-            vm->runtimeError(std::string("Error: string index out of bounds: ") + ss.str());
+            char msg[128];
+            sprintf(msg, "Error: string index out of bounds: %d", idx);
+            vm->runtimeError(msg);
             return 0;
         }
 
@@ -765,9 +783,9 @@ void* opGetVar_int32(acVariable* parent, acInt32 idx, int findInGlobal, int isFu
 
     if(parent->m_valueType != acVT_TABLE)
     {
-        std::stringstream ss;
-        ss << idx;
-        vm->runtimeError(std::string("Error: attempt to get element '")+ss.str()+"' on '"+getVarTypeStr(parent->m_valueType)+"'");
+        char msg[128];
+        sprintf(msg, "Error: attempt to get element '%d' on '%s'", idx, getVarTypeStr(parent->m_valueType).c_str());
+        vm->runtimeError(msg);
         return 0;
     }
 
@@ -783,9 +801,9 @@ void* opGetVar_int32(acVariable* parent, acInt32 idx, int findInGlobal, int isFu
 
         if(value == 0)
         {
-            std::stringstream ss;
-            ss << idx;
-            vm->runtimeError(std::string("Error: element '") + ss.str() + "' not found");
+            char msg[128];
+            sprintf(msg, "Error: element '%d' not found", idx);
+            vm->runtimeError(msg);
             return 0;
         }
     }
@@ -799,9 +817,9 @@ void* opGetVar_int64(acVariable* parent, acInt64 idx, int findInGlobal, int isFu
         acArray* arr = parent->toArray();
         if(idx < 0 || idx >= arr->size())
         {
-            std::stringstream ss;
-            ss << idx;
-            vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
+            char msg[128];
+            sprintf(msg, "Error: array index out of bounds : %d", idx);
+            vm->runtimeError(msg);
             return 0;
         }
 
@@ -813,9 +831,9 @@ void* opGetVar_int64(acVariable* parent, acInt64 idx, int findInGlobal, int isFu
         acString* str = parent->toString();
         if(idx < 0 || idx >= (acInt64)str->m_data.size())
         {
-            std::stringstream ss;
-            ss << idx;
-            vm->runtimeError(std::string("Error: string index out of bounds: ") + ss.str());
+            char msg[128];
+            sprintf(msg, "Error: string index out of bounds: %d", idx);
+            vm->runtimeError(msg);
             return 0;
         }
 
@@ -825,9 +843,9 @@ void* opGetVar_int64(acVariable* parent, acInt64 idx, int findInGlobal, int isFu
 
     if(parent->m_valueType != acVT_TABLE)
     {
-        std::stringstream ss;
-        ss << idx;
-        vm->runtimeError(std::string("Error: attempt to get element '") + ss.str() + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        char msg[128];
+        sprintf(msg, "Error: attempt to get element '%d' on '%s'", idx, getVarTypeStr(parent->m_valueType).c_str());
+        vm->runtimeError(msg);
         return 0;
     }
 
@@ -843,9 +861,9 @@ void* opGetVar_int64(acVariable* parent, acInt64 idx, int findInGlobal, int isFu
 
         if(value == 0)
         {
-            std::stringstream ss;
-            ss << idx;
-            vm->runtimeError(std::string("Error: element '") + ss.str() + "' not found");
+            char msg[128];
+            sprintf(msg, "Error: element '%d' not found", idx);
+            vm->runtimeError(msg);
             return 0;
         }
     }
@@ -856,7 +874,11 @@ void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncC
 {
     if(parent->m_valueType != acVT_TABLE)
     {
-        vm->runtimeError(std::string("Error: attempt to get element '")+name+"' on '"+getVarTypeStr(parent->m_valueType)+"'");
+        char s1[64];
+        s1[snprintf(s1, 63, "%s", name)] = 0;
+        char msg[256];
+        sprintf(msg, "Error: attempt to get element '%s' on '%s'", s1, getVarTypeStr(parent->m_valueType).c_str());
+        vm->runtimeError(msg);
         return 0;
     }
 
@@ -880,7 +902,9 @@ void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncC
 
         if(value == 0)
         {
-            vm->runtimeError(std::string("Error: element '") + name + "' not found");
+            char msg[128];
+            sprintf(msg, "Error: element '%s' not found", name);
+            vm->runtimeError(msg);
             return 0;
         }
     }
@@ -897,26 +921,30 @@ void* opNewVar(acVariable* parent, acVariable* key, acVM* vm)
     {
     case acVT_ARRAY:
         {
-            int idx = 0;
+            acInt64 idx = 0;
             switch(key->m_valueType)
             {
             case acVT_INT32:
                 idx = key->m_int32;
                 break;
             case acVT_INT64:
-                idx = (int)key->m_int64;
+                idx = key->m_int64;
                 break;
             default:
-                vm->runtimeError(std::string("Error: attempt to index array by '")+getVarTypeStr(key->m_valueType)+"'");
+                {
+                    char msg[128];
+                    sprintf(msg, "Error: attempt to index array by '%s'", getVarTypeStr(key->m_valueType).c_str());
+                    vm->runtimeError(msg);
+                }
                 return 0;
             }
 
             acArray* arr = (acArray*)parent->m_gcobj;
-            if(idx < 0 || idx >= arr->size())
+            if(idx < 0 || idx >= (acInt64)arr->size())
             {
-                std::stringstream ss;
-                ss << idx;
-                vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
+                char msg[128];
+                sprintf(msg, "Error: array index out of bounds: %ld", idx);
+                vm->runtimeError(msg);
                 return 0;
             }
 
@@ -932,7 +960,11 @@ void* opNewVar(acVariable* parent, acVariable* key, acVM* vm)
         }
         break;
     default:
-        vm->runtimeError(std::string("Error: attempt to create new var on '")+getVarTypeStr(parent->m_valueType)+"'");
+        {
+            char msg[128];
+            sprintf(msg, "Error: attempt to create new var on '%s'", getVarTypeStr(parent->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
         break;
     }
 
@@ -949,9 +981,9 @@ void* opNewVar_int32(acVariable* parent, acInt32 key, acVM* vm)
             acArray* arr = parent->toArray();
             if(key < 0 || key >= arr->size())
             {
-                std::stringstream ss;
-                ss << key;
-                vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
+                char msg[128];
+                sprintf(msg, "Error: array index out of bounds: %d", key);
+                vm->runtimeError(msg);
                 return 0;
             }
 
@@ -965,7 +997,11 @@ void* opNewVar_int32(acVariable* parent, acInt32 key, acVM* vm)
         }
         break;
     default:
-        vm->runtimeError(std::string("Error: attempt to create new var on '")+getVarTypeStr(parent->m_valueType)+"'");
+        {
+            char msg[128];
+            sprintf(msg, "Error: attempt to create new var on '%s'", getVarTypeStr(parent->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
         break;
     }
 
@@ -982,9 +1018,9 @@ void* opNewVar_int64(acVariable* parent, acInt64 key, acVM* vm)
             acArray* arr = parent->toArray();
             if(key < 0 || key >= arr->size())
             {
-                std::stringstream ss;
-                ss << key;
-                vm->runtimeError(std::string("Error: array index out of bounds: ") + ss.str());
+                char msg[128];
+                sprintf(msg, "Error: array index out of bounds: %ld", key);
+                vm->runtimeError(msg);
                 return 0;
             }
 
@@ -998,7 +1034,11 @@ void* opNewVar_int64(acVariable* parent, acInt64 key, acVM* vm)
         }
         break;
     default:
-        vm->runtimeError(std::string("Error: attempt to create new var on '") + getVarTypeStr(parent->m_valueType) + "'");
+        {
+            char msg[128];
+            sprintf(msg, "Error: attempt to create new var on '%s'", getVarTypeStr(parent->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
         break;
     }
 
@@ -1015,7 +1055,13 @@ void* opNewVar_str(acVariable* parent, char* key, acVM* vm)
         }
         break;
     default:
-        vm->runtimeError(std::string("Error: attempt to create new var on '")+getVarTypeStr(parent->m_valueType)+"'");
+        {
+            char s1[64];
+            s1[snprintf(s1, 63, "%s", key)] = 0;
+            char msg[256];
+            sprintf(msg, "Error: attempt to create new var '%s' on '%s'", s1, getVarTypeStr(parent->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
         break;
     }
 
@@ -1155,9 +1201,11 @@ void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
         }
     }
 
-    vm->runtimeError(std::string("Error: attempt to use op '+' on berween '")+
-        getVarTypeStr(v1->m_valueType)+"' and '"+
-        getVarTypeStr(v2->m_valueType)+"'");
+    char msg[128];
+    sprintf(msg, "Error: attempt to use op '+' on between '%s' and '%s'",
+        getVarTypeStr(v1->m_valueType).c_str(),
+        getVarTypeStr(v2->m_valueType).c_str());
+    vm->runtimeError(msg);
 }
 
 //ret = v1 - v2
@@ -1235,9 +1283,11 @@ void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
         }
     }
 
-    vm->runtimeError(std::string("Error: attempt to use op '-' on berween '")+
-        getVarTypeStr(v1->m_valueType)+"' and '"+
-        getVarTypeStr(v2->m_valueType)+"'");
+    char msg[128];
+    sprintf(msg, "Error: attempt to use op '-' on between '%s' and '%s'",
+        getVarTypeStr(v1->m_valueType).c_str(),
+        getVarTypeStr(v2->m_valueType).c_str());
+    vm->runtimeError(msg);
 }
 
 //ret = v1 * v2
@@ -1315,9 +1365,11 @@ void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
         }
     }
 
-    vm->runtimeError(std::string("Error: attempt to use op '*' on berween '")+
-        getVarTypeStr(v1->m_valueType)+"' and '"+
-        getVarTypeStr(v2->m_valueType)+"'");
+    char msg[128];
+    sprintf(msg, "Error: attempt to use op '*' on between '%s' and '%s'",
+        getVarTypeStr(v1->m_valueType).c_str(),
+        getVarTypeStr(v2->m_valueType).c_str());
+    vm->runtimeError(msg);
 }
 
 //ret = v1 / v2
@@ -1395,9 +1447,11 @@ void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
         }
     }
 
-    vm->runtimeError(std::string("Error: attempt to use op '/' on berween '")+
-        getVarTypeStr(v1->m_valueType)+"' and '"+
-        getVarTypeStr(v2->m_valueType)+"'");
+    char msg[128];
+    sprintf(msg, "Error: attempt to use op '/' on between '%s' and '%s'",
+        getVarTypeStr(v1->m_valueType).c_str(),
+        getVarTypeStr(v2->m_valueType).c_str());
+    vm->runtimeError(msg);
 }
 
 //ret = v1 % v2
@@ -1475,9 +1529,11 @@ void opModVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
         }
     }
 
-    vm->runtimeError(std::string("Error: attempt to use op '%' on berween '")+
-        getVarTypeStr(v1->m_valueType)+"' and '"+
-        getVarTypeStr(v2->m_valueType)+"'");
+    char msg[128];
+    sprintf(msg, "Error: attempt to use op '%%' on between '%s' and '%s'",
+        getVarTypeStr(v1->m_valueType).c_str(),
+        getVarTypeStr(v2->m_valueType).c_str());
+    vm->runtimeError(msg);
 }
 
 //v1(args); ret = args[0]
@@ -1542,10 +1598,12 @@ void opPostfixIncDecVar(acVariable* ret, acVariable* var, int tok, acVM* vm)
         break;
     default:
         {
-            std::string tokstr;
+            const char* tokstr;
             if(tok == TOK_PLUSPLUS) tokstr = "++";
             else tokstr = "--";
-            vm->runtimeError(std::string("Error: attempt to use postfix op '")+tokstr+"' on '"+getVarTypeStr(var->m_valueType)+"'"); 
+            char msg[128];
+            sprintf(msg, "Error: attempt to use postfix op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
+            vm->runtimeError(msg);
         }
         break;
     }
@@ -1573,10 +1631,12 @@ void opPrefixIncDecVar(acVariable* var, int tok, acVM* vm)
         break;
     default:
         {
-            std::string tokstr;
+            const char* tokstr;
             if(tok == TOK_PLUSPLUS) tokstr = "++";
             else tokstr = "--";
-            vm->runtimeError(std::string("Error: attempt to use prefix op '")+tokstr+"' on '"+getVarTypeStr(var->m_valueType)+"'"); 
+            char msg[128];
+            sprintf(msg, "Error: attempt to use prefix op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
+            vm->runtimeError(msg);
         }
         break;
     }
@@ -1604,10 +1664,12 @@ void opUnaryPlusMinusVar(acVariable* ret, acVariable* var, int tok, acVM* vm)
         break;
     default:
         {
-            std::string tokstr;
+            const char* tokstr;
             if(tok == TOK_PLUS) tokstr = "+";
             else tokstr = "-";
-            vm->runtimeError(std::string("Error: attempt to use unary op '")+tokstr+"' on '"+getVarTypeStr(var->m_valueType)+"'"); 
+            char msg[128];
+            sprintf(msg, "Error: attempt to use unary op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
+            vm->runtimeError(msg);
         }
         break;
     }
@@ -1641,7 +1703,11 @@ void opBitwiseNotVar(acVariable* ret, acVariable* var, acVM* vm)
         ret->setValue(~var->m_int64);
         break;
     default:
-        vm->runtimeError(std::string("Error: attempt to use bitwise op '~' on '")+getVarTypeStr(var->m_valueType)+"'"); 
+        {
+            char msg[128];
+            sprintf(msg, "Error: attempt to use bitwise op '~' on '%s'", getVarTypeStr(var->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
         break;
     }
 }
@@ -1718,7 +1784,7 @@ void opBitwiseAndOrXorVar(acVariable* ret, acVariable* var1, acVariable* var2, i
         break;
     }
 
-    std::string tokstr;
+    const char* tokstr;
     switch(tok)
     {
     case TOK_AND:
@@ -1732,10 +1798,12 @@ void opBitwiseAndOrXorVar(acVariable* ret, acVariable* var1, acVariable* var2, i
         break;
     }
 
-    vm->runtimeError(std::string("Error: attempt to use bitwise op '")+tokstr+"' on between '"+
-        getVarTypeStr(var1->m_valueType)+"' and '"+
-        getVarTypeStr(var2->m_valueType)+"'" ); 
- 
+    char msg[128];
+    sprintf(msg, "Error: attempt to use bitwise op '%s' on between '%s' and '%s'",
+        tokstr,
+        getVarTypeStr(var1->m_valueType).c_str(),
+        getVarTypeStr(var2->m_valueType).c_str());
+    vm->runtimeError(msg);
 }
 
 int opToBoolVar(acVariable* var, acVM* vm)
@@ -1757,7 +1825,11 @@ void opInitIter(acVariable* var, acVM* vm)
         ((acTable*)var->m_gcobj)->initIter();
         break;
     default:
-        vm->runtimeError(std::string("Error: attempt to iterate on '")+getVarTypeStr(var->m_valueType)+"'"); 
+        {
+            char msg[128];
+            sprintf(msg, "Error: attempt to iterate on '%s'", getVarTypeStr(var->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
         break;
     }
 }
@@ -1776,7 +1848,11 @@ int opIterateVar(acVariable* var, acVariable* key, acVariable* value, acVM* vm)
         return ((acTable*)var->m_gcobj)->iterate(key, value);
 
     default:
-        vm->runtimeError(std::string("Error: attempt to iterate on '")+getVarTypeStr(var->m_valueType)+"'"); 
+        {
+            char msg[128];
+            sprintf(msg, "Error: attempt to iterate on '%s'", getVarTypeStr(var->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
         break;
     }
     return false;
@@ -1806,7 +1882,13 @@ void opDelete(acVariable* parent, acVariable* key, int findInGlobal, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
-        vm->runtimeError(std::string("Error: attempt to delete element '") + toString(key, vm) + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        char s1[64];
+        s1[snprintf(s1, 63, "%s", toString(key, vm).c_str())] = 0;
+        char msg[256];
+        sprintf(msg, "Error: attempt to delete element '%s' from '%s'",
+            s1,
+            getVarTypeStr(parent->m_valueType).c_str());
+        vm->runtimeError(msg);
         return;
     }
 
@@ -1829,15 +1911,19 @@ void opDelete(acVariable* parent, acVariable* key, int findInGlobal, acVM* vm)
         }
     }
 
-    vm->runtimeError(std::string("Error: delete element '") + toString(key, vm) + "' not found");
+    char s1[64];
+    s1[snprintf(s1, 63, "%s", toString(key, vm).c_str())] = 0;
+    char msg[128];
+    sprintf(msg, "Error: delete element '%s' not found", s1);
+    vm->runtimeError(msg);
 }
 void opDelete_int32(acVariable* parent, acInt32 key, int findInGlobal, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
-        std::stringstream ss;
-        ss << key;
-        vm->runtimeError(std::string("Error: attempt to delete element '") + ss.str() + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        char msg[128];
+        sprintf(msg, "Error: attempt to delete element '%d' from '%s'", key, getVarTypeStr(parent->m_valueType).c_str());
+        vm->runtimeError(msg);
         return;
     }
 
@@ -1860,17 +1946,17 @@ void opDelete_int32(acVariable* parent, acInt32 key, int findInGlobal, acVM* vm)
         }
     }
 
-    std::stringstream ss;
-    ss << key;
-    vm->runtimeError(std::string("Error: delete element '") + ss.str() + "' not found");
+    char msg[128];
+    sprintf(msg, "Error: delete element '%d' not found", key);
+    vm->runtimeError(msg);
 }
 void opDelete_int64(acVariable* parent, acInt64 key, int findInGlobal, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
-        std::stringstream ss;
-        ss << key;
-        vm->runtimeError(std::string("Error: attempt to delete element '") + ss.str() + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        char msg[128];
+        sprintf(msg, "Error: attempt to delete element '%ld' from '%s'", key, getVarTypeStr(parent->m_valueType).c_str());
+        vm->runtimeError(msg);
         return;
     }
 
@@ -1893,15 +1979,19 @@ void opDelete_int64(acVariable* parent, acInt64 key, int findInGlobal, acVM* vm)
         }
     }
 
-    std::stringstream ss;
-    ss << key;
-    vm->runtimeError(std::string("Error: delete element '") + ss.str() + "' not found");
+    char msg[128];
+    sprintf(msg, "Error: delete element '%ld' not found", key);
+    vm->runtimeError(msg);
 }
 void opDelete_str(acVariable* parent, char* key, int findInGlobal, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
-        vm->runtimeError(std::string("Error: attempt to delete element '") + key + "' on '" + getVarTypeStr(parent->m_valueType) + "'");
+        char s1[64];
+        s1[snprintf(s1, 63, "%s", key)] = 0;
+        char msg[256];
+        sprintf(msg, "Error: attempt to delete element '%s' from '%s'", s1, getVarTypeStr(parent->m_valueType).c_str());
+        vm->runtimeError(msg);
         return;
     }
 
@@ -1924,7 +2014,11 @@ void opDelete_str(acVariable* parent, char* key, int findInGlobal, acVM* vm)
         }
     }
 
-    vm->runtimeError(std::string("Error: delete element '") + key + "' not found");
+    char s1[64];
+    s1[snprintf(s1, 63, "%s", key)] = 0;
+    char msg[128];
+    sprintf(msg, "Error: delete element '%s' not found", s1);
+    vm->runtimeError(msg);
 }
 
 }//extern"C"

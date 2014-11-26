@@ -62,17 +62,17 @@ acVM::~acVM()
     llvm::llvm_shutdown();
 }
 
-void acVM::runtimeError(const std::string& errMsg)
+void acVM::runtimeError(const char* errMsg)
 {
     m_isRuntimeError = true;
     if(m_debugInfo != 0)
     {
-        m_msgHandler.error(m_debugInfo->file, m_debugInfo->line, errMsg.c_str());
+        m_msgHandler.error(m_debugInfo->file, m_debugInfo->line, errMsg);
         m_debugInfo = 0;
     }
     else
     {
-        m_msgHandler.error(errMsg.c_str());
+        m_msgHandler.error(errMsg);
     }
     m_gc.clearTempObj();
     longjmp(*m_codeGenerator->getErrorJmpBuf(), 1);

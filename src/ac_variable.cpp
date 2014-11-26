@@ -226,7 +226,9 @@ int acVariable::compare(acVariable* v, acVM* vm)
         break;
     }
 
-    vm->runtimeError(std::string("ERROR: comparsion between '")+getVarTypeStr(m_valueType)+"' and '"+getVarTypeStr(v->m_valueType)+"'");
+    char msg[128];
+    sprintf(msg, "Error: comparsion between '%s' and '%s'", getVarTypeStr(m_valueType).c_str(), getVarTypeStr(v->m_valueType).c_str());
+    vm->runtimeError(msg);
     return 0;
 }
 
@@ -873,7 +875,7 @@ acInt32 str_toInt32(acVariable* var, acVM* vm)
     acInt32 v;
     if(!convertFromString(v, ((acString*)var->m_gcobj)->m_data))
     {
-        vm->runtimeError(std::string("Error: attempt to convert 'string' (")+((acString*)var->m_gcobj)->m_data+") to 'int32'");
+        vm->runtimeError("Error: attempt to convert 'string' to 'int32'");
     }
     return v;
 }
@@ -882,7 +884,7 @@ acInt64 str_toInt64(acVariable* var, acVM* vm)
     acInt64 v;
     if(!convertFromString(v, ((acString*)var->m_gcobj)->m_data))
     {
-        vm->runtimeError(std::string("Error: attempt to convert 'string' (")+((acString*)var->m_gcobj)->m_data+") to 'int64'");
+        vm->runtimeError("Error: attempt to convert 'string' to 'int64'");
     }
     return v;
 }
@@ -891,7 +893,7 @@ acFloat str_toFloat(acVariable* var, acVM* vm)
     acFloat v;
     if(!convertFromString(v, ((acString*)var->m_gcobj)->m_data))
     {
-        vm->runtimeError(std::string("Error: attempt to convert 'string' (")+((acString*)var->m_gcobj)->m_data+") to 'float'");
+        vm->runtimeError("Error: attempt to convert 'string' to 'float'");
     }
     return v;
 }
@@ -900,7 +902,7 @@ acDouble str_toDouble(acVariable* var, acVM* vm)
     acDouble v;
     if(!convertFromString(v, ((acString*)var->m_gcobj)->m_data))
     {
-        vm->runtimeError(std::string("Error: attempt to convert 'string' (")+((acString*)var->m_gcobj)->m_data+") to 'double'");
+        vm->runtimeError("Error: attempt to convert 'string' to 'double'");
     }
     return v;
 }
@@ -910,7 +912,7 @@ std::string str_toStr(acVariable* var, acVM* vm)
 }
 void str_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
 {
-    vm->runtimeError("Error: attempt to call 'string'");
+    vm->runtimeError("Error: attempt to call a 'string'");
 }
 
 //======================================
@@ -1107,7 +1109,11 @@ void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
             }
         }
     default:
-        vm->runtimeError(std::string("Error: attempt to call delegate function with type '") + getVarTypeStr(dele->m_funcVar->m_valueType) + "'");
+        {
+            char msg[128];
+            sprintf(msg, "Error: attempt to call a '%s'", getVarTypeStr(dele->m_funcVar->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
         break;
     }
 }

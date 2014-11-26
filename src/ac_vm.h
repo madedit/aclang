@@ -46,7 +46,7 @@ public:
     acCodeGenerator* getCodeGenerator() { return m_codeGenerator; }
     acGarbageCollector* getGarbageCollector() { return &m_gc; }
     void setDebugInfo(acDebugInfo* debugInfo) { m_debugInfo = debugInfo; }
-    void runtimeError(const std::string& errMsg);
+    void runtimeError(const char* errMsg);
 
     typedef void(*AC_FUNCTION)(acVariable* thisVar, acArray* args, acVariable* retVar, acVM* vm);
     void bindFunction(const std::string& name, AC_FUNCTION func);
