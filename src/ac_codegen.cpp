@@ -479,6 +479,7 @@ void* getArrayVar_int(acArray* arr, int idx, acVM* vm)
     if(idx < 0)
     {
         vm->runtimeError("Error: negtive index for getArrayVar()");
+        return 0;
     }
 
     int size = arr->size();
@@ -643,6 +644,8 @@ void* createArray(acVariable* var, acVM* vm)
 //parent.key or parent[key]
 void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFuncCall, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     if(parent->m_valueType == acVT_ARRAY)
     {
         acInt64 idx = 0;
@@ -658,7 +661,6 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
             {
                 char msg[128];
                 sprintf(msg, "Error: attempt to index array by '%s'", getVarTypeStr(key->m_valueType).c_str());
-                vm->setDebugInfo(debugInfo);
                 vm->runtimeError(msg);
             }
             return 0;
@@ -669,7 +671,6 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
         {
             char msg[128];
             sprintf(msg, "Error: array index out of bounds: %ld", idx);
-            vm->setDebugInfo(debugInfo);
             vm->runtimeError(msg);
             return 0;
         }
@@ -692,7 +693,6 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
             {
                 char msg[128];
                 sprintf(msg, "Error: attempt to index string by '%s'", getVarTypeStr(key->m_valueType).c_str());
-                vm->setDebugInfo(debugInfo);
                 vm->runtimeError(msg);
             }
             return 0;
@@ -703,7 +703,6 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
         {
             char msg[128];
             sprintf(msg, "Error: string index out of bounds: %ld", idx);
-            vm->setDebugInfo(debugInfo);
             vm->runtimeError(msg);
             return 0;
         }
@@ -716,7 +715,6 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
     {
         char msg[128];
         sprintf(msg, "Error: attempt to get element on '%s'", getVarTypeStr(parent->m_valueType).c_str());
-        vm->setDebugInfo(debugInfo);
         vm->runtimeError(msg);
         return 0;
     }
@@ -742,7 +740,6 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
             s1[snprintf(s1, 63, "%s", toString(key, vm).c_str())] = 0;
             char msg[128];
             sprintf(msg, "Error: element '%s' not found", s1);
-            vm->setDebugInfo(debugInfo);
             vm->runtimeError(msg);
             return 0;
         }
@@ -750,8 +747,10 @@ void* opGetVar(acVariable* parent, acVariable* key, int findInGlobal, int isFunc
 
     return value;
 }
-void* opGetVar_int32(acVariable* parent, acInt32 idx, int findInGlobal, int isFuncCall, acVM* vm)
+void* opGetVar_int32(acVariable* parent, acInt32 idx, int findInGlobal, int isFuncCall, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     if(parent->m_valueType == acVT_ARRAY)
     {
         acArray* arr = parent->toArray();
@@ -810,8 +809,10 @@ void* opGetVar_int32(acVariable* parent, acInt32 idx, int findInGlobal, int isFu
 
     return value;
 }
-void* opGetVar_int64(acVariable* parent, acInt64 idx, int findInGlobal, int isFuncCall, acVM* vm)
+void* opGetVar_int64(acVariable* parent, acInt64 idx, int findInGlobal, int isFuncCall, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     if(parent->m_valueType == acVT_ARRAY)
     {
         acArray* arr = parent->toArray();
@@ -870,8 +871,10 @@ void* opGetVar_int64(acVariable* parent, acInt64 idx, int findInGlobal, int isFu
 
     return value;
 }
-void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncCall, acVM* vm)
+void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncCall, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     if(parent->m_valueType != acVT_TABLE)
     {
         char s1[64];
@@ -913,8 +916,10 @@ void* opGetVar_str(acVariable* parent, char* name, int findInGlobal, int isFuncC
 }
 
 //var parent.key or var parent[key]
-void* opNewVar(acVariable* parent, acVariable* key, acVM* vm)
+void* opNewVar(acVariable* parent, acVariable* key, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     acGarbageCollector* gc = vm->getGarbageCollector();
     acVariable* var = 0;
     switch(parent->m_valueType)
@@ -965,13 +970,15 @@ void* opNewVar(acVariable* parent, acVariable* key, acVM* vm)
             sprintf(msg, "Error: attempt to create new var on '%s'", getVarTypeStr(parent->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return 0;
     }
 
     return var;
 }
-void* opNewVar_int32(acVariable* parent, acInt32 key, acVM* vm)
+void* opNewVar_int32(acVariable* parent, acInt32 key, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     acGarbageCollector* gc = vm->getGarbageCollector();
     acVariable* var = 0;
     switch(parent->m_valueType)
@@ -1002,13 +1009,15 @@ void* opNewVar_int32(acVariable* parent, acInt32 key, acVM* vm)
             sprintf(msg, "Error: attempt to create new var on '%s'", getVarTypeStr(parent->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return 0;
     }
 
     return var;
 }
-void* opNewVar_int64(acVariable* parent, acInt64 key, acVM* vm)
+void* opNewVar_int64(acVariable* parent, acInt64 key, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     acGarbageCollector* gc = vm->getGarbageCollector();
     acVariable* var = 0;
     switch(parent->m_valueType)
@@ -1039,13 +1048,15 @@ void* opNewVar_int64(acVariable* parent, acInt64 key, acVM* vm)
             sprintf(msg, "Error: attempt to create new var on '%s'", getVarTypeStr(parent->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return 0;
     }
 
     return var;
 }
-void* opNewVar_str(acVariable* parent, char* key, acVM* vm)
+void* opNewVar_str(acVariable* parent, char* key, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     acVariable* var = 0;
     switch(parent->m_valueType)
     {
@@ -1062,7 +1073,7 @@ void* opNewVar_str(acVariable* parent, char* key, acVM* vm)
             sprintf(msg, "Error: attempt to create new var '%s' on '%s'", s1, getVarTypeStr(parent->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return 0;
     }
 
     return var;
@@ -1117,8 +1128,10 @@ void callOpFunc(acVariable* func, acVariable* ret, acVariable* thisVar, acVariab
 }
 
 //ret = v1 + v2
-void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
+void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     //call default add function; type promotion
     switch(v1->m_valueType)
     {
@@ -1209,8 +1222,10 @@ void opAddVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 }
 
 //ret = v1 - v2
-void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
+void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1291,8 +1306,10 @@ void opSubVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 }
 
 //ret = v1 * v2
-void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
+void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1373,8 +1390,10 @@ void opMulVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 }
 
 //ret = v1 / v2
-void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
+void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1455,8 +1474,10 @@ void opDivVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 }
 
 //ret = v1 % v2
-void opModVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
+void opModVar(acVariable* ret, acVariable* v1, acVariable* v2, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
+
     switch(v1->m_valueType)
     {
     case acVT_INT32:
@@ -1537,24 +1558,28 @@ void opModVar(acVariable* ret, acVariable* v1, acVariable* v2, acVM* vm)
 }
 
 //v1(args); ret = args[0]
-void opCallFunc(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
+void opCallFunc(acVariable* var, acVariable* thisVar, acArray* argArray, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
     callFunction(var, thisVar, argArray, vm);
 }
 
 //return 1 for true; 0 for false
-int opEqualVar(acVariable* lhs, acVariable* rhs, acVM* vm)
+int opEqualVar(acVariable* lhs, acVariable* rhs, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
     return lhs->compare(rhs, vm) == 0;
 }
 //return 1 for true; 0 for false
-int opNotEqualVar(acVariable* lhs, acVariable* rhs, acVM* vm)
+int opNotEqualVar(acVariable* lhs, acVariable* rhs, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
     return lhs->compare(rhs, vm) != 0;
 }
 //return 1 for true; 0 for false
-int opCompareVar(acVariable* lhs, acVariable* rhs, int tok_cmp, acVM* vm)
+int opCompareVar(acVariable* lhs, acVariable* rhs, int tok_cmp, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
     int cmp = lhs->compare(rhs, vm);
     switch(tok_cmp)
     {
@@ -1572,7 +1597,7 @@ int opCompareVar(acVariable* lhs, acVariable* rhs, int tok_cmp, acVM* vm)
     return cmp >= 0;
 }
 
-void opPostfixIncDecVar(acVariable* ret, acVariable* var, int tok, acVM* vm)
+void opPostfixIncDecVar(acVariable* ret, acVariable* var, int tok, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
@@ -1598,6 +1623,7 @@ void opPostfixIncDecVar(acVariable* ret, acVariable* var, int tok, acVM* vm)
         break;
     default:
         {
+            vm->setDebugInfo(debugInfo);
             const char* tokstr;
             if(tok == TOK_PLUSPLUS) tokstr = "++";
             else tokstr = "--";
@@ -1605,11 +1631,11 @@ void opPostfixIncDecVar(acVariable* ret, acVariable* var, int tok, acVM* vm)
             sprintf(msg, "Error: attempt to use postfix op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return;
     }
 }
 
-void opPrefixIncDecVar(acVariable* var, int tok, acVM* vm)
+void opPrefixIncDecVar(acVariable* var, int tok, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
@@ -1631,6 +1657,7 @@ void opPrefixIncDecVar(acVariable* var, int tok, acVM* vm)
         break;
     default:
         {
+            vm->setDebugInfo(debugInfo);
             const char* tokstr;
             if(tok == TOK_PLUSPLUS) tokstr = "++";
             else tokstr = "--";
@@ -1638,11 +1665,11 @@ void opPrefixIncDecVar(acVariable* var, int tok, acVM* vm)
             sprintf(msg, "Error: attempt to use prefix op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return;
     }
 }
 
-void opUnaryPlusMinusVar(acVariable* ret, acVariable* var, int tok, acVM* vm)
+void opUnaryPlusMinusVar(acVariable* ret, acVariable* var, int tok, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
@@ -1664,6 +1691,7 @@ void opUnaryPlusMinusVar(acVariable* ret, acVariable* var, int tok, acVM* vm)
         break;
     default:
         {
+            vm->setDebugInfo(debugInfo);
             const char* tokstr;
             if(tok == TOK_PLUS) tokstr = "+";
             else tokstr = "-";
@@ -1671,28 +1699,29 @@ void opUnaryPlusMinusVar(acVariable* ret, acVariable* var, int tok, acVM* vm)
             sprintf(msg, "Error: attempt to use unary op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return;
     }
 }
 
-void opLogicalNotVar(acVariable* ret, acVariable* var, acVM* vm)
+void opLogicalNotVar(acVariable* ret, acVariable* var, acDebugInfo* debugInfo, acVM* vm)
 {
+    vm->setDebugInfo(debugInfo);
     ret->setValue(!toBool(var, vm));
 }
 
-void opLogicalAndOrVar(acVariable* ret, acVariable* var1, acVariable* var2, int tok, acVM* vm)
+void opLogicalAndVar(acVariable* ret, acVariable* var1, acVariable* var2, acDebugInfo* debugInfo, acVM* vm)
 {
-    if(tok == TOK_ANDAND)
-    {
-        ret->setValue(toBool(var1, vm) && toBool(var2, vm));
-    }
-    else
-    {
-        ret->setValue(toBool(var1, vm) || toBool(var2, vm));
-    }
+    vm->setDebugInfo(debugInfo);
+    ret->setValue(toBool(var1, vm) && toBool(var2, vm));
 }
 
-void opBitwiseNotVar(acVariable* ret, acVariable* var, acVM* vm)
+void opLogicalOrVar(acVariable* ret, acVariable* var1, acVariable* var2, acDebugInfo* debugInfo, acVM* vm)
+{
+    vm->setDebugInfo(debugInfo);
+    ret->setValue(toBool(var1, vm) || toBool(var2, vm));
+}
+
+void opBitwiseNotVar(acVariable* ret, acVariable* var, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
@@ -1704,15 +1733,16 @@ void opBitwiseNotVar(acVariable* ret, acVariable* var, acVM* vm)
         break;
     default:
         {
+            vm->setDebugInfo(debugInfo);
             char msg[128];
             sprintf(msg, "Error: attempt to use bitwise op '~' on '%s'", getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return;
     }
 }
 
-void opBitwiseAndOrXorVar(acVariable* ret, acVariable* var1, acVariable* var2, int tok, acVM* vm)
+void opBitwiseAndVar(acVariable* ret, acVariable* var1, acVariable* var2, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var1->m_valueType)
     {
@@ -1720,98 +1750,113 @@ void opBitwiseAndOrXorVar(acVariable* ret, acVariable* var1, acVariable* var2, i
         switch(var2->m_valueType)
         {
         case acVT_INT32:
-            switch(tok)
-            {
-            case TOK_AND:
-                ret->setValue(var1->m_int32 & var2->m_int32);
-                return;
-            case TOK_OR:
-                ret->setValue(var1->m_int32 | var2->m_int32);
-                return;
-            case TOK_XOR:
-                ret->setValue(var1->m_int32 ^ var2->m_int32);
-                return;
-            }
-            break;
+            ret->setValue(var1->m_int32 & var2->m_int32);
+            return;
         case acVT_INT64:
-            switch(tok)
-            {
-            case TOK_AND:
-                ret->setValue(acInt64(var1->m_int32) & var2->m_int64);
-                return;
-            case TOK_OR:
-                ret->setValue(acInt64(var1->m_int32) | var2->m_int64);
-                return;
-            case TOK_XOR:
-                ret->setValue(acInt64(var1->m_int32) ^ var2->m_int64);
-                return;
-            }
-            break;
+            ret->setValue(acInt64(var1->m_int32) & var2->m_int64);
+            return;
         }
         break;
     case acVT_INT64:
         switch(var2->m_valueType)
         {
         case acVT_INT32:
-            switch(tok)
-            {
-            case TOK_AND:
-                ret->setValue(var1->m_int64 & acInt64(var2->m_int32));
-                return;
-            case TOK_OR:
-                ret->setValue(var1->m_int64 | acInt64(var2->m_int32));
-                return;
-            case TOK_XOR:
-                ret->setValue(var1->m_int64 ^ acInt64(var2->m_int32));
-                return;
-            }
-            break;
+            ret->setValue(var1->m_int64 & acInt64(var2->m_int32));
+            return;
         case acVT_INT64:
-            switch(tok)
-            {
-            case TOK_AND:
-                ret->setValue(var1->m_int64 & var2->m_int64);
-                return;
-            case TOK_OR:
-                ret->setValue(var1->m_int64 | var2->m_int64);
-                return;
-            case TOK_XOR:
-                ret->setValue(var1->m_int64 ^ var2->m_int64);
-                return;
-            }
-            break;
+            ret->setValue(var1->m_int64 & var2->m_int64);
+            return;
         }
         break;
     }
 
-    const char* tokstr;
-    switch(tok)
-    {
-    case TOK_AND:
-        tokstr = "&";
-        break;
-    case TOK_OR:
-        tokstr = "|";
-        break;
-    case TOK_XOR:
-        tokstr = "^";
-        break;
-    }
-
+    vm->setDebugInfo(debugInfo);
     char msg[128];
-    sprintf(msg, "Error: attempt to use bitwise op '%s' on between '%s' and '%s'",
-        tokstr,
+    sprintf(msg, "Error: attempt to use bitwise op '&' on between '%s' and '%s'",
         getVarTypeStr(var1->m_valueType).c_str(),
         getVarTypeStr(var2->m_valueType).c_str());
     vm->runtimeError(msg);
 }
 
-int opToBoolVar(acVariable* var, acVM* vm)
+void opBitwiseOrVar(acVariable* ret, acVariable* var1, acVariable* var2, acDebugInfo* debugInfo, acVM* vm)
 {
+    switch(var1->m_valueType)
+    {
+    case acVT_INT32:
+        switch(var2->m_valueType)
+        {
+        case acVT_INT32:
+            ret->setValue(var1->m_int32 | var2->m_int32);
+            return;
+        case acVT_INT64:
+            ret->setValue(acInt64(var1->m_int32) | var2->m_int64);
+            return;
+        }
+        break;
+    case acVT_INT64:
+        switch(var2->m_valueType)
+        {
+        case acVT_INT32:
+            ret->setValue(var1->m_int64 | acInt64(var2->m_int32));
+            return;
+        case acVT_INT64:
+            ret->setValue(var1->m_int64 | var2->m_int64);
+            return;
+        }
+        break;
+    }
+
+    vm->setDebugInfo(debugInfo);
+    char msg[128];
+    sprintf(msg, "Error: attempt to use bitwise op '|' on between '%s' and '%s'",
+        getVarTypeStr(var1->m_valueType).c_str(),
+        getVarTypeStr(var2->m_valueType).c_str());
+    vm->runtimeError(msg);
+}
+
+void opBitwiseXorVar(acVariable* ret, acVariable* var1, acVariable* var2, acDebugInfo* debugInfo, acVM* vm)
+{
+    switch(var1->m_valueType)
+    {
+    case acVT_INT32:
+        switch(var2->m_valueType)
+        {
+        case acVT_INT32:
+            ret->setValue(var1->m_int32 ^ var2->m_int32);
+            return;
+        case acVT_INT64:
+            ret->setValue(acInt64(var1->m_int32) ^ var2->m_int64);
+            return;
+        }
+        break;
+    case acVT_INT64:
+        switch(var2->m_valueType)
+        {
+        case acVT_INT32:
+            ret->setValue(var1->m_int64 ^ acInt64(var2->m_int32));
+            return;
+        case acVT_INT64:
+            ret->setValue(var1->m_int64 ^ var2->m_int64);
+            return;
+        }
+        break;
+    }
+
+    vm->setDebugInfo(debugInfo);
+    char msg[128];
+    sprintf(msg, "Error: attempt to use bitwise op '^' on between '%s' and '%s'",
+        getVarTypeStr(var1->m_valueType).c_str(),
+        getVarTypeStr(var2->m_valueType).c_str());
+    vm->runtimeError(msg);
+}
+
+int opToBoolVar(acVariable* var, acDebugInfo* debugInfo, acVM* vm)
+{
+    vm->setDebugInfo(debugInfo);
     return toBool(var, vm);
 }
 
-void opInitIter(acVariable* var, acVM* vm)
+void opInitIter(acVariable* var, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
@@ -1826,15 +1871,16 @@ void opInitIter(acVariable* var, acVM* vm)
         break;
     default:
         {
+            vm->setDebugInfo(debugInfo);
             char msg[128];
             sprintf(msg, "Error: attempt to iterate on '%s'", getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
         }
-        break;
+        return;
     }
 }
 
-int opIterateVar(acVariable* var, acVariable* key, acVariable* value, acVM* vm)
+int opIterateVar(acVariable* var, acVariable* key, acVariable* value, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
@@ -1849,6 +1895,7 @@ int opIterateVar(acVariable* var, acVariable* key, acVariable* value, acVM* vm)
 
     default:
         {
+            vm->setDebugInfo(debugInfo);
             char msg[128];
             sprintf(msg, "Error: attempt to iterate on '%s'", getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
@@ -1858,7 +1905,7 @@ int opIterateVar(acVariable* var, acVariable* key, acVariable* value, acVM* vm)
     return false;
 }
 
-void* opNew(acVariable* thisVar, acArray* argArray, acVM* vm)
+void* opNew(acVariable* thisVar, acArray* argArray, acDebugInfo* debugInfo, acVM* vm)
 {
     acGarbageCollector* gc = vm->getGarbageCollector();
     acVariable* newVar = (acVariable*)gc->createObject(acVT_NULL);
@@ -1870,6 +1917,7 @@ void* opNew(acVariable* thisVar, acArray* argArray, acVM* vm)
         acVariable* newFunc = newVar->toTable()->getBindFunc(acOF_NEW);
         if(newFunc != 0)
         {
+            vm->setDebugInfo(debugInfo);
             callFunction(newFunc, newVar, argArray, vm);
         }
     }
@@ -1878,10 +1926,11 @@ void* opNew(acVariable* thisVar, acArray* argArray, acVM* vm)
 }
 
 //delete parent.key or var parent[key]
-void opDelete(acVariable* parent, acVariable* key, int findInGlobal, acVM* vm)
+void opDelete(acVariable* parent, acVariable* key, int findInGlobal, acDebugInfo* debugInfo, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
+        vm->setDebugInfo(debugInfo);
         char s1[64];
         s1[snprintf(s1, 63, "%s", toString(key, vm).c_str())] = 0;
         char msg[256];
@@ -1911,16 +1960,18 @@ void opDelete(acVariable* parent, acVariable* key, int findInGlobal, acVM* vm)
         }
     }
 
+    vm->setDebugInfo(debugInfo);
     char s1[64];
     s1[snprintf(s1, 63, "%s", toString(key, vm).c_str())] = 0;
     char msg[128];
     sprintf(msg, "Error: delete element '%s' not found", s1);
     vm->runtimeError(msg);
 }
-void opDelete_int32(acVariable* parent, acInt32 key, int findInGlobal, acVM* vm)
+void opDelete_int32(acVariable* parent, acInt32 key, int findInGlobal, acDebugInfo* debugInfo, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
+        vm->setDebugInfo(debugInfo);
         char msg[128];
         sprintf(msg, "Error: attempt to delete element '%d' from '%s'", key, getVarTypeStr(parent->m_valueType).c_str());
         vm->runtimeError(msg);
@@ -1946,14 +1997,16 @@ void opDelete_int32(acVariable* parent, acInt32 key, int findInGlobal, acVM* vm)
         }
     }
 
+    vm->setDebugInfo(debugInfo);
     char msg[128];
     sprintf(msg, "Error: delete element '%d' not found", key);
     vm->runtimeError(msg);
 }
-void opDelete_int64(acVariable* parent, acInt64 key, int findInGlobal, acVM* vm)
+void opDelete_int64(acVariable* parent, acInt64 key, int findInGlobal, acDebugInfo* debugInfo, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
+        vm->setDebugInfo(debugInfo);
         char msg[128];
         sprintf(msg, "Error: attempt to delete element '%ld' from '%s'", key, getVarTypeStr(parent->m_valueType).c_str());
         vm->runtimeError(msg);
@@ -1979,14 +2032,16 @@ void opDelete_int64(acVariable* parent, acInt64 key, int findInGlobal, acVM* vm)
         }
     }
 
+    vm->setDebugInfo(debugInfo);
     char msg[128];
     sprintf(msg, "Error: delete element '%ld' not found", key);
     vm->runtimeError(msg);
 }
-void opDelete_str(acVariable* parent, char* key, int findInGlobal, acVM* vm)
+void opDelete_str(acVariable* parent, char* key, int findInGlobal, acDebugInfo* debugInfo, acVM* vm)
 {
     if(parent->m_valueType != acVT_TABLE)
     {
+        vm->setDebugInfo(debugInfo);
         char s1[64];
         s1[snprintf(s1, 63, "%s", key)] = 0;
         char msg[256];
@@ -2014,6 +2069,7 @@ void opDelete_str(acVariable* parent, char* key, int findInGlobal, acVM* vm)
         }
     }
 
+    vm->setDebugInfo(debugInfo);
     char s1[64];
     s1[snprintf(s1, 63, "%s", key)] = 0;
     char msg[128];
@@ -2200,43 +2256,43 @@ void acCodeGenerator::createGlobalFunctions()
 
     m_gf_opGetVar_int32 = cast<Function>(mod->getOrInsertFunction("opGetVar_int32",
                                  voidPtrTy,//ret
-                                 voidPtrTy, int32Ty, int32Ty, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, int32Ty, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opGetVar_int32, (void*)opGetVar_int32);
 
     m_gf_opGetVar_int64 = cast<Function>(mod->getOrInsertFunction("opGetVar_int64",
-        voidPtrTy,//ret
-        voidPtrTy, int64Ty, int32Ty, int32Ty, voidPtrTy,//args
-        NULL));
+                                 voidPtrTy,//ret
+                                 voidPtrTy, int64Ty, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
+                                 NULL));
     ee->addGlobalMapping(m_gf_opGetVar_int64, (void*)opGetVar_int64);
 
     m_gf_opGetVar_str = cast<Function>(mod->getOrInsertFunction("opGetVar_str",
                                  voidPtrTy,//ret
-                                 voidPtrTy, charPtrTy, int32Ty, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, charPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opGetVar_str, (void*)opGetVar_str);
 
     m_gf_opNewVar = cast<Function>(mod->getOrInsertFunction("opNewVar",
                                  voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opNewVar, (void*)opNewVar);
 
     m_gf_opNewVar_int32 = cast<Function>(mod->getOrInsertFunction("opNewVar_int32",
                                  voidPtrTy,//ret
-                                 voidPtrTy, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opNewVar_int32, (void*)opNewVar_int32);
 
     m_gf_opNewVar_int64 = cast<Function>(mod->getOrInsertFunction("opNewVar_int64",
-        voidPtrTy,//ret
-        voidPtrTy, int64Ty, voidPtrTy,//args
-        NULL));
+                                 voidPtrTy,//ret
+                                 voidPtrTy, int64Ty, voidPtrTy, voidPtrTy,//args
+                                 NULL));
     ee->addGlobalMapping(m_gf_opNewVar_int64, (void*)opNewVar_int64);
 
     m_gf_opNewVar_str = cast<Function>(mod->getOrInsertFunction("opNewVar_str",
                                  voidPtrTy,//ret
-                                 voidPtrTy, charPtrTy, voidPtrTy,//args
+                                 voidPtrTy, charPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opNewVar_str, (void*)opNewVar_str);
 
@@ -2291,145 +2347,163 @@ void acCodeGenerator::createGlobalFunctions()
 
     m_gf_opAddVar = cast<Function>(mod->getOrInsertFunction("opAddVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opAddVar, (void*)opAddVar);
 
     m_gf_opSubVar = cast<Function>(mod->getOrInsertFunction("opSubVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opSubVar, (void*)opSubVar);
 
     m_gf_opMulVar = cast<Function>(mod->getOrInsertFunction("opMulVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opMulVar, (void*)opMulVar);
 
     m_gf_opDivVar = cast<Function>(mod->getOrInsertFunction("opDivVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opDivVar, (void*)opDivVar);
 
     m_gf_opModVar = cast<Function>(mod->getOrInsertFunction("opModVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opModVar, (void*)opModVar);
 
     m_gf_opCallFunc = cast<Function>(mod->getOrInsertFunction("opCallFunc",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opCallFunc, (void*)opCallFunc);
 
     m_gf_opEqualVar = cast<Function>(mod->getOrInsertFunction("opEqualVar",
                                  int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opEqualVar, (void*)opEqualVar);
 
     m_gf_opNotEqualVar = cast<Function>(mod->getOrInsertFunction("opNotEqualVar",
                                  int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opNotEqualVar, (void*)opNotEqualVar);
 
     m_gf_opCompareVar = cast<Function>(mod->getOrInsertFunction("opCompareVar",
                                  int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opCompareVar, (void*)opCompareVar);
 
     m_gf_opPostfixIncDecVar = cast<Function>(mod->getOrInsertFunction("opPostfixIncDecVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opPostfixIncDecVar, (void*)opPostfixIncDecVar);
 
     m_gf_opPrefixIncDecVar = cast<Function>(mod->getOrInsertFunction("opPrefixIncDecVar",
                                  voidTy,//ret
-                                 voidPtrTy, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opPrefixIncDecVar, (void*)opPrefixIncDecVar);
 
     m_gf_opUnaryPlusMinusVar = cast<Function>(mod->getOrInsertFunction("opUnaryPlusMinusVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opUnaryPlusMinusVar, (void*)opUnaryPlusMinusVar);
 
     m_gf_opLogicalNotVar = cast<Function>(mod->getOrInsertFunction("opLogicalNotVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opLogicalNotVar, (void*)opLogicalNotVar);
 
-    m_gf_opLogicalAndOrVar = cast<Function>(mod->getOrInsertFunction("opLogicalAndOrVar",
+    m_gf_opLogicalAndVar = cast<Function>(mod->getOrInsertFunction("opLogicalAndVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
-    ee->addGlobalMapping(m_gf_opLogicalAndOrVar, (void*)opLogicalAndOrVar);
+    ee->addGlobalMapping(m_gf_opLogicalAndVar, (void*)opLogicalAndVar);
+
+    m_gf_opLogicalOrVar = cast<Function>(mod->getOrInsertFunction("opLogicalOrVar",
+        voidTy,//ret
+        voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opLogicalOrVar, (void*)opLogicalOrVar);
 
     m_gf_opBitwiseNotVar = cast<Function>(mod->getOrInsertFunction("opBitwiseNotVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opBitwiseNotVar, (void*)opBitwiseNotVar);
 
-    m_gf_opBitwiseAndOrXorVar = cast<Function>(mod->getOrInsertFunction("opBitwiseAndOrXorVar",
+    m_gf_opBitwiseAndVar = cast<Function>(mod->getOrInsertFunction("opBitwiseAndVar",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, int32Ty, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
-    ee->addGlobalMapping(m_gf_opBitwiseAndOrXorVar, (void*)opBitwiseAndOrXorVar);
+    ee->addGlobalMapping(m_gf_opBitwiseAndVar, (void*)opBitwiseAndVar);
+
+    m_gf_opBitwiseOrVar = cast<Function>(mod->getOrInsertFunction("opBitwiseOrVar",
+        voidTy,//ret
+        voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opBitwiseOrVar, (void*)opBitwiseOrVar);
+
+    m_gf_opBitwiseXorVar = cast<Function>(mod->getOrInsertFunction("opBitwiseXorVar",
+        voidTy,//ret
+        voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+        NULL));
+    ee->addGlobalMapping(m_gf_opBitwiseXorVar, (void*)opBitwiseXorVar);
 
     m_gf_opToBoolVar = cast<Function>(mod->getOrInsertFunction("opToBoolVar",
                                  int32Ty,//ret
-                                 voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opToBoolVar, (void*)opToBoolVar);
 
     m_gf_opInitIter = cast<Function>(mod->getOrInsertFunction("opInitIter",
                                  voidTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opInitIter, (void*)opInitIter);
 
     m_gf_opIterateVar = cast<Function>(mod->getOrInsertFunction("opIterateVar",
                                  int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
                                  NULL) );
     ee->addGlobalMapping(m_gf_opIterateVar, (void*)opIterateVar);
 
     m_gf_opNew = cast<Function>(mod->getOrInsertFunction("opNew",
         voidPtrTy,//ret
-        voidPtrTy, voidPtrTy, voidPtrTy,//args
+        voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
         NULL));
     ee->addGlobalMapping(m_gf_opNew, (void*)opNew);
 
     m_gf_opDelete = cast<Function>(mod->getOrInsertFunction("opDelete",
         voidTy,//ret
-        voidPtrTy, voidPtrTy, int32Ty, voidPtrTy,//args
+        voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
         NULL));
     ee->addGlobalMapping(m_gf_opDelete, (void*)opDelete);
 
     m_gf_opDelete_int32 = cast<Function>(mod->getOrInsertFunction("opDelete_int32",
         voidTy,//ret
-        voidPtrTy, int32Ty, int32Ty, voidPtrTy,//args
+        voidPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
         NULL));
     ee->addGlobalMapping(m_gf_opDelete_int32, (void*)opDelete_int32);
 
     m_gf_opDelete_int64 = cast<Function>(mod->getOrInsertFunction("opDelete_int64",
         voidTy,//ret
-        voidPtrTy, int64Ty, int32Ty, voidPtrTy,//args
+        voidPtrTy, int64Ty, int32Ty, voidPtrTy, voidPtrTy,//args
         NULL));
     ee->addGlobalMapping(m_gf_opDelete_int64, (void*)opDelete_int64);
 
     m_gf_opDelete_str = cast<Function>(mod->getOrInsertFunction("opDelete_str",
         voidTy,//ret
-        voidPtrTy, charPtrTy, int32Ty, voidPtrTy,//args
+        voidPtrTy, charPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
         NULL));
     ee->addGlobalMapping(m_gf_opDelete_str, (void*)opDelete_str);
 }

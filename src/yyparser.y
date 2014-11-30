@@ -160,8 +160,8 @@ extern int yyparse(void* parser);
 %type <node> boolean numeric string keyvalue table element array
 %type <token> unary_op assignment_op type_specifier
 %type <node> primary_expr
-%type <node> postfix_expr unary_expr multiplicative_expr additive_expr shift_expr 
-%type <node> relational_expr equality_expr and_expr exclusive_or_expr inclusive_or_expr 
+%type <node> postfix_expr unary_expr multiplicative_expr additive_expr shift_expr
+%type <node> relational_expr equality_expr and_expr exclusive_or_expr inclusive_or_expr
 %type <node> logical_and_expr logical_or_expr conditional_expr assignment_expr
 %type <func> func_decl local_func_decl anony_func_decl
 %type <arglist> func_decl_arglist
@@ -230,10 +230,10 @@ postfix_expr:
       primary_expr                                          { $$ = $1; }
     | postfix_expr TOK_DOT TOK_IDENTIFIER                   { $$ = new GetVarAST($1, $3.getRawString()); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     | postfix_expr TOK_LBRACKET expr TOK_RBRACKET           { $$ = new GetVarAST($1, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
-    | postfix_expr TOK_LPAREN TOK_RPAREN                    { $$ = new CallAST($1, NULL); PARSER->addNodeAST($$); }
-    | postfix_expr TOK_LPAREN argument_expr_list TOK_RPAREN { $$ = new CallAST($1, $3); PARSER->addNodeAST($$); }
-    | postfix_expr TOK_PLUSPLUS                             { $$ = new PostfixIncrementAST($1, TOK_PLUSPLUS); PARSER->addNodeAST($$); }
-    | postfix_expr TOK_MINUSMINUS                           { $$ = new PostfixIncrementAST($1, TOK_MINUSMINUS); PARSER->addNodeAST($$); }
+    | postfix_expr TOK_LPAREN TOK_RPAREN                    { $$ = new CallAST($1, NULL); PARSER->addNodeAST($$); $$->setLine($3.m_beginLine); }
+    | postfix_expr TOK_LPAREN argument_expr_list TOK_RPAREN { $$ = new CallAST($1, $3); PARSER->addNodeAST($$); $$->setLine($4.m_beginLine); }
+    | postfix_expr TOK_PLUSPLUS                             { $$ = new PostfixIncrementAST($1, TOK_PLUSPLUS); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | postfix_expr TOK_MINUSMINUS                           { $$ = new PostfixIncrementAST($1, TOK_MINUSMINUS); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 unary_op:
@@ -245,72 +245,72 @@ unary_op:
 
 unary_expr:
       postfix_expr              { $$ = $1; }
-    | TOK_PLUSPLUS unary_expr   { $$ = new UnaryAST($2, TOK_PLUSPLUS); PARSER->addNodeAST($$); }
-    | TOK_MINUSMINUS unary_expr { $$ = new UnaryAST($2, TOK_MINUSMINUS); PARSER->addNodeAST($$); }
-    | unary_op unary_expr       { $$ = new UnaryAST($2, $1.m_type); PARSER->addNodeAST($$); }
+    | TOK_PLUSPLUS unary_expr   { $$ = new UnaryAST($2, TOK_PLUSPLUS); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_MINUSMINUS unary_expr { $$ = new UnaryAST($2, TOK_MINUSMINUS); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | unary_op unary_expr       { $$ = new UnaryAST($2, $1.m_type); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 multiplicative_expr:
       unary_expr                                { $$ = $1; }
-    | multiplicative_expr TOK_MUL unary_expr    { $$ = new MultiplicativeAST($1, TOK_MUL, $3); PARSER->addNodeAST($$); }
-    | multiplicative_expr TOK_DIV unary_expr    { $$ = new MultiplicativeAST($1, TOK_DIV, $3); PARSER->addNodeAST($$); }
-    | multiplicative_expr TOK_MOD unary_expr    { $$ = new MultiplicativeAST($1, TOK_MOD, $3); PARSER->addNodeAST($$); }
+    | multiplicative_expr TOK_MUL unary_expr    { $$ = new MultiplicativeAST($1, TOK_MUL, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | multiplicative_expr TOK_DIV unary_expr    { $$ = new MultiplicativeAST($1, TOK_DIV, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | multiplicative_expr TOK_MOD unary_expr    { $$ = new MultiplicativeAST($1, TOK_MOD, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 additive_expr:
       multiplicative_expr                           { $$ = $1; }
-    | additive_expr TOK_PLUS multiplicative_expr    { $$ = new AdditiveAST($1, TOK_PLUS, $3); PARSER->addNodeAST($$); }
-    | additive_expr TOK_MINUS multiplicative_expr   { $$ = new AdditiveAST($1, TOK_MINUS, $3); PARSER->addNodeAST($$); }
+    | additive_expr TOK_PLUS multiplicative_expr    { $$ = new AdditiveAST($1, TOK_PLUS, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | additive_expr TOK_MINUS multiplicative_expr   { $$ = new AdditiveAST($1, TOK_MINUS, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 shift_expr:
       additive_expr                     { $$ = $1; }
-    | shift_expr TOK_SHL additive_expr  { $$ = new ShiftAST($1, TOK_SHL, $3); PARSER->addNodeAST($$); }
-    | shift_expr TOK_SHR additive_expr  { $$ = new ShiftAST($1, TOK_SHR, $3); PARSER->addNodeAST($$); }
+    | shift_expr TOK_SHL additive_expr  { $$ = new ShiftAST($1, TOK_SHL, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | shift_expr TOK_SHR additive_expr  { $$ = new ShiftAST($1, TOK_SHR, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 relational_expr:
       shift_expr                        { $$ = $1; }
-    | relational_expr TOK_LT shift_expr { $$ = new RelationalAST($1, TOK_LT, $3); PARSER->addNodeAST($$); }
-    | relational_expr TOK_GT shift_expr { $$ = new RelationalAST($1, TOK_GT, $3); PARSER->addNodeAST($$); }
-    | relational_expr TOK_LE shift_expr { $$ = new RelationalAST($1, TOK_LE, $3); PARSER->addNodeAST($$); }
-    | relational_expr TOK_GE shift_expr { $$ = new RelationalAST($1, TOK_GE, $3); PARSER->addNodeAST($$); }
+    | relational_expr TOK_LT shift_expr { $$ = new RelationalAST($1, TOK_LT, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | relational_expr TOK_GT shift_expr { $$ = new RelationalAST($1, TOK_GT, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | relational_expr TOK_LE shift_expr { $$ = new RelationalAST($1, TOK_LE, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | relational_expr TOK_GE shift_expr { $$ = new RelationalAST($1, TOK_GE, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 equality_expr:
       relational_expr                            { $$ = $1; }
-    | equality_expr TOK_EQUAL relational_expr    { $$ = new EqualityAST($1, TOK_EQUAL, $3); PARSER->addNodeAST($$); }
-    | equality_expr TOK_NOTEQUAL relational_expr { $$ = new EqualityAST($1, TOK_NOTEQUAL, $3); PARSER->addNodeAST($$); }
+    | equality_expr TOK_EQUAL relational_expr    { $$ = new EqualityAST($1, TOK_EQUAL, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | equality_expr TOK_NOTEQUAL relational_expr { $$ = new EqualityAST($1, TOK_NOTEQUAL, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 and_expr:
       equality_expr                     { $$ = $1; }
-    | and_expr TOK_AND equality_expr    { $$ = new AndAST($1, $3); PARSER->addNodeAST($$); }
+    | and_expr TOK_AND equality_expr    { $$ = new AndAST($1, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 exclusive_or_expr:
       and_expr                              { $$ = $1; }
-    | exclusive_or_expr TOK_XOR and_expr    { $$ = new ExclusiveOrAST($1, $3); PARSER->addNodeAST($$); }
+    | exclusive_or_expr TOK_XOR and_expr    { $$ = new ExclusiveOrAST($1, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 inclusive_or_expr:
       exclusive_or_expr                             { $$ = $1; }
-    | inclusive_or_expr TOK_OR exclusive_or_expr    { $$ = new InclusiveOrAST($1, $3); PARSER->addNodeAST($$); }
+    | inclusive_or_expr TOK_OR exclusive_or_expr    { $$ = new InclusiveOrAST($1, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 logical_and_expr:
       inclusive_or_expr                             { $$ = $1; }
-    | logical_and_expr TOK_ANDAND inclusive_or_expr { $$ = new LogicalAndAST($1, $3); PARSER->addNodeAST($$); }
+    | logical_and_expr TOK_ANDAND inclusive_or_expr { $$ = new LogicalAndAST($1, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 logical_or_expr:
       logical_and_expr                          { $$ = $1; }
-    | logical_or_expr TOK_OROR logical_and_expr { $$ = new LogicalOrAST($1, $3); PARSER->addNodeAST($$); }
+    | logical_or_expr TOK_OROR logical_and_expr { $$ = new LogicalOrAST($1, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 conditional_expr:
       logical_or_expr                                               { $$ = $1; }
-    | logical_or_expr TOK_QUESTION inner_expr TOK_COLON inner_expr  { $$ = new ConditionalAST($1, $3, $5); PARSER->addNodeAST($$); }
+    | logical_or_expr TOK_QUESTION inner_expr TOK_COLON inner_expr  { $$ = new ConditionalAST($1, $3, $5); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 assignment_op:
@@ -331,9 +331,9 @@ assignment_op:
 
 assignment_expr:
       conditional_expr                          { $$ = $1; }
-    | unary_expr assignment_op assignment_expr  { $$ = new AssignmentAST($1, $2.m_type, $3); PARSER->addNodeAST($$); }
-    | unary_expr assignment_op table            { $$ = new AssignmentAST($1, $2.m_type, $3); PARSER->addNodeAST($$); }
-    | unary_expr assignment_op anony_func_decl  { $$ = new AssignmentAST($1, $2.m_type, $3); PARSER->addNodeAST($$); }
+    | unary_expr assignment_op assignment_expr  { $$ = new AssignmentAST($1, $2.m_type, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | unary_expr assignment_op table            { $$ = new AssignmentAST($1, $2.m_type, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | unary_expr assignment_op anony_func_decl  { $$ = new AssignmentAST($1, $2.m_type, $3); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
 
 expr:
@@ -347,19 +347,19 @@ inner_expr:
     ;
 
 boolean:
-      TOK_TRUE  { $$ = new BooleanAST(1); PARSER->addNodeAST($$); }
-    | TOK_FALSE { $$ = new BooleanAST(0); PARSER->addNodeAST($$); }
+      TOK_TRUE  { $$ = new BooleanAST(1); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_FALSE { $$ = new BooleanAST(0); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 numeric:
-      TOK_UNS32 { $$ = new Int32AST($1.m_integerValue); PARSER->addNodeAST($$); }
-    | TOK_UNS64 { $$ = new Int64AST($1.m_integerValue); PARSER->addNodeAST($$); }
-    | TOK_FLOAT32 { $$ = new FloatAST($1.m_doubleValue); PARSER->addNodeAST($$); }
-    | TOK_FLOAT64 { $$ = new DoubleAST($1.m_doubleValue); PARSER->addNodeAST($$); }
+      TOK_UNS32 { $$ = new Int32AST($1.m_integerValue); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_UNS64 { $$ = new Int64AST($1.m_integerValue); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_FLOAT32 { $$ = new FloatAST($1.m_doubleValue); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_FLOAT64 { $$ = new DoubleAST($1.m_doubleValue); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 string:
-      TOK_STRING    { $$ = new StringAST($1.toUTF8String(), $1.m_postfix); PARSER->addNodeAST($$); }
+      TOK_STRING    { $$ = new StringAST($1.toUTF8String(), $1.m_postfix); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 keyvalue:
@@ -367,16 +367,19 @@ keyvalue:
         {
             $$ = new KeyValueAST($1.getRawString(), NULL);
             PARSER->addNodeAST($$);
+            $$->setLine($1.m_beginLine);
         }
     | TOK_IDENTIFIER TOK_ASSIGN inner_expr
         {
             $$ = new KeyValueAST($1.getRawString(), $3);
             PARSER->addNodeAST($$);
+            $$->setLine($1.m_beginLine);
         }
     | TOK_LBRACKET expr TOK_RBRACKET TOK_ASSIGN inner_expr
         {
             $$ = new KeyValueAST($2, $5);
             PARSER->addNodeAST($$);
+            $$->setLine($1.m_beginLine);
         }
     | func_decl
         {
@@ -404,9 +407,9 @@ keyvalue_list:
     ;
 
 table:
-      TOK_LCURLY TOK_RCURLY                         { $$ = new TableAST(NULL); PARSER->addNodeAST($$); }
-    | TOK_LCURLY keyvalue_list TOK_RCURLY           { $$ = new TableAST($2); PARSER->addNodeAST($$); }
-    | TOK_LCURLY keyvalue_list TOK_COMMA TOK_RCURLY { $$ = new TableAST($2); PARSER->addNodeAST($$); }
+      TOK_LCURLY TOK_RCURLY                         { $$ = new TableAST(NULL); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | TOK_LCURLY keyvalue_list TOK_RCURLY           { $$ = new TableAST($2); PARSER->addNodeAST($$); $$->setLine($3.m_beginLine); }
+    | TOK_LCURLY keyvalue_list TOK_COMMA TOK_RCURLY { $$ = new TableAST($2); PARSER->addNodeAST($$); $$->setLine($4.m_beginLine); }
     ;
 
 element:
@@ -419,9 +422,9 @@ element_list:
     ;
 
 array:
-      TOK_LBRACKET TOK_RBRACKET                         { $$ = new ArrayAST(NULL); PARSER->addNodeAST($$); }
-    | TOK_LBRACKET element_list TOK_RBRACKET            { $$ = new ArrayAST($2); PARSER->addNodeAST($$); }
-    | TOK_LBRACKET element_list TOK_COMMA TOK_RBRACKET  { $$ = new ArrayAST($2); PARSER->addNodeAST($$); }
+      TOK_LBRACKET TOK_RBRACKET                         { $$ = new ArrayAST(NULL); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
+    | TOK_LBRACKET element_list TOK_RBRACKET            { $$ = new ArrayAST($2); PARSER->addNodeAST($$); $$->setLine($3.m_beginLine); }
+    | TOK_LBRACKET element_list TOK_COMMA TOK_RBRACKET  { $$ = new ArrayAST($2); PARSER->addNodeAST($$); $$->setLine($4.m_beginLine); }
     ;
 
 type_specifier:
@@ -438,9 +441,9 @@ decl_stmt:
     ;
 
 var_decl_stmt:
-      var_decl TOK_SEMICOLON    { $$ = new VariableDeclarationListAST($1); PARSER->addNodeAST($$); }
+      var_decl TOK_SEMICOLON    { $$ = new VariableDeclarationListAST($1); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
     ;
-    
+
 getvar_primary_expr:
       TOK_IDENTIFIER                            { $$ = new GetVarAST(NULL, $1.getRawString(), GetVarAST::NONE); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     | TOK_COLONCOLON TOK_IDENTIFIER             { $$ = new GetVarAST(NULL, $2.getRawString(), GetVarAST::GLOBAL); PARSER->addNodeAST($$); $$->setLine($2.m_beginLine); }
@@ -457,7 +460,7 @@ getvar_postfix_expr:
     ;
 
 var_decl:
-      type_specifier getvar_postfix_expr                    
+      type_specifier getvar_postfix_expr
         {
             $$ = new NodeASTList();
             PARSER->addNodeAST($$);
@@ -527,28 +530,32 @@ func_decl:
         {
             $$ = new FunctionAST($2, NULL, $5);
             PARSER->addNodeAST($$);
+            $$->setLine($1.m_beginLine);
         }
     | TOK_FUNCTION getvar_postfix_expr TOK_LPAREN func_decl_arglist TOK_RPAREN block
         {
             $$ = new FunctionAST($2, $4, $6);
             PARSER->addNodeAST($$);
+            $$->setLine($1.m_beginLine);
         }
     ;
 
 local_func_decl:
       TOK_LOCAL func_decl   { $2->m_isLocal = true; $$ = $2; }
     ;
-    
+
 anony_func_decl:
       TOK_FUNCTION TOK_LPAREN TOK_RPAREN block
         {
             $$ = new FunctionAST(NULL, NULL, $4);
             PARSER->addNodeAST($$);
+            $$->setLine($1.m_beginLine);
         }
     | TOK_FUNCTION TOK_LPAREN func_decl_arglist TOK_RPAREN block
         {
             $$ = new FunctionAST(NULL, $3, $5);
             PARSER->addNodeAST($$);
+            $$->setLine($1.m_beginLine);
         }
     ;
 
@@ -580,28 +587,28 @@ labeled_stmts:
     ;
 
 labeled_stmt:
-      TOK_CASE expr TOK_COLON stmts { $$ = new CaseAST($2, $4); PARSER->addNodeAST($$); }
-    | TOK_CASE expr TOK_COLON       { $$ = new CaseAST($2, NULL); PARSER->addNodeAST($$); }
-    | TOK_DEFAULT TOK_COLON stmts   { $$ = new CaseAST(NULL, $3); PARSER->addNodeAST($$); }
-    | TOK_DEFAULT TOK_COLON         { $$ = new CaseAST(NULL, NULL); PARSER->addNodeAST($$); }
+      TOK_CASE expr TOK_COLON stmts { $$ = new CaseAST($2, $4); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_CASE expr TOK_COLON       { $$ = new CaseAST($2, NULL); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_DEFAULT TOK_COLON stmts   { $$ = new CaseAST(NULL, $3); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_DEFAULT TOK_COLON         { $$ = new CaseAST(NULL, NULL); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 jump_stmt:
-      TOK_CONTINUE TOK_SEMICOLON            { $$ = new ContinueAST(); PARSER->addNodeAST($$); }
-    | TOK_BREAK TOK_SEMICOLON               { $$ = new BreakAST(); PARSER->addNodeAST($$); }
-    | TOK_RETURN TOK_SEMICOLON              { $$ = new ReturnAST(NULL); PARSER->addNodeAST($$); }
-    | TOK_RETURN expr TOK_SEMICOLON         { $$ = new ReturnAST($2); PARSER->addNodeAST($$); }
-    | TOK_RETURN table                      { $$ = new ReturnAST($2); PARSER->addNodeAST($$); }
-    | TOK_RETURN anony_func_decl            { $$ = new ReturnAST($2); PARSER->addNodeAST($$); }
+      TOK_CONTINUE TOK_SEMICOLON            { $$ = new ContinueAST(); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_BREAK TOK_SEMICOLON               { $$ = new BreakAST(); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_RETURN TOK_SEMICOLON              { $$ = new ReturnAST(NULL); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_RETURN expr TOK_SEMICOLON         { $$ = new ReturnAST($2); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_RETURN table                      { $$ = new ReturnAST($2); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_RETURN anony_func_decl            { $$ = new ReturnAST($2); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 iteration_stmt:
-      TOK_WHILE TOK_LPAREN expr TOK_RPAREN stmt                         { $$ = new WhileAST($3, $5); PARSER->addNodeAST($$); }
-    | TOK_DO stmt TOK_WHILE TOK_LPAREN expr TOK_RPAREN TOK_SEMICOLON    { $$ = new DoWhileAST($5, $2); PARSER->addNodeAST($$); }
-    | TOK_FOR TOK_LPAREN expr_stmt expr_stmt TOK_RPAREN stmt            { $$ = new ForAST($3, $4, NULL, $6); PARSER->addNodeAST($$); }
-    | TOK_FOR TOK_LPAREN expr_stmt expr_stmt expr TOK_RPAREN stmt       { $$ = new ForAST($3, $4, $5, $7); PARSER->addNodeAST($$); }
-    | TOK_FOR TOK_LPAREN var_decl_stmt expr_stmt TOK_RPAREN stmt        { $$ = new ForAST($3, $4, NULL, $6); PARSER->addNodeAST($$); }
-    | TOK_FOR TOK_LPAREN var_decl_stmt expr_stmt expr TOK_RPAREN stmt   { $$ = new ForAST($3, $4, $5, $7); PARSER->addNodeAST($$); }
+      TOK_WHILE TOK_LPAREN expr TOK_RPAREN stmt                         { $$ = new WhileAST($3, $5); PARSER->addNodeAST($$); $$->setLine($4.m_beginLine); }
+    | TOK_DO stmt TOK_WHILE TOK_LPAREN expr TOK_RPAREN TOK_SEMICOLON    { $$ = new DoWhileAST($5, $2); PARSER->addNodeAST($$); $$->setLine($6.m_beginLine); }
+    | TOK_FOR TOK_LPAREN expr_stmt expr_stmt TOK_RPAREN stmt            { $$ = new ForAST($3, $4, NULL, $6); PARSER->addNodeAST($$); $$->setLine($5.m_beginLine); }
+    | TOK_FOR TOK_LPAREN expr_stmt expr_stmt expr TOK_RPAREN stmt       { $$ = new ForAST($3, $4, $5, $7); PARSER->addNodeAST($$); $$->setLine($6.m_beginLine); }
+    | TOK_FOR TOK_LPAREN var_decl_stmt expr_stmt TOK_RPAREN stmt        { $$ = new ForAST($3, $4, NULL, $6); PARSER->addNodeAST($$); $$->setLine($5.m_beginLine); }
+    | TOK_FOR TOK_LPAREN var_decl_stmt expr_stmt expr TOK_RPAREN stmt   { $$ = new ForAST($3, $4, $5, $7); PARSER->addNodeAST($$); $$->setLine($6.m_beginLine); }
     | foreach_stmt                                                      { $$ = $1; }
     ;
 
@@ -615,6 +622,7 @@ foreach_stmt:
             }
             $$ = new ForeachAST(0, NULL, (GetVarAST*)$3, $5, $7);
             PARSER->addNodeAST($$);
+            $$->setLine($6.m_beginLine);
         }
     | TOK_FOR TOK_LPAREN postfix_expr TOK_COMMA getvar_postfix_expr TOK_COLON inner_expr TOK_RPAREN stmt
         {
@@ -625,6 +633,7 @@ foreach_stmt:
             }
             $$ = new ForeachAST(0, (GetVarAST*)$3, $5, $7, $9);
             PARSER->addNodeAST($$);
+            $$->setLine($8.m_beginLine);
         }
     | TOK_FOR TOK_LPAREN var_decl TOK_COLON inner_expr TOK_RPAREN stmt
         {
@@ -635,7 +644,7 @@ foreach_stmt:
                 YYABORT;
             }
             GetVarAST* getvar0 = node0->m_varExpr;
-            
+
             VariableDeclarationAST* node1 = NULL;
             GetVarAST* getvar1 = NULL;
             if($3->m_nodeASTVec.size() >= 2)
@@ -648,7 +657,7 @@ foreach_stmt:
                 }
                 getvar1 = node1->m_varExpr;
             }
-            
+
             if(getvar1 == 0)
             {
                 $$ = new ForeachAST(node0->m_isLocal? TOK_LOCAL : TOK_VAR, NULL, getvar0, $5, $7);
@@ -658,21 +667,22 @@ foreach_stmt:
                 $$ = new ForeachAST(node0->m_isLocal? TOK_LOCAL : TOK_VAR, getvar0, getvar1, $5, $7);
             }
             PARSER->addNodeAST($$);
+            $$->setLine($6.m_beginLine);
         }
     ;
 
 namespace_block:
-      TOK_NAMESPACE getvar_postfix_expr TOK_LCURLY stmts TOK_RCURLY { $$ = new NamespaceAST($2, $4); PARSER->addNodeAST($$); }
-    | TOK_NAMESPACE getvar_postfix_expr TOK_LCURLY TOK_RCURLY       { $$ = new NamespaceAST($2, NULL); PARSER->addNodeAST($$); }
+      TOK_NAMESPACE getvar_postfix_expr TOK_LCURLY stmts TOK_RCURLY { $$ = new NamespaceAST($2, $4); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_NAMESPACE getvar_postfix_expr TOK_LCURLY TOK_RCURLY       { $$ = new NamespaceAST($2, NULL); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 new_expr:
-      TOK_NEW getvar_postfix_expr TOK_LPAREN TOK_RPAREN                     { $$ = new NewAST($2, NULL); PARSER->addNodeAST($$); }
-    | TOK_NEW getvar_postfix_expr TOK_LPAREN argument_expr_list TOK_RPAREN  { $$ = new NewAST($2, $4); PARSER->addNodeAST($$); }
+      TOK_NEW getvar_postfix_expr TOK_LPAREN TOK_RPAREN                     { $$ = new NewAST($2, NULL); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
+    | TOK_NEW getvar_postfix_expr TOK_LPAREN argument_expr_list TOK_RPAREN  { $$ = new NewAST($2, $4); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 delete_expr:
-      TOK_DELETE getvar_postfix_expr { $$ = new DeleteAST($2); PARSER->addNodeAST($$); }
+      TOK_DELETE getvar_postfix_expr { $$ = new DeleteAST($2); PARSER->addNodeAST($$); $$->setLine($1.m_beginLine); }
     ;
 
 %%

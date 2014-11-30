@@ -145,9 +145,12 @@ public:
     Function* m_gf_opPrefixIncDecVar;
     Function* m_gf_opUnaryPlusMinusVar;
     Function* m_gf_opLogicalNotVar;
-    Function* m_gf_opLogicalAndOrVar;
+    Function* m_gf_opLogicalAndVar;
+    Function* m_gf_opLogicalOrVar;
     Function* m_gf_opBitwiseNotVar;
-    Function* m_gf_opBitwiseAndOrXorVar;
+    Function* m_gf_opBitwiseAndVar;
+    Function* m_gf_opBitwiseOrVar;
+    Function* m_gf_opBitwiseXorVar;
     Function* m_gf_opToBoolVar;
     Function* m_gf_opInitIter;
     Function* m_gf_opIterateVar;
