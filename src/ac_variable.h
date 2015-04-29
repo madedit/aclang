@@ -42,7 +42,7 @@ enum acVarType
     //user data
     acVT_USERDATA,
     acVT_USERFUNC,
-    //helper data
+    //helper data, internal use only
     acVT_FUNCBINDER,
     acVT_FUNCTIONDATA,
 };

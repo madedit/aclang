@@ -4,7 +4,7 @@
 #include "ac_codegen.h"
 #include "ac_gc.h"
 #include "ac_vm.h"
-#include <llvm/PassManager.h>
+#include "llvm/IR/LegacyPassManager.h"
 #include <llvm/IR/Verifier.h>
 #include <llvm/IR/IRPrintingPasses.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -40,8 +40,6 @@ acCodeGenerator::acCodeGenerator(acVM* vm)
 
     m_rootTmpArray = (acArray*)m_gc->createObject(acVT_ARRAY);
     m_gc->addRootObj(m_rootTmpArray);
-
-    createCoreFunctions();
 }
 
 acCodeGenerator::~acCodeGenerator()
@@ -60,7 +58,7 @@ LLVMContext& acCodeGenerator::getLLVMContext()
 
 Module* acCodeGenerator::getModule()
 {
-    return m_vm->getModule();
+    return m_vm->getCurrentModule();
 }
 
 void acCodeGenerator::generateCode()
@@ -76,7 +74,7 @@ void acCodeGenerator::generateCode()
     m_isCompileError = false;
 
     LLVMContext& context = m_vm->getLLVMContext();
-    Module* module = m_vm->getModule();
+    Module* module = m_vm->getCurrentModule();
 
     //m_vm->getMsgHandler()->error("Generating code...\n");
     
@@ -168,7 +166,7 @@ void acCodeGenerator::generateCode()
     if(m_vm->getPrintIR())
     {
         m_vm->getMsgHandler()->error(">>>LLVM IR<<<\n");
-        PassManager pm;
+        legacy::PassManager pm;
         pm.add(createPrintModulePass(outs()));
         pm.run(*module);
     }
@@ -180,7 +178,9 @@ GenericValue acCodeGenerator::runCode()
     if(m_mainFunction != 0)
     {
         //m_vm->getMsgHandler()->error("Running code...\n");
-        ExecutionEngine* ee = m_vm->getExecutionEngine();
+        ExecutionEngine* ee = m_vm->getCurrentExecutionEngine();
+        ee->finalizeObject();
+
         std::vector<GenericValue> noargs;
         GenericValue v = ee->runFunction(m_mainFunction, noargs);
         //printf("ret = %d\n", v.IntVal.getZExtValue());
@@ -412,8 +412,8 @@ void acCodeGenerator::eraseMainFunction()
 {
     if(m_mainFunction != 0)
     {
-        ExecutionEngine* ee = m_vm->getExecutionEngine();
-        ee->freeMachineCodeForFunction(m_mainFunction);
+        //ExecutionEngine* ee = m_vm->getExecutionEngine();
+        //ee->freeMachineCodeForFunction(m_mainFunction);
         m_mainFunction->replaceAllUsesWith(UndefValue::get(m_mainFunction->getType()));
         m_mainFunction->deleteBody();
         m_mainFunction->eraseFromParent();
@@ -1597,106 +1597,170 @@ int opCompareVar(acVariable* lhs, acVariable* rhs, int tok_cmp, acDebugInfo* deb
     return cmp >= 0;
 }
 
-void opPostfixIncDecVar(acVariable* ret, acVariable* var, int tok, acDebugInfo* debugInfo, acVM* vm)
+void opPostfixIncVar(acVariable* ret, acVariable* var, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
     case acVT_INT32:
         ret->setValue(var->m_int32);
-        if(tok == TOK_PLUSPLUS) ++var->m_int32;
-        else --var->m_int32;
+        ++var->m_int32;
         break;
     case acVT_INT64:
         ret->setValue(var->m_int64);
-        if(tok == TOK_PLUSPLUS) ++var->m_int64;
-        else --var->m_int64;
+        ++var->m_int64;
         break;
     case acVT_FLOAT:
         ret->setValue(var->m_float);
-        if(tok == TOK_PLUSPLUS) ++var->m_float;
-        else --var->m_float;
+        ++var->m_float;
         break;
     case acVT_DOUBLE:
         ret->setValue(var->m_double);
-        if(tok == TOK_PLUSPLUS) ++var->m_double;
-        else --var->m_double;
+        ++var->m_double;
         break;
     default:
         {
             vm->setDebugInfo(debugInfo);
-            const char* tokstr;
-            if(tok == TOK_PLUSPLUS) tokstr = "++";
-            else tokstr = "--";
             char msg[128];
-            sprintf(msg, "Error: attempt to use postfix op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
+            sprintf(msg, "Error: attempt to use postfix op '++' on '%s'", getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
         }
         return;
     }
 }
 
-void opPrefixIncDecVar(acVariable* var, int tok, acDebugInfo* debugInfo, acVM* vm)
+void opPostfixDecVar(acVariable* ret, acVariable* var, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
     case acVT_INT32:
-        if(tok == TOK_PLUSPLUS) ++var->m_int32;
-        else --var->m_int32;
+        ret->setValue(var->m_int32);
+        --var->m_int32;
         break;
     case acVT_INT64:
-        if(tok == TOK_PLUSPLUS) ++var->m_int64;
-        else --var->m_int64;
+        ret->setValue(var->m_int64);
+        --var->m_int64;
         break;
     case acVT_FLOAT:
-        if(tok == TOK_PLUSPLUS) ++var->m_float;
-        else --var->m_float;
+        ret->setValue(var->m_float);
+        --var->m_float;
         break;
     case acVT_DOUBLE:
-        if(tok == TOK_PLUSPLUS) ++var->m_double;
-        else --var->m_double;
+        ret->setValue(var->m_double);
+        --var->m_double;
+        break;
+    default:
+    {
+        vm->setDebugInfo(debugInfo);
+        char msg[128];
+        sprintf(msg, "Error: attempt to use postfix op '--' on '%s'", getVarTypeStr(var->m_valueType).c_str());
+        vm->runtimeError(msg);
+    }
+        return;
+    }
+}
+
+void opPrefixIncVar(acVariable* var, acDebugInfo* debugInfo, acVM* vm)
+{
+    switch(var->m_valueType)
+    {
+    case acVT_INT32:
+        ++var->m_int32;
+        break;
+    case acVT_INT64:
+        ++var->m_int64;
+        break;
+    case acVT_FLOAT:
+        ++var->m_float;
+        break;
+    case acVT_DOUBLE:
+        ++var->m_double;
         break;
     default:
         {
             vm->setDebugInfo(debugInfo);
-            const char* tokstr;
-            if(tok == TOK_PLUSPLUS) tokstr = "++";
-            else tokstr = "--";
             char msg[128];
-            sprintf(msg, "Error: attempt to use prefix op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
+            sprintf(msg, "Error: attempt to use prefix op '++' on '%s'", getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
         }
         return;
     }
 }
 
-void opUnaryPlusMinusVar(acVariable* ret, acVariable* var, int tok, acDebugInfo* debugInfo, acVM* vm)
+void opPrefixDecVar(acVariable* var, acDebugInfo* debugInfo, acVM* vm)
 {
     switch(var->m_valueType)
     {
     case acVT_INT32:
-        if(tok == TOK_PLUS) ret->setValue(+var->m_int32);
-        else ret->setValue(-var->m_int32);
+        --var->m_int32;
         break;
     case acVT_INT64:
-        if(tok == TOK_PLUS) ret->setValue(+var->m_int64);
-        else ret->setValue(-var->m_int64);
+        --var->m_int64;
         break;
     case acVT_FLOAT:
-        if(tok == TOK_PLUS) ret->setValue(+var->m_float);
-        else ret->setValue(-var->m_float);
+        --var->m_float;
         break;
     case acVT_DOUBLE:
-        if(tok == TOK_PLUS) ret->setValue(+var->m_double);
-        else ret->setValue(-var->m_double);
+        --var->m_double;
+        break;
+    default:
+    {
+        vm->setDebugInfo(debugInfo);
+        char msg[128];
+        sprintf(msg, "Error: attempt to use prefix op '--' on '%s'", getVarTypeStr(var->m_valueType).c_str());
+        vm->runtimeError(msg);
+    }
+        return;
+    }
+}
+
+void opUnaryPlusVar(acVariable* ret, acVariable* var, acDebugInfo* debugInfo, acVM* vm)
+{
+    switch(var->m_valueType)
+    {
+    case acVT_INT32:
+        ret->setValue(var->m_int32 < 0 ? -var->m_int32 : var->m_int32);
+        break;
+    case acVT_INT64:
+        ret->setValue(var->m_int64 < 0 ? -var->m_int64 : var->m_int64);
+        break;
+    case acVT_FLOAT:
+        ret->setValue(var->m_float < 0 ? -var->m_float : var->m_float);
+        break;
+    case acVT_DOUBLE:
+        ret->setValue(var->m_double < 0 ? -var->m_double : var->m_double);
         break;
     default:
         {
             vm->setDebugInfo(debugInfo);
-            const char* tokstr;
-            if(tok == TOK_PLUS) tokstr = "+";
-            else tokstr = "-";
             char msg[128];
-            sprintf(msg, "Error: attempt to use unary op '%s' on '%s'", tokstr, getVarTypeStr(var->m_valueType).c_str());
+            sprintf(msg, "Error: attempt to use unary op '+' on '%s'", getVarTypeStr(var->m_valueType).c_str());
+            vm->runtimeError(msg);
+        }
+        return;
+    }
+}
+
+void opUnaryMinusVar(acVariable* ret, acVariable* var, acDebugInfo* debugInfo, acVM* vm)
+{
+    switch(var->m_valueType)
+    {
+    case acVT_INT32:
+        ret->setValue(-var->m_int32);
+        break;
+    case acVT_INT64:
+        ret->setValue(-var->m_int64);
+        break;
+    case acVT_FLOAT:
+        ret->setValue(-var->m_float);
+        break;
+    case acVT_DOUBLE:
+        ret->setValue(-var->m_double);
+        break;
+    default:
+        {
+            vm->setDebugInfo(debugInfo);
+            char msg[128];
+            sprintf(msg, "Error: attempt to use unary op '-' on '%s'", getVarTypeStr(var->m_valueType).c_str());
             vm->runtimeError(msg);
         }
         return;
@@ -1902,7 +1966,8 @@ int opIterateVar(acVariable* var, acVariable* key, acVariable* value, acDebugInf
         }
         break;
     }
-    return false;
+
+    return 0;
 }
 
 void* opNew(acVariable* thisVar, acArray* argArray, acDebugInfo* debugInfo, acVM* vm)
@@ -2083,44 +2148,43 @@ void opDelete_str(acVariable* parent, char* key, int findInGlobal, acDebugInfo* 
 void acCodeGenerator::createGlobalValues()
 {
     Module* mod = getModule();
-    ExecutionEngine *ee = m_vm->getExecutionEngine();
+    ExecutionEngine *ee = m_vm->getCurrentExecutionEngine();
     LLVMContext& context = getLLVMContext();
 
-    //bind gc
     Type* int8Ty = Type::getInt8Ty(context);
     //PointerType* voidPtrTy = PointerType::get(Type::getInt8Ty(context), 0);
     //voidPtrTy->dump();
 
     //!!!global variable in llvm is PointerType
-    
+
     m_gv_vm = cast<GlobalVariable>(mod->getOrInsertGlobal("ac_vm", int8Ty));
-    ee->addGlobalMapping(m_gv_vm, getVM());
+    addGlobalSymbal(ee, m_gv_vm, getVM());
 
     m_gv_cg = cast<GlobalVariable>(mod->getOrInsertGlobal("ac_cg", int8Ty));
-    ee->addGlobalMapping(m_gv_cg, this);
+    addGlobalSymbal(ee, m_gv_cg, this);
 
     m_gv_gc = cast<GlobalVariable>(mod->getOrInsertGlobal("ac_gc", int8Ty));
-    ee->addGlobalMapping(m_gv_gc, getGarbageCollector());
+    addGlobalSymbal(ee, m_gv_gc, getGarbageCollector());
 
     m_gv_errorJmpBuf = cast<GlobalVariable>(mod->getOrInsertGlobal("ac_errorJmpBuf", int8Ty));
-    ee->addGlobalMapping(m_gv_errorJmpBuf, m_errorJmpBuf);
+    addGlobalSymbal(ee, m_gv_errorJmpBuf, m_errorJmpBuf);
     //printf("%p %p\n", m_errorJmpBuf, &m_errorJmpBuf);
     //m_gv_errorJmpBuf->getType()->dump();
 
     m_gv_rootTableVar = cast<GlobalVariable>(mod->getOrInsertGlobal("ac_rootTableVar", int8Ty));
-    ee->addGlobalMapping(m_gv_rootTableVar, m_rootTableVar);
+    addGlobalSymbal(ee, m_gv_rootTableVar, m_rootTableVar);
 
     m_gv_rootArgArray = cast<GlobalVariable>(mod->getOrInsertGlobal("ac_rootArgArray", int8Ty));
-    ee->addGlobalMapping(m_gv_rootArgArray, m_rootArgArray);
+    addGlobalSymbal(ee, m_gv_rootArgArray, m_rootArgArray);
 
     m_gv_rootTmpArray = cast<GlobalVariable>(mod->getOrInsertGlobal("ac_rootTmpArray", int8Ty));
-    ee->addGlobalMapping(m_gv_rootTmpArray, m_rootTmpArray);
+    addGlobalSymbal(ee, m_gv_rootTmpArray, m_rootTmpArray);
 }
 
 void acCodeGenerator::createGlobalFunctions()
 {
     Module* mod = getModule();
-    ExecutionEngine *ee = m_vm->getExecutionEngine();
+    ExecutionEngine *ee = m_vm->getCurrentExecutionEngine();
     LLVMContext& context = getLLVMContext();
 
     Type* voidTy = Type::getVoidTy(context);
@@ -2133,377 +2197,411 @@ void acCodeGenerator::createGlobalFunctions()
 
     //error handling
     m_gf_setJmp = cast<Function>(mod->getOrInsertFunction("setJmp",
-                                 int32Ty,//ret
-                                 voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_setJmp, (void*)_setjmp);
+                                int32Ty,//ret
+                                voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_setJmp, (void*)_setjmp);
 
     m_gf_longJmp = cast<Function>(mod->getOrInsertFunction("myLongJmp",
-                                 voidTy,//ret
-                                 voidPtrTy, int32Ty,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_longJmp, (void*)myLongJmp);
+                                voidTy,//ret
+                                voidPtrTy, int32Ty,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_longJmp, (void*)myLongJmp);
 
-    //
+    //general functions for acVM
     m_gf_newArrayVar = cast<Function>(mod->getOrInsertFunction("newArrayVar",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, int32Ty, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_newArrayVar, (void*)newArrayVar);
+                                voidPtrTy,//ret
+                                voidPtrTy, int32Ty, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_newArrayVar, (void*)newArrayVar);
 
     m_gf_setArrayVar = cast<Function>(mod->getOrInsertFunction("setArrayVar",
-                                 voidTy,//ret
-                                 voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_setArrayVar, (void*)setArrayVar);
+                                voidTy,//ret
+                                voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_setArrayVar, (void*)setArrayVar);
 
     m_gf_getArrayVar = cast<Function>(mod->getOrInsertFunction("getArrayVar",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_getArrayVar, (void*)getArrayVar);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_getArrayVar, (void*)getArrayVar);
 
     m_gf_getArrayVar_int = cast<Function>(mod->getOrInsertFunction("getArrayVar_int",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, int32Ty, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_getArrayVar_int, (void*)getArrayVar_int);
+                                voidPtrTy,//ret
+                                voidPtrTy, int32Ty, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_getArrayVar_int, (void*)getArrayVar_int);
 
     m_gf_addTableKeyValue = cast<Function>(mod->getOrInsertFunction("addTableKeyValue",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_addTableKeyValue, (void*)addTableKeyValue);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_addTableKeyValue, (void*)addTableKeyValue);
 
     m_gf_addTableKeyValue_str = cast<Function>(mod->getOrInsertFunction("addTableKeyValue_str",
-                                 voidTy,//ret
-                                 voidPtrTy, charPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_addTableKeyValue_str, (void*)addTableKeyValue_str);
+                                voidTy,//ret
+                                voidPtrTy, charPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_addTableKeyValue_str, (void*)addTableKeyValue_str);
 
     m_gf_addTableVar = cast<Function>(mod->getOrInsertFunction("addTableVar",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_addTableVar, (void*)addTableVar);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_addTableVar, (void*)addTableVar);
 
     m_gf_addTableVar_str = cast<Function>(mod->getOrInsertFunction("addTableVar_str",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, charPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_addTableVar_str, (void*)addTableVar_str);
+                                voidPtrTy,//ret
+                                voidPtrTy, charPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_addTableVar_str, (void*)addTableVar_str);
 
     m_gf_getTableVar = cast<Function>(mod->getOrInsertFunction("getTableVar",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, charPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_getTableVar, (void*)getTableVar);
+                                voidPtrTy,//ret
+                                voidPtrTy, charPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_getTableVar, (void*)getTableVar);
 
     m_gf_createUpValueTable = cast<Function>(mod->getOrInsertFunction("createUpValueTable",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_createUpValueTable, (void*)createUpValueTable);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_createUpValueTable, (void*)createUpValueTable);
 
     m_gf_createFunc = cast<Function>(mod->getOrInsertFunction("createFunc",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_createFunc, (void*)createFunc);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_createFunc, (void*)createFunc);
 
     m_gf_assignFunc = cast<Function>(mod->getOrInsertFunction("assignFunc",
-        voidTy,//ret
-        voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_assignFunc, (void*)assignFunc);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_assignFunc, (void*)assignFunc);
 
     m_gf_setFuncPtr = cast<Function>(mod->getOrInsertFunction("setFuncPtr",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_setFuncPtr, (void*)setFuncPtr);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_setFuncPtr, (void*)setFuncPtr);
 
     m_gf_setFuncMiscData = cast<Function>(mod->getOrInsertFunction("setFuncMiscData",
-        voidTy,//ret
-        voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_setFuncMiscData, (void*)setFuncMiscData);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_setFuncMiscData, (void*)setFuncMiscData);
 
     m_gf_createTmpArray = cast<Function>(mod->getOrInsertFunction("createTmpArray",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_createTmpArray, (void*)createTmpArray);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_createTmpArray, (void*)createTmpArray);
 
     m_gf_createTable = cast<Function>(mod->getOrInsertFunction("createTable",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_createTable, (void*)createTable);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_createTable, (void*)createTable);
 
     m_gf_createArray = cast<Function>(mod->getOrInsertFunction("createArray",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_createArray, (void*)createArray);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_createArray, (void*)createArray);
 
     //
     m_gf_opGetVar = cast<Function>(mod->getOrInsertFunction("opGetVar",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opGetVar, (void*)opGetVar);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opGetVar, (void*)opGetVar);
 
     m_gf_opGetVar_int32 = cast<Function>(mod->getOrInsertFunction("opGetVar_int32",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, int32Ty, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opGetVar_int32, (void*)opGetVar_int32);
+                                voidPtrTy,//ret
+                                voidPtrTy, int32Ty, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opGetVar_int32, (void*)opGetVar_int32);
 
     m_gf_opGetVar_int64 = cast<Function>(mod->getOrInsertFunction("opGetVar_int64",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, int64Ty, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL));
-    ee->addGlobalMapping(m_gf_opGetVar_int64, (void*)opGetVar_int64);
+                                voidPtrTy,//ret
+                                voidPtrTy, int64Ty, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opGetVar_int64, (void*)opGetVar_int64);
 
     m_gf_opGetVar_str = cast<Function>(mod->getOrInsertFunction("opGetVar_str",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, charPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opGetVar_str, (void*)opGetVar_str);
+                                voidPtrTy,//ret
+                                voidPtrTy, charPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opGetVar_str, (void*)opGetVar_str);
 
     m_gf_opNewVar = cast<Function>(mod->getOrInsertFunction("opNewVar",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opNewVar, (void*)opNewVar);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opNewVar, (void*)opNewVar);
 
     m_gf_opNewVar_int32 = cast<Function>(mod->getOrInsertFunction("opNewVar_int32",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opNewVar_int32, (void*)opNewVar_int32);
+                                voidPtrTy,//ret
+                                voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opNewVar_int32, (void*)opNewVar_int32);
 
     m_gf_opNewVar_int64 = cast<Function>(mod->getOrInsertFunction("opNewVar_int64",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, int64Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL));
-    ee->addGlobalMapping(m_gf_opNewVar_int64, (void*)opNewVar_int64);
+                                voidPtrTy,//ret
+                                voidPtrTy, int64Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opNewVar_int64, (void*)opNewVar_int64);
 
     m_gf_opNewVar_str = cast<Function>(mod->getOrInsertFunction("opNewVar_str",
-                                 voidPtrTy,//ret
-                                 voidPtrTy, charPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opNewVar_str, (void*)opNewVar_str);
+                                voidPtrTy,//ret
+                                voidPtrTy, charPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opNewVar_str, (void*)opNewVar_str);
 
     //
     m_gf_opAssignVar = cast<Function>(mod->getOrInsertFunction("opAssignVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAssignVar, (void*)opAssignVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAssignVar, (void*)opAssignVar);
 
     m_gf_opAssignVar_null = cast<Function>(mod->getOrInsertFunction("opAssignVar_null",
-                                 voidTy,//ret
-                                 voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAssignVar_null, (void*)opAssignVar_null);
+                                voidTy,//ret
+                                voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAssignVar_null, (void*)opAssignVar_null);
 
     m_gf_opAssignVar_bool = cast<Function>(mod->getOrInsertFunction("opAssignVar_bool",
-                                 voidTy,//ret
-                                 voidPtrTy, int32Ty,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAssignVar_bool, (void*)opAssignVar_bool);
+                                voidTy,//ret
+                                voidPtrTy, int32Ty,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAssignVar_bool, (void*)opAssignVar_bool);
 
     m_gf_opAssignVar_int32 = cast<Function>(mod->getOrInsertFunction("opAssignVar_int32",
-                                 voidTy,//ret
-                                 voidPtrTy, int32Ty,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAssignVar_int32, (void*)opAssignVar_int32);
+                                voidTy,//ret
+                                voidPtrTy, int32Ty,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAssignVar_int32, (void*)opAssignVar_int32);
 
     m_gf_opAssignVar_int64 = cast<Function>(mod->getOrInsertFunction("opAssignVar_int64",
-                                 voidTy,//ret
-                                 voidPtrTy, int64Ty,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAssignVar_int64, (void*)opAssignVar_int64);
+                                voidTy,//ret
+                                voidPtrTy, int64Ty,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAssignVar_int64, (void*)opAssignVar_int64);
 
     m_gf_opAssignVar_float = cast<Function>(mod->getOrInsertFunction("opAssignVar_float",
-                                 voidTy,//ret
-                                 voidPtrTy, floatTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAssignVar_float, (void*)opAssignVar_float);
+                                voidTy,//ret
+                                voidPtrTy, floatTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAssignVar_float, (void*)opAssignVar_float);
 
     m_gf_opAssignVar_double = cast<Function>(mod->getOrInsertFunction("opAssignVar_double",
-                                 voidTy,//ret
-                                 voidPtrTy, doubleTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAssignVar_double, (void*)opAssignVar_double);
+                                voidTy,//ret
+                                voidPtrTy, doubleTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAssignVar_double, (void*)opAssignVar_double);
 
     m_gf_opAssignVar_str = cast<Function>(mod->getOrInsertFunction("opAssignVar_str",
-                                 voidTy,//ret
-                                 voidPtrTy, charPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAssignVar_str, (void*)opAssignVar_str);
+                                voidTy,//ret
+                                voidPtrTy, charPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAssignVar_str, (void*)opAssignVar_str);
 
     m_gf_opAddVar = cast<Function>(mod->getOrInsertFunction("opAddVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opAddVar, (void*)opAddVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opAddVar, (void*)opAddVar);
 
     m_gf_opSubVar = cast<Function>(mod->getOrInsertFunction("opSubVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opSubVar, (void*)opSubVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opSubVar, (void*)opSubVar);
 
     m_gf_opMulVar = cast<Function>(mod->getOrInsertFunction("opMulVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opMulVar, (void*)opMulVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opMulVar, (void*)opMulVar);
 
     m_gf_opDivVar = cast<Function>(mod->getOrInsertFunction("opDivVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opDivVar, (void*)opDivVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opDivVar, (void*)opDivVar);
 
     m_gf_opModVar = cast<Function>(mod->getOrInsertFunction("opModVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opModVar, (void*)opModVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opModVar, (void*)opModVar);
 
     m_gf_opCallFunc = cast<Function>(mod->getOrInsertFunction("opCallFunc",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opCallFunc, (void*)opCallFunc);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opCallFunc, (void*)opCallFunc);
 
     m_gf_opEqualVar = cast<Function>(mod->getOrInsertFunction("opEqualVar",
-                                 int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opEqualVar, (void*)opEqualVar);
+                                int32Ty,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opEqualVar, (void*)opEqualVar);
 
     m_gf_opNotEqualVar = cast<Function>(mod->getOrInsertFunction("opNotEqualVar",
-                                 int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opNotEqualVar, (void*)opNotEqualVar);
+                                int32Ty,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opNotEqualVar, (void*)opNotEqualVar);
 
     m_gf_opCompareVar = cast<Function>(mod->getOrInsertFunction("opCompareVar",
-                                 int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opCompareVar, (void*)opCompareVar);
+                                int32Ty,//ret
+                                voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opCompareVar, (void*)opCompareVar);
 
-    m_gf_opPostfixIncDecVar = cast<Function>(mod->getOrInsertFunction("opPostfixIncDecVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opPostfixIncDecVar, (void*)opPostfixIncDecVar);
+    m_gf_opPostfixIncVar = cast<Function>(mod->getOrInsertFunction("opPostfixIncVar",
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opPostfixIncVar, (void*)opPostfixIncVar);
 
-    m_gf_opPrefixIncDecVar = cast<Function>(mod->getOrInsertFunction("opPrefixIncDecVar",
-                                 voidTy,//ret
-                                 voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opPrefixIncDecVar, (void*)opPrefixIncDecVar);
+    m_gf_opPostfixDecVar = cast<Function>(mod->getOrInsertFunction("opPostfixDecVar",
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opPostfixDecVar, (void*)opPostfixDecVar);
 
-    m_gf_opUnaryPlusMinusVar = cast<Function>(mod->getOrInsertFunction("opUnaryPlusMinusVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opUnaryPlusMinusVar, (void*)opUnaryPlusMinusVar);
+    m_gf_opPrefixIncVar = cast<Function>(mod->getOrInsertFunction("opPrefixIncVar",
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opPrefixIncVar, (void*)opPrefixIncVar);
+
+    m_gf_opPrefixDecVar = cast<Function>(mod->getOrInsertFunction("opPrefixDecVar",
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opPrefixDecVar, (void*)opPrefixDecVar);
+
+    m_gf_opUnaryPlusVar = cast<Function>(mod->getOrInsertFunction("opUnaryPlusVar",
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opUnaryPlusVar, (void*)opUnaryPlusVar);
+
+    m_gf_opUnaryMinusVar = cast<Function>(mod->getOrInsertFunction("opUnaryMinusVar",
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opUnaryMinusVar, (void*)opUnaryMinusVar);
 
     m_gf_opLogicalNotVar = cast<Function>(mod->getOrInsertFunction("opLogicalNotVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opLogicalNotVar, (void*)opLogicalNotVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opLogicalNotVar, (void*)opLogicalNotVar);
 
     m_gf_opLogicalAndVar = cast<Function>(mod->getOrInsertFunction("opLogicalAndVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opLogicalAndVar, (void*)opLogicalAndVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opLogicalAndVar, (void*)opLogicalAndVar);
 
     m_gf_opLogicalOrVar = cast<Function>(mod->getOrInsertFunction("opLogicalOrVar",
-        voidTy,//ret
-        voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_opLogicalOrVar, (void*)opLogicalOrVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opLogicalOrVar, (void*)opLogicalOrVar);
 
     m_gf_opBitwiseNotVar = cast<Function>(mod->getOrInsertFunction("opBitwiseNotVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opBitwiseNotVar, (void*)opBitwiseNotVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opBitwiseNotVar, (void*)opBitwiseNotVar);
 
     m_gf_opBitwiseAndVar = cast<Function>(mod->getOrInsertFunction("opBitwiseAndVar",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opBitwiseAndVar, (void*)opBitwiseAndVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opBitwiseAndVar, (void*)opBitwiseAndVar);
 
     m_gf_opBitwiseOrVar = cast<Function>(mod->getOrInsertFunction("opBitwiseOrVar",
-        voidTy,//ret
-        voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_opBitwiseOrVar, (void*)opBitwiseOrVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opBitwiseOrVar, (void*)opBitwiseOrVar);
 
     m_gf_opBitwiseXorVar = cast<Function>(mod->getOrInsertFunction("opBitwiseXorVar",
-        voidTy,//ret
-        voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_opBitwiseXorVar, (void*)opBitwiseXorVar);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opBitwiseXorVar, (void*)opBitwiseXorVar);
 
     m_gf_opToBoolVar = cast<Function>(mod->getOrInsertFunction("opToBoolVar",
-                                 int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opToBoolVar, (void*)opToBoolVar);
+                                int32Ty,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opToBoolVar, (void*)opToBoolVar);
 
     m_gf_opInitIter = cast<Function>(mod->getOrInsertFunction("opInitIter",
-                                 voidTy,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opInitIter, (void*)opInitIter);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opInitIter, (void*)opInitIter);
 
     m_gf_opIterateVar = cast<Function>(mod->getOrInsertFunction("opIterateVar",
-                                 int32Ty,//ret
-                                 voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-                                 NULL) );
-    ee->addGlobalMapping(m_gf_opIterateVar, (void*)opIterateVar);
+                                int32Ty,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opIterateVar, (void*)opIterateVar);
 
     m_gf_opNew = cast<Function>(mod->getOrInsertFunction("opNew",
-        voidPtrTy,//ret
-        voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_opNew, (void*)opNew);
+                                voidPtrTy,//ret
+                                voidPtrTy, voidPtrTy, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opNew, (void*)opNew);
 
     m_gf_opDelete = cast<Function>(mod->getOrInsertFunction("opDelete",
-        voidTy,//ret
-        voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_opDelete, (void*)opDelete);
+                                voidTy,//ret
+                                voidPtrTy, voidPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opDelete, (void*)opDelete);
 
     m_gf_opDelete_int32 = cast<Function>(mod->getOrInsertFunction("opDelete_int32",
-        voidTy,//ret
-        voidPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_opDelete_int32, (void*)opDelete_int32);
+                                voidTy,//ret
+                                voidPtrTy, int32Ty, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opDelete_int32, (void*)opDelete_int32);
 
     m_gf_opDelete_int64 = cast<Function>(mod->getOrInsertFunction("opDelete_int64",
-        voidTy,//ret
-        voidPtrTy, int64Ty, int32Ty, voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_opDelete_int64, (void*)opDelete_int64);
+                                voidTy,//ret
+                                voidPtrTy, int64Ty, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opDelete_int64, (void*)opDelete_int64);
 
     m_gf_opDelete_str = cast<Function>(mod->getOrInsertFunction("opDelete_str",
-        voidTy,//ret
-        voidPtrTy, charPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
-        NULL));
-    ee->addGlobalMapping(m_gf_opDelete_str, (void*)opDelete_str);
+                                voidTy,//ret
+                                voidPtrTy, charPtrTy, int32Ty, voidPtrTy, voidPtrTy,//args
+                                NULL) );
+    addGlobalSymbal(ee, m_gf_opDelete_str, (void*)opDelete_str);
+}
+
+void acCodeGenerator::addGlobalSymbal(ExecutionEngine *ee, const GlobalValue *gv, void *addr)
+{
+    //ee->addGlobalMapping(gv, addr);
+    m_globalSymbalMap.insert(std::make_pair(gv->getName(), addr));
+}
+
+void* acCodeGenerator::getGlobalSymbolAddress(const std::string &name)
+{
+    StringMap<void*>::iterator it = m_globalSymbalMap.find(name);
+    if(it == m_globalSymbalMap.end())
+    {
+        return NULL;
+    }
+    return it->second;
 }

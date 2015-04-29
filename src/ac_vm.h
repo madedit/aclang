@@ -17,8 +17,13 @@ protected:
     bool m_initOkay;
 
     llvm::LLVMContext m_llvmContext;
+
+    //current module
     llvm::Module* m_module;
     llvm::ExecutionEngine* m_executionEngine;
+    //finalized module
+    //std::list< std::pair< llvm::ExecutionEngine*, llvm::Module* > > m_executionEngineList;
+    std::map<llvm::Module*, llvm::ExecutionEngine*> m_moduleEngineMap;
 
     acMsgHandler m_msgHandler;
     acParser* m_parser;
@@ -27,7 +32,7 @@ protected:
     bool m_isRuntimeError;
     acDebugInfo* m_debugInfo;
 
-        //for debug
+    //for debug
     bool m_printAST;
     bool m_printIR;
 
@@ -38,8 +43,13 @@ public:
     bool getInitOkay() { return m_initOkay; }
 
     llvm::LLVMContext& getLLVMContext() { return m_llvmContext; }
-    llvm::Module* getModule() { return m_module; }
-    llvm::ExecutionEngine* getExecutionEngine() { return m_executionEngine; }
+
+    llvm::Module* getCurrentModule() { return m_module; }
+    llvm::ExecutionEngine* getCurrentExecutionEngine() { return m_executionEngine; }
+    llvm::ExecutionEngine* getExecutionEngine(llvm::Module* mod);
+
+    void storeCurrentModuleEngine();
+    void createNewModuleEngine();
 
     acMsgHandler* getMsgHandler() { return &m_msgHandler; }
     acParser* getParser() { return m_parser; }
@@ -66,6 +76,7 @@ public:
 public:
     //compile & run Code
     bool runCode(const char* code, bool runGCFinally = true);
+
     //get roottable
     acVariable* getRootTable() { return m_codeGenerator->getRootTableVar(); }
     //key: "a.b.123"; return ::a[b][123] or NULL if there is any key that is not exist.

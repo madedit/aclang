@@ -3,12 +3,15 @@
 #include "ac_vm.h"
 #include "ac_variable.h"
 #include "ac_stdlib.h"
-#include <llvm/ExecutionEngine/JIT.h>
+#include <llvm/ExecutionEngine/MCJIT.h>
+#include "llvm/ExecutionEngine/SectionMemoryManager.h"
+#include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/ManagedStatic.h>
 #include <stdio.h>
 #include <string.h>
 #include <setjmp.h>
+#include <memory>
 
 using namespace llvm;
 
@@ -19,11 +22,45 @@ void llvm_fatal_error_handler(void *user_data, const std::string &reason, bool g
     vm->getMsgHandler()->error("LLVM fatal error: %d\n", reason.c_str());
 }
 
+class HelpingMemoryManager : public SectionMemoryManager {
+    HelpingMemoryManager(const HelpingMemoryManager &) = delete;
+    void operator=(const HelpingMemoryManager &) = delete;
+
+public:
+    HelpingMemoryManager(acVM* vm) : m_vm(vm) {}
+    virtual ~HelpingMemoryManager() {}
+
+    /// This method returns the address of the specified symbol.
+    /// Our implementation will attempt to find symbols in other
+    /// modules associated with the MCJITHelper to cross link symbols
+    /// from one generated module to another.
+    virtual uint64_t getSymbolAddress(const std::string &name) override;
+
+private:
+    acVM* m_vm;
+};
+
+uint64_t HelpingMemoryManager::getSymbolAddress(const std::string &name) {
+    uint64_t fnAddr = SectionMemoryManager::getSymbolAddress(name);
+    if(fnAddr)
+        return fnAddr;
+
+    return (uint64_t)m_vm->getCodeGenerator()->getGlobalSymbolAddress(name);
+
+    //uint64_t helperFun = m_vm->getCurrentExecutionEngine()->getFunctionAddress(name);
+    //if(!helperFun)
+    //{
+    //    report_fatal_error("Program used extern function '" + Name +
+    //        "' which could not be resolved!");
+    //}
+    //return helperFun;
+}
+
 
 acVM::acVM()
     : m_initOkay(true)
     , m_llvmContext()
-    , m_module(new Module("aclang jit", m_llvmContext))
+    , m_module(0)
     , m_msgHandler()
     , m_gc(this)
     , m_isRuntimeError(false)
@@ -32,25 +69,20 @@ acVM::acVM()
     , m_printIR(false)
 {
     llvm::install_fatal_error_handler(&llvm_fatal_error_handler, this);
+    
+    //LLVMInitializeAllTargets();
+    //LLVMInitializeAllTargetMCs();
+    //LLVMInitializeAllTargetInfos();
     InitializeNativeTarget();
-
-    //std::string s = m_module->getTargetTriple();
-    //m_module->setTargetTriple("elf");
-
-    std::string errStr;
-    llvm::EngineBuilder factory(m_module);
-    factory.setEngineKind(llvm::EngineKind::JIT);
-    factory.setErrorStr(&errStr);
-    factory.setUseMCJIT(true);
-    m_executionEngine = factory.create();
-    if(m_executionEngine == NULL)
-    {
-        m_msgHandler.error("Could not create ExecutionEngine: %s\n", errStr.c_str());
-        m_initOkay = false;
-    }
+    InitializeNativeTargetAsmPrinter();
+    InitializeNativeTargetAsmParser();
+    //InitializeNativeTargetDisassembler();
 
     m_parser = new acParser(this);
     m_codeGenerator = new acCodeGenerator(this);
+
+    createNewModuleEngine();
+    
     acStdLib::bindStdFunctions(this);
 }
 
@@ -60,6 +92,66 @@ acVM::~acVM()
     delete m_parser;
     delete m_executionEngine;
     llvm::llvm_shutdown();
+}
+
+ExecutionEngine* acVM::getExecutionEngine(Module* mod)
+{
+    if(mod == m_module)
+        return m_executionEngine;
+
+    auto it = m_moduleEngineMap.find(mod);
+    if(it == m_moduleEngineMap.end())
+        return 0;
+
+    return it->second;
+}
+
+void acVM::storeCurrentModuleEngine()
+{
+    if(m_module != 0)
+    {
+        m_moduleEngineMap[m_module] = m_executionEngine;
+
+        m_module = 0;
+        m_executionEngine = 0;
+    }
+}
+
+void acVM::createNewModuleEngine()
+{
+    storeCurrentModuleEngine();
+
+    static int count = 0;
+    char buf[16];
+    sprintf(buf, "aclang jit %d", count++);
+    std::unique_ptr<Module> mod(new Module(buf, m_llvmContext));
+    m_module = mod.get();
+
+#ifdef _WIN32
+    std::string s = llvm::sys::getDefaultTargetTriple();
+    //s = llvm::sys::getProcessTriple();
+    //m_module->setTargetTriple("x86_64-pc-windows-msvc");
+    m_module->setTargetTriple(s + "-elf");
+#endif
+
+    std::string errStr;
+    llvm::EngineBuilder factory(std::move(mod));
+    factory.setEngineKind(llvm::EngineKind::JIT);
+    factory.setErrorStr(&errStr);
+
+    HelpingMemoryManager* memMgr = new HelpingMemoryManager(this);
+    factory.setMCJITMemoryManager(std::unique_ptr<RTDyldMemoryManager>(memMgr));
+
+    m_executionEngine = factory.create();
+    if(m_executionEngine == NULL)
+    {
+        m_msgHandler.error("Could not create ExecutionEngine: %s\n", errStr.c_str());
+        m_initOkay = false;
+    }
+    else
+    {
+        m_codeGenerator->createCoreFunctions();
+    }
 }
 
 void acVM::runtimeError(const char* errMsg)
@@ -108,6 +200,11 @@ bool acVM::runCode(const char* code, bool runGCFinally)
     if(m_parser->setCode(code) == 0)
         return false;
 
+    if(m_module == NULL)
+    {
+        createNewModuleEngine();
+    }
+
     bool compileOk = true;
 
     if(yyparse(m_parser) != 0)
@@ -132,6 +229,8 @@ bool acVM::runCode(const char* code, bool runGCFinally)
         else
             m_codeGenerator->runCode();
     }
+
+    storeCurrentModuleEngine();
 
     m_parser->releaseNodeASTList();
 

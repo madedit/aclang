@@ -1023,15 +1023,14 @@ std::string func_toStr(acVariable* var, acVM* vm)
 }
 void func_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
 {
-    ExecutionEngine* ee = vm->getExecutionEngine();
-    acGarbageCollector* gc = vm->getGarbageCollector();
-
     acFunction* func = (acFunction*)var->m_gcobj;
     acFunctionData* funcData = (acFunctionData*)func->m_funcData;
 
     typedef void (*PFN)(void*, void*, void*);
     if(funcData->m_funcPtr == 0)
     {
+        Module* mod = funcData->m_llvmFunc->getParent();
+        ExecutionEngine* ee = vm->getExecutionEngine(mod);
         funcData->m_funcPtr = ee->getPointerToFunction(funcData->m_llvmFunc);
     }
     PFN pfn = reinterpret_cast<PFN>(funcData->m_funcPtr);
@@ -1072,9 +1071,6 @@ std::string dele_toStr(acVariable* var, acVM* vm)
 }
 void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
 {
-    ExecutionEngine* ee = vm->getExecutionEngine();
-    acGarbageCollector* gc = vm->getGarbageCollector();
-
     acDelegate* dele = (acDelegate*)var->m_gcobj;
     switch(dele->m_funcVar->m_valueType)
     {
@@ -1085,6 +1081,8 @@ void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
             typedef void(*PFN)(void*, void*, void*);
             if(funcData->m_funcPtr == 0)
             {
+                Module* mod = funcData->m_llvmFunc->getParent();
+                ExecutionEngine* ee = vm->getExecutionEngine(mod);
                 funcData->m_funcPtr = ee->getPointerToFunction(funcData->m_llvmFunc);
             }
             PFN pfn = reinterpret_cast<PFN>(funcData->m_funcPtr);
@@ -1093,11 +1091,15 @@ void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
         break;
     case acVT_USERFUNC:
         {
+            acGarbageCollector* gc = vm->getGarbageCollector();
             acVariable* retVar = (acVariable*)gc->createObject(acVT_NULL);
+            gc->addTempObj(retVar);
+
             acUserFunc* uf = (acUserFunc*)dele->m_funcVar->m_gcobj;
             typedef void(*PFN)(void*, void*, void*, void*);
             PFN pfn = reinterpret_cast<PFN>(uf->m_funcPtr);
             pfn(thisVar, argArray, retVar, vm);
+
             //set ret var
             if(argArray->size() > 0)
             {
@@ -1107,6 +1109,7 @@ void dele_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM
             {
                 argArray->add(retVar);
             }
+            gc->removeTempObj(retVar);
         }
     default:
         {
@@ -1152,7 +1155,7 @@ std::string uf_toStr(acVariable* var, acVM* vm)
 }
 void uf_funcCall(acVariable* var, acVariable* thisVar, acArray* argArray, acVM* vm)
 {
-    ExecutionEngine* ee = vm->getExecutionEngine();
+    //ExecutionEngine* ee = vm->getExecutionEngine();
     acGarbageCollector* gc = vm->getGarbageCollector();
 
     //ret var = null

@@ -924,15 +924,13 @@ Value* PostfixIncrementAST::codeGen(acCodeGenerator* cg)
     IRBuilder<>& builder = cg->getIRBuilder();
 
     Value* org = m_expr->codeGen(cg);
-    Value* op = builder.getInt32(m_op);
 
     Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
         block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
 
-    builder.CreateCall5(cg->m_gf_opPostfixIncDecVar,
+    builder.CreateCall4(m_op == TOK_PLUSPLUS ? cg->m_gf_opPostfixIncVar : cg->m_gf_opPostfixDecVar,
         val,
         org,
-        op,
         cg->createDebugInfoPtr(m_line, block, builder),
         cg->m_gv_vm);
 
@@ -948,13 +946,20 @@ Value* UnaryAST::codeGen(acCodeGenerator* cg)
     switch(m_op)
     {
     case TOK_PLUSPLUS:
+        {
+            Value* org = m_expr->codeGen(cg);
+            builder.CreateCall3(cg->m_gf_opPrefixIncVar,
+                org,
+                cg->createDebugInfoPtr(m_line, block, builder),
+                cg->m_gv_vm);
+            val = org;
+        }
+        break;
     case TOK_MINUSMINUS:
         {
             Value* org = m_expr->codeGen(cg);
-            Value* op = builder.getInt32(m_op);
-            builder.CreateCall4(cg->m_gf_opPrefixIncDecVar,
+            builder.CreateCall3(cg->m_gf_opPrefixDecVar,
                 org,
-                op,
                 cg->createDebugInfoPtr(m_line, block, builder),
                 cg->m_gv_vm);
             val = org;
@@ -993,13 +998,11 @@ Value* UnaryAST::codeGen(acCodeGenerator* cg)
             default:
                 {
                     Value* org = m_expr->codeGen(cg);
-                    Value* op = builder.getInt32(m_op);
                     val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
                         block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-                    builder.CreateCall5(cg->m_gf_opUnaryPlusMinusVar,
+                    builder.CreateCall4(cg->m_gf_opUnaryPlusVar,
                         val,
                         org,
-                        op,
                         cg->createDebugInfoPtr(m_line, block, builder),
                         cg->m_gv_vm);
                 }
@@ -1040,13 +1043,11 @@ Value* UnaryAST::codeGen(acCodeGenerator* cg)
             default:
                 {
                     Value* org = m_expr->codeGen(cg);
-                    Value* op = builder.getInt32(m_op);
                     val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
                         block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-                    builder.CreateCall5(cg->m_gf_opUnaryPlusMinusVar,
+                    builder.CreateCall4(cg->m_gf_opUnaryMinusVar,
                         val,
                         org,
-                        op,
                         cg->createDebugInfoPtr(m_line, block, builder),
                         cg->m_gv_vm);
                 }

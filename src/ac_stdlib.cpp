@@ -41,7 +41,7 @@ void ac_stdlib_isfunction(acVariable* thisVar, acArray* args, acVariable* retVar
 {
     if(args->size() < 1)
     {
-        vm->runtimeError("Error: typeof() has no argument");
+        vm->runtimeError("Error: isfunction() has no argument");
         return;
     }
 

@@ -5,6 +5,7 @@
 
 #include "ac_config.h"
 #include "ac_ast.h"
+#include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/GenericValue.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
@@ -84,6 +85,8 @@ protected:
 
     std::list<acCodeGenBlock*> m_blocks;
 
+    StringMap<void*> m_globalSymbalMap;
+
     //for error handling at compile-time
     bool m_isCompileError;
 
@@ -141,9 +144,12 @@ public:
     Function* m_gf_opEqualVar;
     Function* m_gf_opNotEqualVar;
     Function* m_gf_opCompareVar;
-    Function* m_gf_opPostfixIncDecVar;
-    Function* m_gf_opPrefixIncDecVar;
-    Function* m_gf_opUnaryPlusMinusVar;
+    Function* m_gf_opPostfixIncVar;
+    Function* m_gf_opPostfixDecVar;
+    Function* m_gf_opPrefixIncVar;
+    Function* m_gf_opPrefixDecVar;
+    Function* m_gf_opUnaryPlusVar;
+    Function* m_gf_opUnaryMinusVar;
     Function* m_gf_opLogicalNotVar;
     Function* m_gf_opLogicalAndVar;
     Function* m_gf_opLogicalOrVar;
@@ -200,12 +206,17 @@ public:
     bool isCompileError() { return m_isCompileError; }
     jmp_buf* getErrorJmpBuf() { return &m_errorJmpBuf; }
 
+    void* getGlobalSymbolAddress(const std::string &name);
+
+    void createCoreFunctions();
+
 protected:
     void llvm_fatal_error_handler(void *user_data, const std::string &reason, bool gen_crash_diag);
     void eraseMainFunction();
-    void createCoreFunctions();
+    
     void createGlobalValues();
     void createGlobalFunctions();
+    void addGlobalSymbal(ExecutionEngine *ee, const GlobalValue *gv, void *addr);
 };
 
 
