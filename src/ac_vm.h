@@ -20,10 +20,15 @@ protected:
 
     //current module
     llvm::Module* m_module;
+    //current engine
     llvm::ExecutionEngine* m_executionEngine;
-    //finalized module
-    //std::list< std::pair< llvm::ExecutionEngine*, llvm::Module* > > m_executionEngineList;
+    //count of generated functions in current module
+    int m_functionCount; 
+
+    //finalized modules
     std::map<llvm::Module*, llvm::ExecutionEngine*> m_moduleEngineMap;
+    //for GC. if count == 0, the module can be safely deleted.
+    std::map<llvm::Module*, int> m_moduleFunctionCountMap;
 
     acMsgHandler m_msgHandler;
     acParser* m_parser;
@@ -48,7 +53,10 @@ public:
     llvm::ExecutionEngine* getCurrentExecutionEngine() { return m_executionEngine; }
     llvm::ExecutionEngine* getExecutionEngine(llvm::Module* mod);
 
+    void releaseCurrentModuleEngine();
     void storeCurrentModuleEngine();
+    void incFunctionCount() { ++m_functionCount; }
+    void decFunctionCount(llvm::Module* mod);
     void createNewModuleEngine();
 
     acMsgHandler* getMsgHandler() { return &m_msgHandler; }

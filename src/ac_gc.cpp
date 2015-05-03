@@ -351,9 +351,11 @@ bool acGarbageCollector::gcSweep(clock_t clocks)
                     acFunctionData* funcData = (acFunctionData*)obj;
                     //ExecutionEngine* ee = m_vm->getExecutionEngine();
                     //ee->freeMachineCodeForFunction(funcData->m_llvmFunc);
-                    funcData->m_llvmFunc->replaceAllUsesWith(UndefValue::get(funcData->m_llvmFunc->getType()));
-                    funcData->m_llvmFunc->deleteBody();
-                    funcData->m_llvmFunc->eraseFromParent();
+                    //funcData->m_llvmFunc->replaceAllUsesWith(UndefValue::get(funcData->m_llvmFunc->getType()));
+                    //funcData->m_llvmFunc->deleteBody();
+                    //funcData->m_llvmFunc->eraseFromParent();
+                    Module* mod = funcData->m_llvmFunc->getParent();
+                    m_vm->decFunctionCount(mod);
 
                     delete funcData->m_stringList;
                     delete funcData->m_debugInfoList;

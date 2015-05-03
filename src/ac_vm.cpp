@@ -106,14 +106,66 @@ ExecutionEngine* acVM::getExecutionEngine(Module* mod)
     return it->second;
 }
 
+void acVM::releaseCurrentModuleEngine()
+{
+    if(m_module != 0)
+    {
+        delete m_executionEngine;
+
+        m_module = 0;
+        m_executionEngine = 0;
+        m_functionCount = 0;
+    }
+}
+
 void acVM::storeCurrentModuleEngine()
 {
     if(m_module != 0)
     {
         m_moduleEngineMap[m_module] = m_executionEngine;
+        m_moduleFunctionCountMap[m_module] = m_functionCount;
 
         m_module = 0;
         m_executionEngine = 0;
+        m_functionCount = 0;
+    }
+}
+
+void acVM::decFunctionCount(llvm::Module* mod)
+{
+    if(mod == m_module)
+    {
+        if(m_functionCount > 0)
+        {
+            --m_functionCount;
+        }
+        else
+        {
+            //error!!!
+        }
+    }
+    else
+    {
+        int count = m_moduleFunctionCountMap[mod];
+        if(count > 0)
+        {
+            if(--count == 0)
+            {
+                ExecutionEngine* ee = m_moduleEngineMap[mod];
+                m_moduleEngineMap.erase(mod);
+                m_moduleFunctionCountMap.erase(mod);
+
+                delete ee;
+            }
+            else
+            {
+                m_moduleFunctionCountMap[mod] = count;
+            }
+        }
+        else
+        {
+            //error!!!
+        }
     }
 }
 
@@ -152,6 +204,8 @@ void acVM::createNewModuleEngine()
     {
         m_codeGenerator->createCoreFunctions();
     }
+
+    m_functionCount = 0;
 }
 
 void acVM::runtimeError(const char* errMsg)
@@ -230,7 +284,14 @@ bool acVM::runCode(const char* code, bool runGCFinally)
             m_codeGenerator->runCode();
     }
 
-    storeCurrentModuleEngine();
+    if(m_functionCount == 0)
+    {
+        releaseCurrentModuleEngine();
+    }
+    else
+    {
+        storeCurrentModuleEngine();
+    }
 
     m_parser->releaseNodeASTList();
 

@@ -414,9 +414,9 @@ void acCodeGenerator::eraseMainFunction()
     {
         //ExecutionEngine* ee = m_vm->getExecutionEngine();
         //ee->freeMachineCodeForFunction(m_mainFunction);
-        m_mainFunction->replaceAllUsesWith(UndefValue::get(m_mainFunction->getType()));
-        m_mainFunction->deleteBody();
-        m_mainFunction->eraseFromParent();
+        //m_mainFunction->replaceAllUsesWith(UndefValue::get(m_mainFunction->getType()));
+        //m_mainFunction->deleteBody();
+        //m_mainFunction->eraseFromParent();
         m_mainFunction = 0;
     }
 }

@@ -610,6 +610,8 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     }
     Twine name2 = Twine(name).concat(funcName);
 
+    cg->getVM()->incFunctionCount(); //add FunctionCount of current module
+
     llvm::Function* llvmFunc = Function::Create(funcType, GlobalValue::InternalLinkage, name2, cg->getModule());
     acFunctionData* acFuncData = (acFunctionData*)cg->getGarbageCollector()->createObject(acVT_FUNCTIONDATA);
     acFuncData->m_llvmFunc = llvmFunc;
