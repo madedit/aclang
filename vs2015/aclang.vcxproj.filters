@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{8df5c3a4-f2dd-4972-b452-92266d7f3a06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{848ece76-21ae-42a2-a20a-a1ab3c2eeb51}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\ac_ast.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_codegen.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_gc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_hashvalue.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_lexer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_msghandler.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_parser.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_stdlib.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_unichar.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_utf.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_utility.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_variable.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ac_vm.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\MurmurHash3.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\yyparser.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test\main.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test\test_gc.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test\test_lexer.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+    <ClCompile Include="..\test\test_parser.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\ac_ast.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_codegen.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_config.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_gc.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_hashvalue.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_lexer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_msghandler.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_parser.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_stdlib.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_token.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_unichar.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_utf.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_utility.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_variable.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ac_vm.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\aclang.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\MurmurHash3.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\yyparser.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -143,7 +143,7 @@ void acCodeGenerator::generateCode()
 
     m_irBuilder.SetInsertPoint(label_begin);
 
-    Value* retVar = m_irBuilder.CreateCall3(m_gf_newArrayVar, m_gv_rootArgArray, m_irBuilder.getInt32(-1), m_gv_vm, "retVar");
+    Value* retVar = m_irBuilder.CreateCall(m_gf_newArrayVar, { m_gv_rootArgArray, m_irBuilder.getInt32(-1), m_gv_vm }, "retVar");
 
     /* Push a new variable/block context */
     pushBlock(label_begin, label_end, m_programBlockAST, acCodeGenBlock::FUNCTION,

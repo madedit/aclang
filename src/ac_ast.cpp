@@ -39,9 +39,9 @@ Value* NullAST::codeGen(acCodeGenerator* cg)
 {
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall(cg->m_gf_opAssignVar_null, val);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm } );
+    builder.CreateCall(cg->m_gf_opAssignVar_null, { val });
     return val;
 }
 
@@ -49,9 +49,9 @@ Value* BooleanAST::codeGen(acCodeGenerator* cg)
 {
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall2(cg->m_gf_opAssignVar_bool, val, builder.getInt32(m_val));
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opAssignVar_bool, { val, builder.getInt32(m_val) });
     return val;
 }
 
@@ -59,9 +59,9 @@ Value* Int32AST::codeGen(acCodeGenerator* cg)
 {
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall2(cg->m_gf_opAssignVar_int32, val, builder.getInt32(m_val));
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opAssignVar_int32, { val, builder.getInt32(m_val) });
     return val;
 }
 
@@ -69,9 +69,9 @@ Value* Int64AST::codeGen(acCodeGenerator* cg)
 {
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall2(cg->m_gf_opAssignVar_int64, val, builder.getInt64(m_val));
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opAssignVar_int64, { val, builder.getInt64(m_val) });
     return val;
 }
 
@@ -79,9 +79,9 @@ Value* FloatAST::codeGen(acCodeGenerator* cg)
 {
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall2(cg->m_gf_opAssignVar_float, val, ConstantFP::get(builder.getFloatTy(), m_val));
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opAssignVar_float, { val, ConstantFP::get(builder.getFloatTy(), m_val) });
     return val;
 }
 
@@ -89,9 +89,9 @@ Value* DoubleAST::codeGen(acCodeGenerator* cg)
 {
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall2(cg->m_gf_opAssignVar_double, val, ConstantFP::get(builder.getDoubleTy(), m_val));
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opAssignVar_double, { val, ConstantFP::get(builder.getDoubleTy(), m_val) });
     return val;
 }
 
@@ -100,9 +100,9 @@ Value* StringAST::codeGen(acCodeGenerator* cg)
     //std::cout << "Creating string: " << m_val << std::endl;
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall3(cg->m_gf_opAssignVar_str, val, cg->createStringPtr(m_val, block, builder), cg->m_gv_vm);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opAssignVar_str, { val, cg->createStringPtr(m_val, block, builder), cg->m_gv_vm });
     return val;
 }
 
@@ -111,10 +111,10 @@ Value* TableAST::codeGen(acCodeGenerator* cg)
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
 
-    Value* table = builder.CreateCall2(cg->m_gf_createTable, val, cg->m_gv_vm);
+    Value* table = builder.CreateCall(cg->m_gf_createTable, { val, cg->m_gv_vm });
 
     //create contents in table
     if(m_keyValueList != 0)
@@ -130,12 +130,12 @@ Value* TableAST::codeGen(acCodeGenerator* cg)
             {
                 if(kv->m_value == 0)
                 {
-                    builder.CreateCall3(cg->m_gf_addTableVar_str, table, cg->createStringPtr(kv->m_key, block, builder), cg->m_gv_vm, kvName);
+                    builder.CreateCall(cg->m_gf_addTableVar_str, { table, cg->createStringPtr(kv->m_key, block, builder), cg->m_gv_vm }, kvName);
                 }
                 else
                 {
                     Value* v = kv->m_value->codeGen(cg);
-                    builder.CreateCall4(cg->m_gf_addTableKeyValue_str, table, cg->createStringPtr(kv->m_key, block, builder), v, cg->m_gv_vm);
+                    builder.CreateCall(cg->m_gf_addTableKeyValue_str, { table, cg->createStringPtr(kv->m_key, block, builder), v, cg->m_gv_vm });
                 }
             }
             else
@@ -143,12 +143,12 @@ Value* TableAST::codeGen(acCodeGenerator* cg)
                 Value* k = kv->m_keyExpr->codeGen(cg);
                 if(kv->m_value == 0)
                 {
-                    builder.CreateCall3(cg->m_gf_addTableVar, table, k, cg->m_gv_vm, kvName);
+                    builder.CreateCall(cg->m_gf_addTableVar, { table, k, cg->m_gv_vm }, kvName);
                 }
                 else
                 {
                     Value* v = kv->m_value->codeGen(cg);
-                    builder.CreateCall4(cg->m_gf_addTableKeyValue, table, k, v, cg->m_gv_vm);
+                    builder.CreateCall(cg->m_gf_addTableKeyValue, { table, k, v, cg->m_gv_vm });
                 }
             }
 
@@ -165,49 +165,49 @@ inline void codeGenAssignment(IRBuilder<>& builder, Value* val, NodeAST* assExpr
     {
     case NodeAST::tNullAST:
         {
-            builder.CreateCall(cg->m_gf_opAssignVar_null, val);
+            builder.CreateCall(cg->m_gf_opAssignVar_null, { val });
         }
         break;
     case NodeAST::tBooleanAST:
         {
             BooleanAST* ast = (BooleanAST*)assExpr;
-            builder.CreateCall2(cg->m_gf_opAssignVar_bool, val, builder.getInt32(ast->m_val));
+            builder.CreateCall(cg->m_gf_opAssignVar_bool, { val, builder.getInt32(ast->m_val) });
         }
         break;
     case NodeAST::tInt32AST:
         {
             Int32AST* ast = (Int32AST*)assExpr;
-            builder.CreateCall2(cg->m_gf_opAssignVar_int32, val, builder.getInt32(ast->m_val));
+            builder.CreateCall(cg->m_gf_opAssignVar_int32, { val, builder.getInt32(ast->m_val) });
         }
         break;
     case NodeAST::tInt64AST:
         {
             Int64AST* ast = (Int64AST*)assExpr;
-            builder.CreateCall2(cg->m_gf_opAssignVar_int64, val, builder.getInt64(ast->m_val));
+            builder.CreateCall(cg->m_gf_opAssignVar_int64, { val, builder.getInt64(ast->m_val) });
         }
         break;
     case NodeAST::tFloatAST:
         {
             FloatAST* ast = (FloatAST*)assExpr;
-            builder.CreateCall2(cg->m_gf_opAssignVar_float, val, ConstantFP::get(builder.getFloatTy(), ast->m_val));
+            builder.CreateCall(cg->m_gf_opAssignVar_float, { val, ConstantFP::get(builder.getFloatTy(), ast->m_val) });
         }
         break;
     case NodeAST::tDoubleAST:
         {
             DoubleAST* ast = (DoubleAST*)assExpr;
-            builder.CreateCall2(cg->m_gf_opAssignVar_double, val, ConstantFP::get(builder.getDoubleTy(), ast->m_val));
+            builder.CreateCall(cg->m_gf_opAssignVar_double, { val, ConstantFP::get(builder.getDoubleTy(), ast->m_val) });
         }
         break;
     case NodeAST::tStringAST:
         {
             StringAST* ast = (StringAST*)assExpr;
-            builder.CreateCall3(cg->m_gf_opAssignVar_str, val, cg->createStringPtr(ast->m_val, cg->currentBlock(), builder), cg->m_gv_vm);
+            builder.CreateCall(cg->m_gf_opAssignVar_str, { val, cg->createStringPtr(ast->m_val, cg->currentBlock(), builder), cg->m_gv_vm });
         }
         break;
     default:
         {
             Value* rhs = assExpr->codeGen(cg);
-            builder.CreateCall2(cg->m_gf_opAssignVar, val, rhs);
+            builder.CreateCall(cg->m_gf_opAssignVar, { val, rhs });
         }
     }
 }
@@ -217,10 +217,10 @@ Value* ArrayAST::codeGen(acCodeGenerator* cg)
     acCodeGenBlock* block = cg->currentBlock();
     IRBuilder<>& builder = cg->getIRBuilder();
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
 
-    Value* array = builder.CreateCall2(cg->m_gf_createArray, val, cg->m_gv_vm);
+    Value* array = builder.CreateCall(cg->m_gf_createArray, { val, cg->m_gv_vm });
 
     //create contents in array
     if(m_elementList != 0)
@@ -231,7 +231,7 @@ Value* ArrayAST::codeGen(acCodeGenerator* cg)
         NodeASTVec::iterator itend = m_elementList->m_nodeASTVec.end();
         while(it != itend)
         {
-            Value* var = builder.CreateCall3(cg->m_gf_newArrayVar, array, const_idx, cg->m_gv_vm);
+            Value* var = builder.CreateCall(cg->m_gf_newArrayVar, { array, const_idx, cg->m_gv_vm });
             NodeAST* ele = (NodeAST*)(*it);
             codeGenAssignment(builder, var, ele, cg);
 
@@ -430,40 +430,40 @@ inline Value* codeGenNewVar(IRBuilder<>& builder, Value* parent, NodeAST* keyExp
     case NodeAST::tInt32AST:
         {
             Int32AST* ast = (Int32AST*)keyExpr;
-            return builder.CreateCall4(cg->m_gf_opNewVar_int32,
-                parent,
+            return builder.CreateCall(cg->m_gf_opNewVar_int32,
+                { parent,
                 builder.getInt32(ast->m_val),
                 debugInfo,
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
         break;
     case NodeAST::tInt64AST:
         {
             Int64AST* ast = (Int64AST*)keyExpr;
-            return builder.CreateCall4(cg->m_gf_opNewVar_int64,
-                parent,
+            return builder.CreateCall(cg->m_gf_opNewVar_int64,
+                { parent,
                 builder.getInt64(ast->m_val),
                 debugInfo,
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
         break;
     case NodeAST::tStringAST:
         {
             StringAST* ast = (StringAST*)keyExpr;
-            return builder.CreateCall4(cg->m_gf_opNewVar_str,
-                parent,
+            return builder.CreateCall(cg->m_gf_opNewVar_str,
+                { parent,
                 cg->createStringPtr(ast->m_val, cg->currentBlock(), builder),
                 debugInfo,
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
         break;
     }
     Value* key = keyExpr->codeGen(cg);
-    return builder.CreateCall4(cg->m_gf_opNewVar,
-        parent,
+    return builder.CreateCall(cg->m_gf_opNewVar,
+        { parent,
         key,
         debugInfo,
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 }
 
 Value* codeGenVarDecl(IRBuilder<>& builder, GetVarAST* varExpr, bool isLocal, acCodeGenerator* cg)
@@ -480,10 +480,8 @@ Value* codeGenVarDecl(IRBuilder<>& builder, GetVarAST* varExpr, bool isLocal, ac
             return 0;
         }
 
-        val = builder.CreateCall3(cg->m_gf_newArrayVar,
-            block->m_argArray,
-            builder.getInt32(-1),
-            cg->m_gv_vm,
+        val = builder.CreateCall(cg->m_gf_newArrayVar,
+            { block->m_argArray, builder.getInt32(-1), cg->m_gv_vm },
             Twine("v_").concat(varExpr->m_keyIdentifier));
     }
     else
@@ -517,11 +515,11 @@ Value* codeGenVarDecl(IRBuilder<>& builder, GetVarAST* varExpr, bool isLocal, ac
         }
         else
         {
-            val = builder.CreateCall4(cg->m_gf_opNewVar_str,
-                parent,
+            val = builder.CreateCall(cg->m_gf_opNewVar_str,
+                { parent,
                 cg->createStringPtr(varExpr->m_keyIdentifier, block, builder),
                 cg->createDebugInfoPtr(varExpr->m_line, block, builder),
-                cg->m_gv_vm,
+                cg->m_gv_vm },
                 Twine("v_").concat(varExpr->m_keyIdentifier));
         }
     }
@@ -620,13 +618,13 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     m_funcVar = 0;
     if(m_isLocal)
     {
-        m_funcVar = builder.CreateCall3(cg->m_gf_newArrayVar, m_upblock->m_argArray, builder.getInt32(-1), cg->m_gv_vm, Twine("f_").concat(m_nameExpr->m_keyIdentifier));
+        m_funcVar = builder.CreateCall(cg->m_gf_newArrayVar, { m_upblock->m_argArray, builder.getInt32(-1), cg->m_gv_vm }, Twine("f_").concat(m_nameExpr->m_keyIdentifier));
         m_upblock->m_localVars.push_back(std::make_pair(m_nameExpr->m_keyIdentifier, m_funcVar));
     }
     else if(m_nameExpr == 0)//anonymous function
     {
-        m_funcVar = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-            m_upblock->m_tmpArray, builder.getInt32(m_upblock->m_tmpArraySize++), cg->m_gv_vm);
+        m_funcVar = builder.CreateCall(cg->m_gf_getArrayVar_int,
+            { m_upblock->m_tmpArray, builder.getInt32(m_upblock->m_tmpArraySize++), cg->m_gv_vm });
     }
     else
     {
@@ -660,17 +658,17 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
         }
         else
         {
-            m_funcVar = builder.CreateCall4(cg->m_gf_opNewVar_str,
-                parent,
+            m_funcVar = builder.CreateCall(cg->m_gf_opNewVar_str,
+                { parent,
                 cg->createStringPtr(m_nameExpr->m_keyIdentifier, m_upblock, builder),
                 cg->createDebugInfoPtr(m_nameExpr->m_line, m_upblock, builder),
-                cg->m_gv_vm,
+                cg->m_gv_vm },
                 Twine("f_").concat(m_nameExpr->m_keyIdentifier));
         }
     }
 
     //build function
-    builder.CreateCall2(cg->m_gf_createFunc, m_funcVar, cg->m_gv_vm);
+    builder.CreateCall(cg->m_gf_createFunc, { m_funcVar, cg->m_gv_vm });
 
     Value* acFuncDataToPtr;
     if(sizeof(void*) == sizeof(uint64_t))
@@ -683,7 +681,7 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     }
 
     //store function values
-    m_buildUpValueTableInsertPoint = builder.CreateCall2(cg->m_gf_setFuncPtr, m_funcVar, acFuncDataToPtr);
+    m_buildUpValueTableInsertPoint = builder.CreateCall(cg->m_gf_setFuncPtr, { m_funcVar, acFuncDataToPtr });
 
     //function init
     BasicBlock* entry = BasicBlock::Create(context, "entry", llvmFunc, 0);
@@ -708,7 +706,7 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     argArray->setName("argArray");
     m_localUpValueTable = argsValues++;
     m_localUpValueTable->setName("upValueTable");
-
+ 
     m_localblock->m_thisVar = thisVar;
     m_localblock->m_argArray = argArray;
 
@@ -724,18 +722,18 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
         StringVec::iterator itend = m_args->m_stringVec.end();
         for(; it != itend; ++it)
         {
-            CallInst* localVar = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-                argArray, builder.getInt32(argIndex++), cg->m_gv_vm, *it);
+            CallInst* localVar = builder.CreateCall(cg->m_gf_getArrayVar_int,
+                { argArray, builder.getInt32(argIndex++), cg->m_gv_vm }, *it);
 
             localVars.push_back(std::make_pair(*it, localVar));
         }
     }
 
     //retVar
-    m_localblock->m_retVar = builder.CreateCall3(cg->m_gf_newArrayVar, argArray, builder.getInt32(-1), cg->m_gv_vm, "retVar");
+    m_localblock->m_retVar = builder.CreateCall(cg->m_gf_newArrayVar, { argArray, builder.getInt32(-1), cg->m_gv_vm }, Twine("retVar"));
 
     //tmpArray
-    m_localblock->m_tmpArray = builder.CreateCall2(cg->m_gf_createTmpArray, argArray, cg->m_gv_vm, Twine("tmpArray"));
+    m_localblock->m_tmpArray = builder.CreateCall(cg->m_gf_createTmpArray, { argArray, cg->m_gv_vm }, Twine("tmpArray"));
     m_localUpValueInsertPoint = (Instruction*)m_localblock->m_tmpArray;
     
     //function body codegen
@@ -746,7 +744,7 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
 
     builder.SetInsertPoint(leave);
     //set retVar
-    builder.CreateCall4(cg->m_gf_setArrayVar, argArray, builder.getInt32(0), m_localblock->m_retVar, cg->m_gv_vm);
+    builder.CreateCall(cg->m_gf_setArrayVar, { argArray, builder.getInt32(0), m_localblock->m_retVar, cg->m_gv_vm });
     //leave block return
     builder.CreateRetVoid();
 
@@ -784,7 +782,7 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
     if(setMiscData)
     {
         builder.SetInsertPoint(m_buildUpValueTableInsertPoint);
-        builder.CreateCall2(cg->m_gf_setFuncMiscData, m_funcVar, funcDataListToPtr);
+        builder.CreateCall(cg->m_gf_setFuncMiscData, { m_funcVar, funcDataListToPtr });
     }
 
     //restore InsertPoint
@@ -803,18 +801,18 @@ Value* FunctionAST::codeGenForUpValue(acCodeGenerator* cg, const std::string& na
 
     if(m_upValueTable == 0)
     {
-        m_upValueTable = upbuilder.CreateCall2(cg->m_gf_createUpValueTable, m_funcVar, cg->m_gv_vm, Twine("UpValTab"));
+        m_upValueTable = upbuilder.CreateCall(cg->m_gf_createUpValueTable, { m_funcVar, cg->m_gv_vm }, Twine("UpValTab"));
     }
 
     Value* namePtr = cg->createStringPtr(name, m_upblock, upbuilder);
-    upbuilder.CreateCall4(cg->m_gf_addTableKeyValue_str, m_upValueTable, namePtr, upValue, cg->m_gv_vm);
+    upbuilder.CreateCall(cg->m_gf_addTableKeyValue_str, { m_upValueTable, namePtr, upValue, cg->m_gv_vm });
 
     //get upValue from upValueTable in localblock
     IRBuilder<> builder(m_localblock->m_bblock);
     builder.SetInsertPoint(m_localUpValueInsertPoint);
 
     Value* localNamePtr = cg->createStringPtr(name, m_localblock, builder);
-    val = builder.CreateCall3(cg->m_gf_getTableVar, m_localUpValueTable, localNamePtr, cg->m_gv_vm, Twine("v_").concat(name));
+    val = builder.CreateCall(cg->m_gf_getTableVar, { m_localUpValueTable, localNamePtr, cg->m_gv_vm }, Twine("v_").concat(name));
     
     //add upvalue to localvars
     m_localblock->m_localVars.push_back(std::make_pair(name, val));
@@ -834,9 +832,9 @@ Value* CallAST::codeGen(acCodeGenerator* cg)
 
     Value* funcVar = m_callee->codeGen(cg);
 
-    Value* tmpVar = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    Value* argArray = builder.CreateCall2(cg->m_gf_createArray, tmpVar, cg->m_gv_vm, Twine("v_argArray"));
+    Value* tmpVar = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm } );
+    Value* argArray = builder.CreateCall(cg->m_gf_createArray, { tmpVar, cg->m_gv_vm }, Twine("v_argArray"));
 
     //push args
     if(m_args != 0)
@@ -845,7 +843,7 @@ Value* CallAST::codeGen(acCodeGenerator* cg)
         NodeASTVec::iterator itend = m_args->m_nodeASTVec.end();
         for(; it != itend; ++it)
         {
-            Value* arg = builder.CreateCall3(cg->m_gf_newArrayVar, argArray, builder.getInt32(-1), cg->m_gv_vm);
+            Value* arg = builder.CreateCall(cg->m_gf_newArrayVar, { argArray, builder.getInt32(-1), cg->m_gv_vm });
             codeGenAssignment(builder, arg, *it, cg);
         }
     }
@@ -862,15 +860,15 @@ Value* CallAST::codeGen(acCodeGenerator* cg)
     }
 
     //call function
-    builder.CreateCall5(cg->m_gf_opCallFunc,
-        funcVar,
+    builder.CreateCall(cg->m_gf_opCallFunc,
+        { funcVar,
         thisVar,
         argArray,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
     //get return value
-    return builder.CreateCall3(cg->m_gf_getArrayVar_int, argArray, builder.getInt32(0), cg->m_gv_vm, Twine("v_func_ret"));
+    return builder.CreateCall(cg->m_gf_getArrayVar_int, { argArray, builder.getInt32(0), cg->m_gv_vm }, Twine("v_func_ret"));
 }
 
 Value* ReturnAST::codeGen(acCodeGenerator* cg)
@@ -927,14 +925,14 @@ Value* PostfixIncrementAST::codeGen(acCodeGenerator* cg)
 
     Value* org = m_expr->codeGen(cg);
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
 
-    builder.CreateCall4(m_op == TOK_PLUSPLUS ? cg->m_gf_opPostfixIncVar : cg->m_gf_opPostfixDecVar,
-        val,
+    builder.CreateCall(m_op == TOK_PLUSPLUS ? cg->m_gf_opPostfixIncVar : cg->m_gf_opPostfixDecVar,
+        { val,
         org,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
     return val;
 }
@@ -950,63 +948,63 @@ Value* UnaryAST::codeGen(acCodeGenerator* cg)
     case TOK_PLUSPLUS:
         {
             Value* org = m_expr->codeGen(cg);
-            builder.CreateCall3(cg->m_gf_opPrefixIncVar,
-                org,
+            builder.CreateCall(cg->m_gf_opPrefixIncVar,
+                { org,
                 cg->createDebugInfoPtr(m_line, block, builder),
-                cg->m_gv_vm);
+                cg->m_gv_vm });
             val = org;
         }
         break;
     case TOK_MINUSMINUS:
         {
             Value* org = m_expr->codeGen(cg);
-            builder.CreateCall3(cg->m_gf_opPrefixDecVar,
-                org,
+            builder.CreateCall(cg->m_gf_opPrefixDecVar,
+                { org,
                 cg->createDebugInfoPtr(m_line, block, builder),
-                cg->m_gv_vm);
+                cg->m_gv_vm });
             val = org;
         }
         break;
     case TOK_PLUS:
         {
-            val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-                block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+            val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+                { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
             switch(m_expr->m_type)
             {
             case NodeAST::tInt32AST:
                 {
                     Int32AST* ast = (Int32AST*)m_expr;
-                    builder.CreateCall2(cg->m_gf_opAssignVar_int32, val, builder.getInt32(ast->m_val));
+                    builder.CreateCall(cg->m_gf_opAssignVar_int32, { val, builder.getInt32(ast->m_val) });
                 }
                 break;
             case NodeAST::tInt64AST:
                 {
                     Int64AST* ast = (Int64AST*)m_expr;
-                    builder.CreateCall2(cg->m_gf_opAssignVar_int64, val, builder.getInt64(ast->m_val));
+                    builder.CreateCall(cg->m_gf_opAssignVar_int64, { val, builder.getInt64(ast->m_val) });
                 }
                 break;
             case NodeAST::tFloatAST:
                 {
                     FloatAST* ast = (FloatAST*)m_expr;
-                    builder.CreateCall2(cg->m_gf_opAssignVar_float, val, ConstantFP::get(builder.getFloatTy(), ast->m_val));
+                    builder.CreateCall(cg->m_gf_opAssignVar_float, { val, ConstantFP::get(builder.getFloatTy(), ast->m_val) });
                 }
                 break;
             case NodeAST::tDoubleAST:
                 {
                     DoubleAST* ast = (DoubleAST*)m_expr;
-                    builder.CreateCall2(cg->m_gf_opAssignVar_double, val, ConstantFP::get(builder.getDoubleTy(), ast->m_val));
+                    builder.CreateCall(cg->m_gf_opAssignVar_double, {val, ConstantFP::get(builder.getDoubleTy(), ast->m_val)});
                 }
                 break;
             default:
                 {
                     Value* org = m_expr->codeGen(cg);
-                    val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-                        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-                    builder.CreateCall4(cg->m_gf_opUnaryPlusVar,
-                        val,
+                    val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+                        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+                    builder.CreateCall(cg->m_gf_opUnaryPlusVar,
+                        { val,
                         org,
                         cg->createDebugInfoPtr(m_line, block, builder),
-                        cg->m_gv_vm);
+                        cg->m_gv_vm });
                 }
                 break;
             }
@@ -1014,44 +1012,44 @@ Value* UnaryAST::codeGen(acCodeGenerator* cg)
         break;
     case TOK_MINUS:
         {
-            val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-                block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+            val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+                { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
             switch(m_expr->m_type)
             {
             case NodeAST::tInt32AST:
                 {
                     Int32AST* ast = (Int32AST*)m_expr;
-                    builder.CreateCall2(cg->m_gf_opAssignVar_int32, val, builder.getInt32(-ast->m_val));
+                    builder.CreateCall(cg->m_gf_opAssignVar_int32, { val, builder.getInt32(-ast->m_val) });
                 }
                 break;
             case NodeAST::tInt64AST:
                 {
                     Int64AST* ast = (Int64AST*)m_expr;
-                    builder.CreateCall2(cg->m_gf_opAssignVar_int64, val, builder.getInt64(-ast->m_val));
+                    builder.CreateCall(cg->m_gf_opAssignVar_int64, { val, builder.getInt64(-ast->m_val) });
                 }
                 break;
             case NodeAST::tFloatAST:
                 {
                     FloatAST* ast = (FloatAST*)m_expr;
-                    builder.CreateCall2(cg->m_gf_opAssignVar_float, val, ConstantFP::get(builder.getFloatTy(), -ast->m_val));
+                    builder.CreateCall(cg->m_gf_opAssignVar_float, { val, ConstantFP::get(builder.getFloatTy(), -ast->m_val) });
                 }
                 break;
             case NodeAST::tDoubleAST:
                 {
                     DoubleAST* ast = (DoubleAST*)m_expr;
-                    builder.CreateCall2(cg->m_gf_opAssignVar_double, val, ConstantFP::get(builder.getDoubleTy(), -ast->m_val));
+                    builder.CreateCall(cg->m_gf_opAssignVar_double, { val, ConstantFP::get(builder.getDoubleTy(), -ast->m_val) });
                 }
                 break;
             default:
                 {
                     Value* org = m_expr->codeGen(cg);
-                    val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-                        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-                    builder.CreateCall4(cg->m_gf_opUnaryMinusVar,
-                        val,
+                    val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+                        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+                    builder.CreateCall(cg->m_gf_opUnaryMinusVar,
+                        { val,
                         org,
                         cg->createDebugInfoPtr(m_line, block, builder),
-                        cg->m_gv_vm);
+                        cg->m_gv_vm });
                 }
                 break;
             }
@@ -1060,25 +1058,25 @@ Value* UnaryAST::codeGen(acCodeGenerator* cg)
     case TOK_CAT:
         {
             Value* org = m_expr->codeGen(cg);
-            val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-                block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-            builder.CreateCall4(cg->m_gf_opBitwiseNotVar,
-                val,
+            val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+                { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+            builder.CreateCall(cg->m_gf_opBitwiseNotVar,
+                { val,
                 org,
                 cg->createDebugInfoPtr(m_line, block, builder),
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
         break;
     case TOK_NOT:
         {
             Value* org = m_expr->codeGen(cg);
-            val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-                block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-            builder.CreateCall4(cg->m_gf_opLogicalNotVar,
-                val,
+            val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+                { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+            builder.CreateCall(cg->m_gf_opLogicalNotVar,
+                { val,
                 org,
                 cg->createDebugInfoPtr(m_line, block, builder),
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
         break;
     }
@@ -1094,34 +1092,34 @@ Value* MultiplicativeAST::codeGen(acCodeGenerator* cg)
     Value* lhs = m_expr1->codeGen(cg);
     Value* rhs = m_expr2->codeGen(cg);
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
 
     switch(m_op)
     {
     case TOK_MUL:
-        builder.CreateCall5(cg->m_gf_opMulVar,
-            val,
+        builder.CreateCall(cg->m_gf_opMulVar,
+            { val,
             lhs,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     case TOK_DIV:
-        builder.CreateCall5(cg->m_gf_opDivVar,
-            val,
+        builder.CreateCall(cg->m_gf_opDivVar,
+            { val,
             lhs,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     case TOK_MOD:
-        builder.CreateCall5(cg->m_gf_opModVar,
-            val,
+        builder.CreateCall(cg->m_gf_opModVar,
+            { val,
             lhs,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     }
 
@@ -1136,26 +1134,26 @@ Value* AdditiveAST::codeGen(acCodeGenerator* cg)
     Value* lhs = m_expr1->codeGen(cg);
     Value* rhs = m_expr2->codeGen(cg);
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
 
     switch(m_op)
     {
     case TOK_PLUS:
-        builder.CreateCall5(cg->m_gf_opAddVar,
-            val,
+        builder.CreateCall(cg->m_gf_opAddVar,
+            { val,
             lhs,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     case TOK_MINUS:
-        builder.CreateCall5(cg->m_gf_opSubVar,
-            val,
+        builder.CreateCall(cg->m_gf_opSubVar,
+            { val,
             lhs,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     }
 
@@ -1178,16 +1176,16 @@ Value* RelationalAST::codeGen(acCodeGenerator* cg)
     Value* rhs = m_expr2->codeGen(cg);
 
     Value* cmp = builder.getInt32(m_op);
-    Value* ret = builder.CreateCall5(cg->m_gf_opCompareVar,
-        lhs,
+    Value* ret = builder.CreateCall(cg->m_gf_opCompareVar,
+        { lhs,
         rhs,
         cmp,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall2(cg->m_gf_opAssignVar_bool, val, ret);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opAssignVar_bool, { val, ret });
 
     return val;
 }
@@ -1202,24 +1200,24 @@ Value* EqualityAST::codeGen(acCodeGenerator* cg)
     Value* ret = 0;
     if(m_op == TOK_EQUAL)
     {
-        ret = builder.CreateCall4(cg->m_gf_opEqualVar,
-            lhs,
+        ret = builder.CreateCall(cg->m_gf_opEqualVar,
+            { lhs,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
     }
     else
     {
-        ret = builder.CreateCall4(cg->m_gf_opNotEqualVar,
-            lhs,
+        ret = builder.CreateCall(cg->m_gf_opNotEqualVar,
+            { lhs,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
     }
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall2(cg->m_gf_opAssignVar_bool, val, ret);
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opAssignVar_bool, { val, ret });
 
     return val;
 }
@@ -1232,14 +1230,14 @@ Value* AndAST::codeGen(acCodeGenerator* cg)
     Value* val1 = m_expr1->codeGen(cg);
     Value* val2 = m_expr2->codeGen(cg);
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall5(cg->m_gf_opBitwiseAndVar,
-        val,
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opBitwiseAndVar,
+        { val,
         val1,
         val2,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
     return val;
 }
@@ -1252,14 +1250,14 @@ Value* ExclusiveOrAST::codeGen(acCodeGenerator* cg)
     Value* val1 = m_expr1->codeGen(cg);
     Value* val2 = m_expr2->codeGen(cg);
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall5(cg->m_gf_opBitwiseXorVar,
-        val,
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opBitwiseXorVar,
+        { val,
         val1,
         val2,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
     return val;
 }
@@ -1272,14 +1270,14 @@ Value* InclusiveOrAST::codeGen(acCodeGenerator* cg)
     Value* val1 = m_expr1->codeGen(cg);
     Value* val2 = m_expr2->codeGen(cg);
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall5(cg->m_gf_opBitwiseOrVar,
-        val,
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opBitwiseOrVar,
+        { val,
         val1,
         val2,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
     return val;
 }
@@ -1292,14 +1290,14 @@ Value* LogicalAndAST::codeGen(acCodeGenerator* cg)
     Value* val1 = m_expr1->codeGen(cg);
     Value* val2 = m_expr2->codeGen(cg);
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall5(cg->m_gf_opLogicalAndVar,
-        val,
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opLogicalAndVar,
+        { val,
         val1,
         val2,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
     return val;
 }
@@ -1312,14 +1310,14 @@ Value* LogicalOrAST::codeGen(acCodeGenerator* cg)
     Value* val1 = m_expr1->codeGen(cg);
     Value* val2 = m_expr2->codeGen(cg);
 
-    Value* val = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    builder.CreateCall5(cg->m_gf_opLogicalOrVar,
-        val,
+    Value* val = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    builder.CreateCall(cg->m_gf_opLogicalOrVar,
+        { val,
         val1,
         val2,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
     return val;
 }
@@ -1330,10 +1328,10 @@ Value* ConditionalAST::codeGen(acCodeGenerator* cg)
     IRBuilder<>& builder = cg->getIRBuilder();
 
     Value* condVar = m_operand1->codeGen(cg);
-    Value* boolValue = builder.CreateCall3(cg->m_gf_opToBoolVar,
-        condVar,
+    Value* boolValue = builder.CreateCall(cg->m_gf_opToBoolVar,
+        { condVar,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
     Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
 
     Value* trueVar = m_operand2->codeGen(cg);
@@ -1359,12 +1357,12 @@ Value* AssignmentAST::codeGen(acCodeGenerator* cg)
     switch(m_op)
     {
     case TOK_DIVASS:
-        builder.CreateCall5(cg->m_gf_opDivVar,
-            val,
+        builder.CreateCall(cg->m_gf_opDivVar,
+            { val,
             val,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     case TOK_ANDASS:
         cg->getMsgHandler()->error(m_line, "Error: TOK_ANDASS not implemented yet QQ");
@@ -1375,20 +1373,20 @@ Value* AssignmentAST::codeGen(acCodeGenerator* cg)
         cg->setCompileError(true);
         return 0;
     case TOK_MINUSASS:
-        builder.CreateCall5(cg->m_gf_opSubVar,
-            val,
+        builder.CreateCall(cg->m_gf_opSubVar,
+            { val,
             val,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     case TOK_PLUSASS:
-        builder.CreateCall5(cg->m_gf_opAddVar,
-            val,
+        builder.CreateCall(cg->m_gf_opAddVar,
+            { val,
             val,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     case TOK_SHLASS:
         cg->getMsgHandler()->error(m_line, "Error: TOK_SHLASS not implemented yet QQ");
@@ -1403,20 +1401,20 @@ Value* AssignmentAST::codeGen(acCodeGenerator* cg)
         cg->setCompileError(true);
         return 0;
     case TOK_MULASS:
-        builder.CreateCall5(cg->m_gf_opMulVar,
-            val,
+        builder.CreateCall(cg->m_gf_opMulVar,
+            { val,
             val,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     case TOK_MODASS:
-        builder.CreateCall5(cg->m_gf_opModVar,
-            val,
+        builder.CreateCall(cg->m_gf_opModVar,
+            { val,
             val,
             rhs,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         break;
     case TOK_XORASS:
         cg->getMsgHandler()->error(m_line, "Error: TOK_XORASS not implemented yet QQ");
@@ -1439,10 +1437,10 @@ Value* IfElseAST::codeGen(acCodeGenerator* cg)
     Function* function = block->m_bblock->getParent();
 
     Value* condVar = m_cond->codeGen(cg);
-    Value* boolValue = builder.CreateCall3(cg->m_gf_opToBoolVar,
-        condVar,
+    Value* boolValue = builder.CreateCall(cg->m_gf_opToBoolVar,
+        { condVar,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
     Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
 
     BasicBlock* label_if_then = BasicBlock::Create(context, "if.then", function, block->m_leave);
@@ -1571,15 +1569,15 @@ Value* SwitchAST::codeGen(acCodeGenerator* cg)
         if(ast->m_expr != 0)//case
         {
             //codegen for case-label
-            Value* caseVar = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-                block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
+            Value* caseVar = builder.CreateCall(cg->m_gf_getArrayVar_int,
+                { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
             codeGenAssignment(builder, caseVar, ast->m_expr, cg);
 
-            Value* boolValue = builder.CreateCall4(cg->m_gf_opEqualVar,
-                condVar,
+            Value* boolValue = builder.CreateCall(cg->m_gf_opEqualVar,
+                { condVar,
                 caseVar,
                 cg->createDebugInfoPtr(ast->m_expr->m_line, block, builder),
-                cg->m_gv_vm);
+                cg->m_gv_vm });
             Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
 
             builder.CreateCondBr(cond, ast->m_swblock, ast->m_swcase->getNextNode());
@@ -1714,10 +1712,10 @@ Value* WhileAST::codeGen(acCodeGenerator* cg)
 
     //codegen for condition
     Value* condVar = m_cond->codeGen(cg);
-    Value* boolValue = builder.CreateCall3(cg->m_gf_opToBoolVar,
-        condVar,
+    Value* boolValue = builder.CreateCall(cg->m_gf_opToBoolVar,
+        { condVar,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
     Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
 
     builder.CreateCondBr(cond, label_while_loop, label_while_end);
@@ -1774,10 +1772,10 @@ Value* DoWhileAST::codeGen(acCodeGenerator* cg)
 
     //codegen for condition
     Value* condVar = m_cond->codeGen(cg);
-    Value* boolValue = builder.CreateCall3(cg->m_gf_opToBoolVar,
-        condVar,
+    Value* boolValue = builder.CreateCall(cg->m_gf_opToBoolVar,
+        { condVar,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
     Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
 
     builder.CreateCondBr(cond, label_dowhile_loop, label_dowhile_end);
@@ -1822,10 +1820,10 @@ Value* ForAST::codeGen(acCodeGenerator* cg)
     if(m_cond != 0)
     {
         Value* condVar = m_cond->codeGen(cg);
-        Value* boolValue = builder.CreateCall3(cg->m_gf_opToBoolVar,
-            condVar,
+        Value* boolValue = builder.CreateCall(cg->m_gf_opToBoolVar,
+            { condVar,
             cg->createDebugInfoPtr(m_line, block, builder),
-            cg->m_gv_vm);
+            cg->m_gv_vm });
         Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
 
         builder.CreateCondBr(cond, label_for_loop, label_for_end);
@@ -1929,21 +1927,21 @@ Value* ForeachAST::codeGen(acCodeGenerator* cg)
     }
 
     containerVal = m_container->codeGen(cg);
-    builder.CreateCall3(cg->m_gf_opInitIter,
-        containerVal,
+    builder.CreateCall(cg->m_gf_opInitIter,
+        { containerVal,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 
     //cond
     builder.CreateBr(label_foreach_cond);
     builder.SetInsertPoint(label_foreach_cond);
 
-    Value* boolValue = builder.CreateCall5(cg->m_gf_opIterateVar,
-        containerVal,
+    Value* boolValue = builder.CreateCall(cg->m_gf_opIterateVar,
+        { containerVal,
         keyVal,
         valueVal,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm);
+        cg->m_gv_vm });
     Value* cond = builder.CreateCast(Instruction::Trunc, boolValue, builder.getInt1Ty(), "IsNotZero");
     builder.CreateCondBr(cond, label_foreach_loop, label_foreach_end);
 
@@ -1983,9 +1981,9 @@ Value* NewAST::codeGen(acCodeGenerator* cg)
 
     Value* orgVar = m_varExpr->codeGen(cg);
 
-    Value* tmpVar = builder.CreateCall3(cg->m_gf_getArrayVar_int,
-        block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm);
-    Value* argArray = builder.CreateCall2(cg->m_gf_createArray, tmpVar, cg->m_gv_vm, Twine("v_argArray"));
+    Value* tmpVar = builder.CreateCall(cg->m_gf_getArrayVar_int,
+        { block->m_tmpArray, builder.getInt32(block->m_tmpArraySize++), cg->m_gv_vm });
+    Value* argArray = builder.CreateCall(cg->m_gf_createArray, { tmpVar, cg->m_gv_vm }, Twine("v_argArray"));
 
     //push args
     if(m_args != 0)
@@ -1994,17 +1992,17 @@ Value* NewAST::codeGen(acCodeGenerator* cg)
         NodeASTVec::iterator itend = m_args->m_nodeASTVec.end();
         for(; it != itend; ++it)
         {
-            Value* arg = builder.CreateCall3(cg->m_gf_newArrayVar, argArray, builder.getInt32(-1), cg->m_gv_vm);
+            Value* arg = builder.CreateCall(cg->m_gf_newArrayVar, { argArray, builder.getInt32(-1), cg->m_gv_vm });
             codeGenAssignment(builder, arg, *it, cg);
         }
     }
 
     //call opNew
-    return builder.CreateCall4(cg->m_gf_opNew,
-        orgVar,
+    return builder.CreateCall(cg->m_gf_opNew,
+        { orgVar,
         argArray,
         cg->createDebugInfoPtr(m_line, block, builder),
-        cg->m_gv_vm,
+        cg->m_gv_vm },
         Twine("v_new_var"));
 }
 
@@ -2015,45 +2013,45 @@ inline Value* codeGenDelete(IRBuilder<>& builder, Value* parent, NodeAST* keyExp
     case NodeAST::tInt32AST:
         {
             Int32AST* ast = (Int32AST*)keyExpr;
-            return builder.CreateCall5(cg->m_gf_opDelete_int32,
-                parent,
+            return builder.CreateCall(cg->m_gf_opDelete_int32,
+                { parent,
                 builder.getInt32(ast->m_val),
                 builder.getInt32(findInGlobal),
                 debugInfo,
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
         break;
     case NodeAST::tInt64AST:
         {
             Int64AST* ast = (Int64AST*)keyExpr;
-            return builder.CreateCall5(cg->m_gf_opDelete_int64,
-                parent,
+            return builder.CreateCall(cg->m_gf_opDelete_int64,
+                { parent,
                 builder.getInt64(ast->m_val),
                 builder.getInt32(findInGlobal),
                 debugInfo,
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
         break;
     case NodeAST::tStringAST:
         {
             StringAST* ast = (StringAST*)keyExpr;
-            return builder.CreateCall5(cg->m_gf_opDelete_str,
-                parent,
+            return builder.CreateCall(cg->m_gf_opDelete_str,
+                { parent,
                 cg->createStringPtr(ast->m_val, cg->currentBlock(), builder),
                 builder.getInt32(findInGlobal),
                 debugInfo,
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
         break;
     }
 
     Value* key = keyExpr->codeGen(cg);
-    return builder.CreateCall5(cg->m_gf_opDelete,
-        parent,
+    return builder.CreateCall(cg->m_gf_opDelete,
+        { parent,
         key,
         builder.getInt32(findInGlobal),
         debugInfo,
-        cg->m_gv_vm);
+        cg->m_gv_vm });
 }
 
 Value* DeleteAST::codeGen(acCodeGenerator* cg)
@@ -2079,12 +2077,12 @@ Value* DeleteAST::codeGen(acCodeGenerator* cg)
         }
         else
         {
-            val = builder.CreateCall5(cg->m_gf_opDelete_str,
-                m_varExpr->m_parent,
+            val = builder.CreateCall(cg->m_gf_opDelete_str,
+                { m_varExpr->m_parent,
                 cg->createStringPtr(m_varExpr->m_keyIdentifier, block, builder),
                 zero,
                 cg->createDebugInfoPtr(m_line, block, builder),
-                cg->m_gv_vm);
+                cg->m_gv_vm });
         }
     }
     else
@@ -2114,12 +2112,12 @@ Value* DeleteAST::codeGen(acCodeGenerator* cg)
                 }
 
                 //then find in this & global table
-                val = builder.CreateCall5(cg->m_gf_opDelete_str,
-                    block->m_thisVar,
+                val = builder.CreateCall(cg->m_gf_opDelete_str,
+                    { block->m_thisVar,
                     cg->createStringPtr(m_varExpr->m_keyIdentifier, block, builder),
                     builder.getInt32(1),
                     cg->createDebugInfoPtr(m_line, block, builder),
-                    cg->m_gv_vm);
+                    cg->m_gv_vm });
             }
             break;
         case GetVarAST::THIS:
@@ -2134,12 +2132,12 @@ Value* DeleteAST::codeGen(acCodeGenerator* cg)
             }
             else
             {
-                val = builder.CreateCall5(cg->m_gf_opDelete_str,
-                    block->m_thisVar,
+                val = builder.CreateCall(cg->m_gf_opDelete_str,
+                    { block->m_thisVar,
                     cg->createStringPtr(m_varExpr->m_keyIdentifier, block, builder),
                     zero,
                     cg->createDebugInfoPtr(m_line, block, builder),
-                    cg->m_gv_vm);
+                    cg->m_gv_vm });
             }
             break;
         case GetVarAST::GLOBAL:
@@ -2154,12 +2152,12 @@ Value* DeleteAST::codeGen(acCodeGenerator* cg)
             }
             else
             {
-                val = builder.CreateCall5(cg->m_gf_opDelete_str,
-                    cg->m_gv_rootTableVar,
+                val = builder.CreateCall(cg->m_gf_opDelete_str,
+                    { cg->m_gv_rootTableVar,
                     cg->createStringPtr(m_varExpr->m_keyIdentifier, block, builder),
                     zero,
                     cg->createDebugInfoPtr(m_line, block, builder),
-                    cg->m_gv_vm);
+                    cg->m_gv_vm });
             }
             break;
         }
