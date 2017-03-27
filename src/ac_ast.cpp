@@ -700,11 +700,13 @@ Value* FunctionAST::codeGen(acCodeGenerator* cg)
 
     //this, args, upvalues
     Function::arg_iterator argsValues = llvmFunc->arg_begin();
-    Value* thisVar = argsValues++;
+    Value* thisVar = &*argsValues;
     thisVar->setName("thisVar");
-    Value* argArray = argsValues++;
+    ++argsValues;
+    Value* argArray = &*argsValues;
     argArray->setName("argArray");
-    m_localUpValueTable = argsValues++;
+    ++argsValues;
+    m_localUpValueTable = &*argsValues;
     m_localUpValueTable->setName("upValueTable");
  
     m_localblock->m_thisVar = thisVar;
